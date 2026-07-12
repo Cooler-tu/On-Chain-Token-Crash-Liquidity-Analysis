@@ -5,7 +5,9 @@ from typing import Any, Optional
 
 from web3 import Web3
 
-DEFAULT_CHUNK_SIZE = 2_000
+# Alchemy Free and similar tiers cap eth_getLogs at 10 blocks per request.
+DEFAULT_CHUNK_SIZE = 10
+MIN_CHUNK_SIZE = 1
 
 
 def get_logs_chunked(
@@ -32,14 +34,14 @@ def get_logs_chunked(
             )
             logs.extend(entries)
         except Exception:
-            if chunk_size > 500:
+            if chunk_size > MIN_CHUNK_SIZE:
                 logs.extend(
                     get_logs_chunked(
                         event,
                         start,
                         end,
                         argument_filters,
-                        chunk_size=chunk_size // 2,
+                        chunk_size=max(chunk_size // 2, MIN_CHUNK_SIZE),
                     )
                 )
         start = end + 1
