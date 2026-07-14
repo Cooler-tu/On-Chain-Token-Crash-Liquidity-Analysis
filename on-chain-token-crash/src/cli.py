@@ -20,6 +20,8 @@ from .analysis.metrics import calculate_all_metrics
 from .analysis.timeline import analyze_timeline
 from .analysis.risk import compute_risk
 from .report.generator import generate_report
+from .analysis.holdings import analyze_holdings
+from .analysis.dashboard import generate_dashboard
 
 app = typer.Typer()
 
@@ -240,6 +242,99 @@ def discover_only(
     for p in verified_pools:
         status = "OK" if p.verified else "FAIL"
         typer.echo("{} {} (conf={})".format(status, p.pool_address, p.verification_confidence))
+
+
+
+@app.command()
+def holdings(
+    token_address: str = typer.Argument(..., help="Token contract address"),
+    from_block: int = typer.Option(19000000, help="Start block"),
+    to_block: int = typer.Option(19100000, help="End block"),
+    rpc_url: str = typer.Option("", envvar="ETH_RPC_URL", help="RPC URL"),
+    output_dir: str = typer.Option("output", help="Output directory"),
+):
+    """Step 1-2: Analyze token holdings & identify pool accounts.
+
+    Runs:
+      1. Basic Token Holdings Analysis - extracts unique addresses from
+         Transfer events and queries their token balances
+      2. Pool Account Identification - matches pool addresses among holders
+    """
+    from .token.profiler import profile_token as _profile
+    from .discovery.engine import discover_pools as _discover
+    from .verification.verifier import verify_pools as _verify
+    from .registry.loader import load_registry as _registry, get_chain_id as _chain_id
+    from .indexer.indexer import index_events as _index
+    from .models import VerifiedPool as _VP, to_dict as _to_dict
+
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    w3 = get_web3(rpc_url or None)
+    registry = _registry()
+    chain_id_val = _chain_id(registry)
+
+    typer.echo("[1] Profiling token ...")
+    profile = _profile(w3, token_address, chain_id_val)
+    _write_json(out / "token_profile.json", profile.__dict__)
+    typer.echo("  Symbol: {}, Decimals: {}".format(profile.symbol, profile.decimals))
+    target_token = profile.address
+    token_decimals = profile.decimals or 18
+
+    typer.echo("[2] Discovering and verifying pools ...")
+    result = _discover(w3, token_address, from_block, to_block, chain_id_val)
+    candidates = [_VP(**dict(pdata)) for pdata in result["pools"]]
+    verified_pools = _verify(
+        w3, candidates, target_token=token_address,
+        from_block=from_block, to_block=to_block,
+    )
+    _write_json(out / "verified_pools.json", [_to_dict(p) for p in verified_pools])
+    verified_count = sum(1 for p in verified_pools if p.verified)
+    typer.echo("  {} verified pools".format(verified_count))
+    if verified_count == 0:
+        typer.echo("No verified pools found. Cannot proceed.")
+        raise typer.Exit(1)
+
+    typer.echo("[3] Indexing token transfer events ...")
+    indexed = _index(
+        w3, verified_pools, target_token, from_block, to_block,
+        output_dir=output_dir, index_token_transfer=True,
+    )
+    transfers = indexed["transfers"]
+    typer.echo("  {} transfer events indexed".format(len(transfers)))
+
+    typer.echo("[4] Running holdings analysis ...")
+    holdings_result = analyze_holdings(
+        w3, target_token, token_decimals, transfers,
+        verified_pools, from_block, to_block,
+        output_dir=output_dir,
+    )
+    typer.echo("  {} unique addresses found, {} holders with balance".format(
+        holdings_result["total_unique_addresses"],
+        holdings_result["holdings_count"],
+    ))
+    pool_identified = [p for p in holdings_result["pool_identification"]
+                       if p.get("in_holders_list")]
+    typer.echo("  {} pool addresses identified in holder list".format(len(pool_identified)))
+
+    typer.echo("\n=== Holdings Analysis Complete ===")
+    typer.echo("Output files:")
+    typer.echo("  holdings.json        - Full holdings data (JSON)")
+    typer.echo("  holdings_table.csv   - Holdings table (CSV)")
+    typer.echo("  pool_identification_table.csv - Pool identification table (CSV)")
+
+
+@app.command()
+def dashboard(
+    output_dir: str = typer.Option("output", help="Output directory"),
+):
+    """Step 3: Generate a visual HTML dashboard from analysis results.
+
+    Requires holdings.json, verified_pools.json, and other analysis
+    output files to already exist in the output directory.
+    """
+    dashboard_path = generate_dashboard(output_dir=output_dir)
+    typer.echo("Dashboard generated: {}".format(dashboard_path))
 
 
 def _write_json(path: Path, data):
