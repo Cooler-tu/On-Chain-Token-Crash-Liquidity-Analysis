@@ -8,7 +8,7 @@ import requests as _requests
 from web3 import Web3
 
 DEFAULT_CHUNK_SIZE = 2_000
-TOPIC_CHUNK_SIZE = 10  # Alchemy Free tier: 10 blocks with topics
+TOPIC_CHUNK_SIZE = 10  # Alchemy Free / tight eth_getLogs limits
 
 PAIR_CREATED_TOPIC = "0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9"
 POOL_CREATED_TOPIC = "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"
@@ -20,29 +20,51 @@ def address_topic(address: str) -> str:
 
 
 def get_logs_chunked(event, from_block, to_block, argument_filters=None,
-                      chunk_size=DEFAULT_CHUNK_SIZE):
-    """Fetch logs with adaptive chunk sizing."""
+                      chunk_size=DEFAULT_CHUNK_SIZE, on_chunk=None):
+    """Fetch logs with adaptive chunk sizing.
+
+    on_chunk: optional ``(chunk_start, chunk_end, entries) -> None`` after each
+    successful chunk (used for checkpoint/resume).
+
+    After a failure, a hard ceiling prevents thrashing (grow → fail → shrink loops).
+    Large failures jump directly to TOPIC_CHUNK_SIZE instead of slowly halving.
+    """
     if from_block > to_block:
         return []
 
     logs = []
     start = from_block
     adaptive_size = chunk_size
+    ceiling = chunk_size
+    consecutive_ok = 0
 
     while start <= to_block:
-        end = min(start + adaptive_size - 1, to_block)
+        size = min(adaptive_size, ceiling)
+        end = min(start + size - 1, to_block)
         try:
             entries = event.get_logs(from_block=start, to_block=end)
             logs.extend(entries)
+            if on_chunk is not None:
+                on_chunk(start, end, entries)
             start = end + 1
-            adaptive_size = min(chunk_size, adaptive_size * 2)
+            consecutive_ok += 1
+            if consecutive_ok >= 5 and size < ceiling:
+                adaptive_size = min(ceiling, size * 2)
+                consecutive_ok = 0
+            else:
+                adaptive_size = size
         except Exception:
-            if adaptive_size > 1:
-                adaptive_size = max(1, adaptive_size // 2)
-                # Don't advance start — retry with smaller chunk
+            consecutive_ok = 0
+            if size > 1:
+                if size > TOPIC_CHUNK_SIZE * 2:
+                    ceiling = TOPIC_CHUNK_SIZE
+                    adaptive_size = TOPIC_CHUNK_SIZE
+                else:
+                    ceiling = max(1, size // 2)
+                    adaptive_size = ceiling
             else:
                 start = end + 1
-                adaptive_size = chunk_size
+                adaptive_size = min(ceiling, chunk_size)
 
     if argument_filters:
         filtered = []
@@ -80,15 +102,17 @@ def get_logs_with_topics(w3, contract_address, topics, from_block, to_block,
     logs = []
     start = from_block
     adaptive_size = chunk_size
+    ceiling = chunk_size
     request_id = 0
+    consecutive_ok = 0
 
     while start <= to_block:
-        end = min(start + adaptive_size - 1, to_block)
+        size = min(adaptive_size, ceiling)
+        end = min(start + size - 1, to_block)
         request_id += 1
 
         params_dict = {"address": addr, "fromBlock": hex(start), "toBlock": hex(end)}
 
-        # Build topics: keep None for correct position matching
         has_non_none = any(t is not None for t in topics)
         if has_non_none:
             params_dict["topics"] = [t if t is not None else None for t in topics]
@@ -101,25 +125,44 @@ def get_logs_with_topics(w3, contract_address, topics, from_block, to_block,
                 if "result" in data:
                     logs.extend(data["result"])
                     start = end + 1
-                    adaptive_size = min(chunk_size * 4, adaptive_size * 2)
+                    consecutive_ok += 1
+                    if consecutive_ok >= 5 and size < ceiling:
+                        adaptive_size = min(ceiling, size * 2, chunk_size * 4)
+                        consecutive_ok = 0
+                    else:
+                        adaptive_size = size
                 else:
-                    if adaptive_size > 1:
-                        adaptive_size = max(1, adaptive_size // 2)
+                    consecutive_ok = 0
+                    if size > 1:
+                        ceiling = max(1, size // 2)
+                        adaptive_size = ceiling
                     else:
                         start = end + 1
-                        adaptive_size = chunk_size
+                        adaptive_size = min(ceiling, chunk_size)
             else:
-                if adaptive_size > 1:
-                    adaptive_size = max(1, adaptive_size // 2)
+                consecutive_ok = 0
+                if size > 1:
+                    if size > TOPIC_CHUNK_SIZE * 2:
+                        ceiling = TOPIC_CHUNK_SIZE
+                        adaptive_size = TOPIC_CHUNK_SIZE
+                    else:
+                        ceiling = max(1, size // 2)
+                        adaptive_size = ceiling
                 else:
                     start = end + 1
-                    adaptive_size = chunk_size
+                    adaptive_size = min(ceiling, chunk_size)
         except Exception:
-            if adaptive_size > 1:
-                adaptive_size = max(1, adaptive_size // 2)
+            consecutive_ok = 0
+            if size > 1:
+                if size > TOPIC_CHUNK_SIZE * 2:
+                    ceiling = TOPIC_CHUNK_SIZE
+                    adaptive_size = TOPIC_CHUNK_SIZE
+                else:
+                    ceiling = max(1, size // 2)
+                    adaptive_size = ceiling
             else:
                 start = end + 1
-                adaptive_size = chunk_size
+                adaptive_size = min(ceiling, chunk_size)
 
     return logs
 

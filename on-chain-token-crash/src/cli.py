@@ -107,7 +107,8 @@ def analyze(
         raise typer.Exit(1)
 
     # Step 4: Event indexing
-    typer.echo("[4/10] Indexing events (this may take a while) ...")
+    typer.echo("[4/10] Indexing events (chunk-level resume enabled; Ctrl+C is safe) ...")
+    typer.echo("  Progress: {}/indexer_cache + event_indexer_checkpoint.json".format(output_dir))
     indexed = index_events(
         w3,
         verified_pools,
