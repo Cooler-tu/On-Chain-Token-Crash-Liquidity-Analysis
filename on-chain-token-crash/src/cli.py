@@ -11,6 +11,7 @@ from .client import get_web3
 from .discovery.engine import discover_pools
 from .models import VerifiedPool, to_dict
 from .token.profiler import profile_token
+from .token.resolver import TokenResolveError, format_resolve_summary, resolve_token
 from .registry.loader import load_registry, get_chain_id
 from .verification.verifier import verify_pools
 from .indexer.indexer import index_events
@@ -26,9 +27,22 @@ from .analysis.dashboard import generate_dashboard
 app = typer.Typer()
 
 
+def _resolve_or_exit(token_query: str, chain_id: int, pick: int) -> str:
+    """Resolve address/symbol/name → checksum address, or exit with a clear error."""
+    try:
+        resolved = resolve_token(token_query, chain_id=chain_id, pick=pick)
+    except TokenResolveError as exc:
+        typer.echo("Token resolve failed: {}".format(exc), err=True)
+        raise typer.Exit(1)
+    typer.echo(format_resolve_summary(resolved))
+    return resolved["address"]
+
+
 @app.command()
 def analyze(
-    token_address: str = typer.Argument(..., help="Token contract address"),
+    token: str = typer.Argument(
+        ..., help="Token contract address, symbol, or name (e.g. 0x… / USDC / CREDI)"
+    ),
     chain_id: int = typer.Option(1, help="Chain ID"),
     from_block: int = typer.Option(19000000, help="Start block"),
     to_block: int = typer.Option(19100000, help="End block"),
@@ -36,6 +50,7 @@ def analyze(
     rpc_url: str = typer.Option("", envvar="ETH_RPC_URL", help="RPC URL"),
     output_dir: str = typer.Option("output", help="Output directory"),
     fast_mode: bool = typer.Option(False, help="Skip exhaustive event indexing (faster, less data)"),
+    pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
 ):
     """End-to-end analysis of a token's on-chain liquidity and crash timeline.
 
@@ -53,6 +68,8 @@ def analyze(
     """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    token_address = _resolve_or_exit(token, chain_id, pick)
 
     w3 = get_web3(rpc_url or None)
     registry = load_registry()
@@ -211,15 +228,21 @@ def analyze(
 
 @app.command()
 def discover_only(
-    token_address: str = typer.Argument(..., help="Token contract address"),
+    token: str = typer.Argument(
+        ..., help="Token contract address, symbol, or name (e.g. 0x… / USDC / CREDI)"
+    ),
     from_block: int = typer.Option(19000000, help="Start block"),
     to_block: int = typer.Option(19100000, help="End block"),
     rpc_url: str = typer.Option("", envvar="ETH_RPC_URL", help="RPC URL"),
     output_dir: str = typer.Option("output", help="Output directory"),
+    pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
+    chain_id: int = typer.Option(1, help="Chain ID"),
 ):
     """Discover and verify pools for a token."""
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    token_address = _resolve_or_exit(token, chain_id, pick)
 
     w3 = get_web3(rpc_url or None)
     registry = load_registry()
@@ -247,11 +270,15 @@ def discover_only(
 
 @app.command()
 def holdings(
-    token_address: str = typer.Argument(..., help="Token contract address"),
+    token: str = typer.Argument(
+        ..., help="Token contract address, symbol, or name (e.g. 0x… / USDC / CREDI)"
+    ),
     from_block: int = typer.Option(19000000, help="Start block"),
     to_block: int = typer.Option(19100000, help="End block"),
     rpc_url: str = typer.Option("", envvar="ETH_RPC_URL", help="RPC URL"),
     output_dir: str = typer.Option("output", help="Output directory"),
+    pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
+    chain_id: int = typer.Option(1, help="Chain ID"),
 ):
     """Step 1-2: Analyze token holdings & identify pool accounts.
 
@@ -269,6 +296,8 @@ def holdings(
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    token_address = _resolve_or_exit(token, chain_id, pick)
 
     w3 = get_web3(rpc_url or None)
     registry = _registry()
