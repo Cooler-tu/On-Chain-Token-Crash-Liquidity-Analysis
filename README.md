@@ -176,6 +176,30 @@ For crash studies, pass `--incident-block` and use a window that covers the even
 
 ---
 
+## Public site
+
+The analysis dashboard can be published as a static site (built with Chart.js, zero server backend needed).
+
+```bash
+# Build the public site from all output directories
+python3 scripts/publish_site.py
+
+# Build and preview locally
+python3 scripts/publish_site.py --serve
+```
+
+The generated site lives in `site/` and is ready to deploy to [GitHub Pages](https://pages.github.com/), Vercel, Netlify, or any static host.
+
+### GitHub Pages (one-time setup)
+
+1. Go to your repo **Settings → Pages**
+2. Under **Source**, select **GitHub Actions**
+3. Push to `main` — the included `.github/workflows/deploy-pages.yml` will build and deploy automatically
+
+Your site will be available at `https://<username>.github.io/<repo-name>/`.
+
+---
+
 ## Known limitations
 
 | Limitation | Details |
@@ -193,6 +217,13 @@ See also `on-chain-token-crash/SUPPORTED_PROTOCOLS.md` for protocol notes.
 <a name="中文"></a>
 
 # 中文
+### Analysis Log
+
+| Token | Chain | Block Window | Pools | Holders | Risk Score | Level | Dir |
+|-------|-------|-------------|-------|---------|-----------|-------|-----|
+| SPX | Ethereum | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 | LOW | `output/` |
+| USDC | Ethereum | 19000000–19000050 | — | — | 0.0000 | LOW | `output-test/` |
+
 
 ## 概述
 
@@ -291,6 +322,37 @@ open output/dashboard.html
 | `positions.json` | LP 仓位（可能为空） |
 
 ---
+
+## 公开站点
+
+分析看板可以发布为静态站点（基于 Chart.js，无需后端服务）。
+
+```bash
+# 从所有 output 目录构建公开站点
+python3 scripts/publish_site.py
+
+# 构建并在本地预览
+python3 scripts/publish_site.py --serve
+```
+
+生成的站点在 `site/` 目录中，可直接部署到 [GitHub Pages](https://pages.github.com/)、Vercel、Netlify 或任何静态托管服务。
+
+### GitHub Pages（一次性配置）
+
+1. 进入仓库 **Settings → Pages**
+2. 在 **Source** 中选择 **GitHub Actions**
+3. 推送到 `main` 分支 —— 项目自带的 `.github/workflows/deploy-pages.yml` 会自动构建并部署
+
+站点将可通过 `https://<用户名>.github.io/<仓库名>/` 访问。
+
+---
+### 分析记录
+
+| Token | 链 | 区块范围 | 池子 | 持有者 | 风险值 | 等级 | 目录 |
+|-------|-----|---------|------|--------|-------|------|------|
+| SPX | Ethereum | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 | 低 | `output/` |
+| USDC | Ethereum | 19000000–19000050 | — | — | 0.0000 | 低 | `output-test/` |
+
 
 ## 已知限制
 

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPX Token Dashboard</title>
+<meta name="description" content="On-chain liquidity and holdings analysis for SPX on Ethereum mainnet.">
+<meta property="og:title" content="SPX Token Dashboard">
+<meta property="og:description" content="On-chain liquidity and holdings analysis for SPX.">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--text-muted:#94a3b8;--text-dim:#64748b;--accent:#3b82f6;--accent-light:#60a5fa;--green:#4ade80;--yellow:#facc15;--red:#f87171;--radius:10px;--shadow:0 4px 24px rgba(0,0,0,0.25)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);padding:20px;min-height:100vh}
+.container{max-width:1400px;margin:0 auto}
+h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
+.symbol-muted{color:var(--text-muted);font-weight:400}
+.subtitle{color:var(--text-muted);font-size:13px;margin-bottom:20px}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.brand{font-size:18px;font-weight:700}
+.brand-accent{color:var(--accent)}
+.nav-links a{color:var(--text-dim);text-decoration:none;font-size:13px;margin-left:20px;transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--accent-light)}
+.nav-links a.active{font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.card h2{font-size:12px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.6px;font-weight:600}
+.stat-value{font-size:30px;font-weight:700;color:var(--text)}
+.stat-label{font-size:12px;color:var(--text-dim);margin-top:2px}
+.badge{display:inline-block;padding:3px 16px;border-radius:20px;font-weight:600;font-size:13px}
+.bg-low{background:rgba(34,197,94,0.12);color:var(--green)}
+.bg-medium{background:rgba(250,204,21,0.12);color:var(--yellow)}
+.bg-high{background:rgba(239,68,68,0.12);color:var(--red)}
+.bg-n-a{background:rgba(100,116,139,0.12);color:var(--text-muted)}
+.fw{grid-column:1/-1}
+.chart-box{position:relative;height:260px;width:100%}
+.chart-box-sm{position:relative;height:200px;width:100%}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);color:var(--text-dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+td{padding:6px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+tr:hover td{background:rgba(59,130,246,0.04)}
+.addr{font-family:'SF Mono','Fira Code','Cascadia Code','Courier New',monospace;font-size:11px;color:var(--accent-light);word-break:break-all}
+.plabel{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(96,165,250,0.12);color:var(--accent-light)}
+.scroll{max-height:360px;overflow-y:auto}
+.scroll::-webkit-scrollbar{width:5px}
+.scroll::-webkit-scrollbar-track{background:transparent}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.glow{box-shadow:0 0 30px rgba(59,130,246,0.06)}
+.info-bar{display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:20px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px}
+.info-item{font-size:12px;color:var(--text-muted)}
+.info-item span{color:var(--text);font-weight:500}
+.empty-note{padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:var(--red);font-size:13px;margin-bottom:16px}
+.footer{margin-top:32px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-dim)}
+.footer a{color:var(--accent-light);text-decoration:none}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.nav-bar{flex-direction:column;gap:10px;align-items:flex-start}.nav-links a{margin-left:0;margin-right:14px}.stat-value{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="nav-bar">
+    <div class="brand"><span class="brand-accent">On-Chain</span> Token Crash</div>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="#" class="active">Dashboard</a>
+      <a href="https://github.com/Cooler-tu/On-Chain-Token-Crash-Liquidity-Analysis" target="_blank">GitHub</a>
+    </div>
+  </nav>
+
+  <h1>SPX <span class="symbol-muted">Holdings &amp; Liquidity</span></h1>
+  <p class="subtitle">Chain ID: 1 &middot; Token: <span class="addr">0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C</span></p>
+  
+
+  <div class="info-bar">
+    <div class="info-item">Analysis &middot; <span>2026-07-18 06:07:41 UTC</span></div>
+    <div class="info-item">Token &middot; <span>SPX6900</span></div>
+    <div class="info-item">Decimals &middot; <span>8</span></div>
+    
+  </div>
+
+  <div class="grid">
+    <div class="card glow">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Unique Transfer Addresses</div>
+    </div>
+    <div class="card glow">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Active Holders</div>
+    </div>
+    <div class="card glow">
+      <div class="stat-value">8</div>
+      <div class="stat-label">Verified Liquidity Pools</div>
+    </div>
+    <div class="card glow">
+      <div class="stat-value"><span class="badge bg-low">LOW</span></div>
+      <div class="stat-label">Risk Index &middot; Score <span style="color:#4ade80">0.1944</span></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Holder Distribution</h2>
+      <div class="chart-box-sm"><canvas id="c1"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Pool Concentration</h2>
+      <div class="chart-box-sm"><canvas id="c2"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Top Holders</h2>
+      <div class="chart-box-sm"><canvas id="c3"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fw">
+      <h2>All Non-Pool Holders</h2>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (SPX)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr><td>1</td><td class="addr">0x0376b46804BE07379829bb321002EC170D52cBfc</td><td>0.0000 SPX</td><td>1</td><td></td></tr>
+<tr><td>2</td><td class="addr">0x2dfaDAB8266483beD9Fd9A292Ce56596a2D1378D</td><td>0.0000 SPX</td><td>2</td><td></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fw">
+      <h2>Pool-Labeled Addresses</h2>
+      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody><tr><td class="addr">0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39</td><td>UNISWAP V2</td><td>12.92M SPX</td><td><span class="plabel">POOL</span></td></tr></tbody></table></div>
+    </div>
+  </div>
+<div class="grid">
+    <div class="card fw">
+      <h2>All Verified Pools</h2>
+      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>In Holders</th></tr></thead><tbody><tr><td class="addr">0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39</td><td>uniswap v2</td><td>0xC02aaA39.../0xE0f63A42...</td><td>Yes</td></tr>
+<tr><td class="addr">0xEb8261A88eBF20f6fC6fd402a50e864FfcEFd4C6</td><td>uniswap v2</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr>
+<tr><td class="addr">0xE60FbA68Aa34040a1da64Cc661d06920853C16CF</td><td>uniswap v3</td><td>0xC02aaA39.../0xE0f63A42...</td><td>No</td></tr>
+<tr><td class="addr">0x7C706586679Af2BA6D1A9fC2DA9C6aF59883fdD3</td><td>uniswap v3</td><td>0xC02aaA39.../0xE0f63A42...</td><td>No</td></tr>
+<tr><td class="addr">0x00Ed26e794b949E18B142F9108429b74CE08aC99</td><td>uniswap v3</td><td>0xC02aaA39.../0xE0f63A42...</td><td>No</td></tr>
+<tr><td class="addr">0x95b5Dc7efdc7b9CB5A1254dF176Bb526Ad1B7C72</td><td>uniswap v3</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr>
+<tr><td class="addr">0x14167b77c5bc79C16bb4493830B2fbb74f503665</td><td>uniswap v3</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr>
+<tr><td class="addr">0xa1532d04697cCB522E4EFC8FBa5daa75A412f7b8</td><td>uniswap v3</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fw">
+      <h2>Pool TVL Timeline</h2>
+      <div class="chart-box"><canvas id="c4"></canvas></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated by <a href="https://github.com/Cooler-tu/On-Chain-Token-Crash-Liquidity-Analysis">On-Chain Token Crash &amp; Liquidity Analysis</a>
+    &middot; Data sourced from Ethereum mainnet
+  </div>
+</div>
+<script>
+const topH = [
+  {
+    "address": "0x0376b46804BE07379829bb321002EC170D52cBfc",
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "is_pool": false,
+    "pool_label": "",
+    "tx_count": 1,
+    "first_seen_block": 19000022,
+    "last_seen_block": 19000022,
+    "query_timestamp": 1784354861
+  },
+  {
+    "address": "0x2dfaDAB8266483beD9Fd9A292Ce56596a2D1378D",
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "is_pool": false,
+    "pool_label": "",
+    "tx_count": 2,
+    "first_seen_block": 19000022,
+    "last_seen_block": 19000022,
+    "query_timestamp": 1784354861
+  }
+];
+const poolH = [
+  {
+    "address": "0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39",
+    "balance_raw": "1292354257645358",
+    "balance_decimal": 12923542.576454,
+    "is_pool": true,
+    "pool_label": "UNISWAP V2",
+    "tx_count": 1,
+    "first_seen_block": 19000022,
+    "last_seen_block": 19000022,
+    "query_timestamp": 1784354861
+  }
+];
+const poolI = [
+  {
+    "pool_address": "0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39",
+    "protocol": "uniswap",
+    "version": "v2",
+    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": null,
+    "balance_raw": "1292354257645358",
+    "balance_decimal": 12923542.576454,
+    "in_holders_list": true
+  },
+  {
+    "pool_address": "0xEb8261A88eBF20f6fC6fd402a50e864FfcEFd4C6",
+    "protocol": "uniswap",
+    "version": "v2",
+    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": null,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  },
+  {
+    "pool_address": "0xE60FbA68Aa34040a1da64Cc661d06920853C16CF",
+    "protocol": "uniswap",
+    "version": "v3",
+    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": 500,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  },
+  {
+    "pool_address": "0x7C706586679Af2BA6D1A9fC2DA9C6aF59883fdD3",
+    "protocol": "uniswap",
+    "version": "v3",
+    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": 3000,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  },
+  {
+    "pool_address": "0x00Ed26e794b949E18B142F9108429b74CE08aC99",
+    "protocol": "uniswap",
+    "version": "v3",
+    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": 10000,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  },
+  {
+    "pool_address": "0x95b5Dc7efdc7b9CB5A1254dF176Bb526Ad1B7C72",
+    "protocol": "uniswap",
+    "version": "v3",
+    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": 100,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  },
+  {
+    "pool_address": "0x14167b77c5bc79C16bb4493830B2fbb74f503665",
+    "protocol": "uniswap",
+    "version": "v3",
+    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": 3000,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  },
+  {
+    "pool_address": "0xa1532d04697cCB522E4EFC8FBa5daa75A412f7b8",
+    "protocol": "uniswap",
+    "version": "v3",
+    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+    "fee": 10000,
+    "balance_raw": "0",
+    "balance_decimal": 0.0,
+    "in_holders_list": false
+  }
+];
+const tvlD = [];
+
+(function(){
+  function tc(id,cfg){ new Chart(document.getElementById(id),cfg); }
+
+  tc('c1',{
+    type:'doughnut',
+    data:{
+      labels:['Pool LP Holders','Regular Holders'],
+      datasets:[{data:[1,2],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
+  });
+
+  tc('c2',{
+    type:'doughnut',
+    data:{
+      labels:['Main Pool Share','Other Pools'],
+      datasets:[{data:[97.5312,2.4688000000000017],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
+  });
+
+  tc('c3',{
+    type:'bar',
+    data:{
+      labels:topH.slice(0,10).map(function(d){return d.address.slice(0,8)+'...';}),
+      datasets:[{label:'Balance',data:topH.slice(0,10).map(function(d){return d.balance_decimal;}),backgroundColor:'#3b82f6',borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}
+  });
+  tc('c4',{type:'line',data:{labels:['No Data'],datasets:[{data:[0],backgroundColor:'#3b82f6',borderColor:'#3b82f6'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}});
+})();
+
+</script>
+</body>
+</html>
