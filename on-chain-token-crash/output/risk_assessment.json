@@ -1,16 +1,16 @@
 {
-  "final_score": 0.3159,
+  "final_score": 0.3163,
   "risk_level": "LOW",
-  "raw_score": 0.3471,
+  "raw_score": 0.3476,
   "evidence_confidence": 0.91,
   "migration_adjusted": false,
   "migration_note": "",
   "features": {
     "pool_concentration": {
-      "value": 0.7308,
+      "value": 0.7341,
       "weight": 0.15,
-      "description": "Main pool holds 73.08% of total DEX liquidity.",
-      "raw_data": 0.730774
+      "description": "Main pool holds 73.41% of total DEX liquidity.",
+      "raw_data": 0.734111
     },
     "lp_concentration": {
       "value": 0.0,

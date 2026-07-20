@@ -1,12 +1,12 @@
 {
   "pool_concentration": {
-    "total_tvl": 3991859232370047769749958,
+    "total_tvl": 4041967213195710299788396,
     "main_pool": "0xAC9fbdbE486F8023606b932a747BC476011B5071",
-    "main_pool_tvl": 2917145955848153891342018,
-    "main_pool_share": 0.730774,
+    "main_pool_tvl": 2967253936673816421380456,
+    "main_pool_share": 0.734111,
     "num_active_pools": 2,
     "per_pool_tvl": {
-      "0xAC9fbdbE486F8023606b932a747BC476011B5071": 2917145955848153891342018,
+      "0xAC9fbdbE486F8023606b932a747BC476011B5071": 2967253936673816421380456,
       "0xAB26D20964CC0284e190Bc22e67d52b8A88a3084": 1074713276521893878407940
     },
     "source": "onchain"
@@ -19,7 +19,7 @@
   "withdrawal_severity": {
     "num_withdrawals": 58,
     "total_removed_token0": 0,
-    "pre_event_tvl": 3991859232370047769749958,
+    "pre_event_tvl": 4041967213195710299788396,
     "withdrawal_severity": 0.0,
     "withdrawal_events": [
       {

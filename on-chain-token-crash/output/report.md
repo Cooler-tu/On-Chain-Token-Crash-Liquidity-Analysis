@@ -6,13 +6,13 @@
 - **Chain:** Ethereum (Chain ID: 1)
 - **Analysis Window:** Block 19000170 to 19000196
 - **Incident Block:** Not specified
-- **Report Generated:** 2026-07-17 12:06:17 UTC
+- **Report Generated:** 2026-07-19 03:04:46 UTC
 
 ### Risk Score
 
 | Metric | Value |
 |--------|-------|
-| **Final Risk Score** | **0.3159 / 1.00** |
+| **Final Risk Score** | **0.3163 / 1.00** |
 | **Risk Level** | **LOW** |
 | Evidence Confidence | 91.00% |
 | Visual | `██████░░░░░░░░░░░░░░` |
@@ -55,19 +55,19 @@
 | [0xC36442b4...11FE88](https://etherscan.io/address/0xC36442b4a4522E871399CD717aBDD847Ab11FE88) | PositionManager (uniswap_v3) | position_manager | 100% |
 | [0xE592427A...861564](https://etherscan.io/address/0xE592427A0AEce92De3Edee1F18E0157C05861564) | Router (uniswap_v3) | router | 100% |
 | [0x8EF7d631...bbd48a](https://etherscan.io/address/0x8EF7d63150E027Bd31FD84dfeCe615E1a0bbd48a) | Deployer | token_creator | 100% |
+| [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
 | [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
 | [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
-| [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
 
 
 ## TVL & Price History
 
 | Metric | Value |
 |--------|-------|
-| Total TVL (in token units) | 3991859.2324 |
+| Total TVL (in token units) | 4041967.2132 |
 | Active Pools | 0 |
 | Main Pool | [0xAC9fbdbE...1B5071](https://etherscan.io/address/0xAC9fbdbE486F8023606b932a747BC476011B5071) |
-| Main Pool Share | 73.08% |
+| Main Pool Share | 73.41% |
 
 
 ## Liquidity Events
@@ -117,7 +117,7 @@
 |--------|-------|
 | Pre-Crash Withdrawals | 58 |
 | Total Removed (token0) | 0 |
-| Pre-Event TVL | 3991859.2324 |
+| Pre-Event TVL | 4041967.2132 |
 | Withdrawal Severity | 0.00% of pre-event TVL |
 
 
@@ -146,14 +146,14 @@
 
 | Feature | Value | Weight | Contribution | Description |
 |---------|-------|--------|-------------|-------------|
-| Pool Concentration | 0.7308 | 0.15 | 0.1096 | Main pool holds 73.08% of total DEX liquidity. |
+| Pool Concentration | 0.7341 | 0.15 | 0.1101 | Main pool holds 73.41% of total DEX liquidity. |
 | Lp Concentration | 0.0000 | 0.15 | 0.0000 | Largest LP holds 0.00% of pool shares. |
 | Withdrawal Severity | 0.0000 | 0.20 | 0.0000 | Liquidity removed is 0.00% of reference TVL. |
 | Temporal Proximity | 0.4500 | 0.15 | 0.0675 | No incident block — 58 liquidity removals in window. |
 | Role Sensitivity | 0.8000 | 0.15 | 0.1200 | Deployer is directly involved in pool(s). |
 | Market Impact | 0.0000 | 0.15 | 0.0000 | No timeline data. |
 | Combined Activity | 1.0000 | 0.05 | 0.0500 | Suspicious activity: 58 withdrawals and large sells detected. |
-| **Raw Score** | | | **0.3471** | |
+| **Raw Score** | | | **0.3476** | |
 
 ### Interpretation
 
