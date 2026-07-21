@@ -7,6 +7,12 @@ from typing import Optional
 
 import typer
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+except ImportError:
+    pass
+
 from .client import get_web3
 from .discovery.engine import discover_pools
 from .models import VerifiedPool, to_dict
@@ -51,6 +57,10 @@ def analyze(
     output_dir: str = typer.Option("output", help="Output directory"),
     fast_mode: bool = typer.Option(False, help="Skip exhaustive event indexing (faster, less data)"),
     pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
+    holdings_source: str = typer.Option(
+        "auto",
+        help="Holdings address source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
+    ),
 ):
     """End-to-end analysis: token → liquidity report + dashboard.
 
@@ -248,7 +258,14 @@ def analyze(
             w3, target_token, token_decimals, transfers,
             verified_pools, from_block, to_block,
             output_dir=output_dir,
+            source=holdings_source,
         )
+        typer.echo("  source={}, balances={}".format(
+            holdings_result.get("source", "rpc"),
+            holdings_result.get("balance_source", "rpc"),
+        ))
+        if holdings_result.get("dune_error"):
+            typer.echo("  dune fallback: {}".format(holdings_result["dune_error"]))
         typer.echo("  {} unique addresses, {} holders with balance".format(
             holdings_result.get("total_unique_addresses", 0),
             holdings_result.get("holdings_count", 0),
@@ -322,6 +339,10 @@ def holdings(
     output_dir: str = typer.Option("output", help="Output directory"),
     pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
     chain_id: int = typer.Option(1, help="Chain ID"),
+    holdings_source: str = typer.Option(
+        "auto",
+        help="Holdings address source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
+    ),
 ):
     """Step 1-2: Analyze token holdings & identify pool accounts.
 
@@ -380,7 +401,14 @@ def holdings(
         w3, target_token, token_decimals, transfers,
         verified_pools, from_block, to_block,
         output_dir=output_dir,
+        source=holdings_source,
     )
+    typer.echo("  source={}, balances={}".format(
+        holdings_result.get("source", "rpc"),
+        holdings_result.get("balance_source", "rpc"),
+    ))
+    if holdings_result.get("dune_error"):
+        typer.echo("  dune fallback: {}".format(holdings_result["dune_error"]))
     typer.echo("  {} unique addresses found, {} holders with balance".format(
         holdings_result["total_unique_addresses"],
         holdings_result["holdings_count"],

@@ -1,7 +1,7 @@
 """Token holdings analysis & pool account identification.
 
-1. Extract unique account addresses from Transfer events
-2. Query token balance for each account
+1. Extract unique account addresses from Transfer events (RPC index or Dune)
+2. Query token balance for each account (Dune balances table or RPC balanceOf)
 3. Identify and annotate pool addresses
 """
 from __future__ import annotations
@@ -11,7 +11,7 @@ import json
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from web3 import Web3
 
@@ -28,70 +28,128 @@ def analyze_holdings(
     from_block: int,
     to_block: int,
     output_dir: str | Path = "output",
+    source: str = "auto",
 ) -> dict[str, Any]:
     """Run the full holdings analysis pipeline.
 
-    Steps:
-      1. Extract unique addresses from transfer events
-      2. Query balanceOf for each address
-      3. Identify pool addresses among them
-      4. Store results as JSON + CSV tables
+    ``source``:
+      - ``auto`` — use Dune when ``DUNE_API_KEY`` is set, else RPC transfers
+      - ``dune`` — require Dune for address discovery
+      - ``rpc``  — only use local ``transfer_events`` + ``balanceOf``
     """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    # --- Step 1: Extract unique addresses ---
+    source_norm = (source or "auto").strip().lower()
+    if source_norm not in ("auto", "dune", "rpc"):
+        raise ValueError("source must be auto|dune|rpc, got {!r}".format(source))
+
+    used_source = "rpc"
     unique_addresses: set[str] = set()
     address_tx_count: dict[str, int] = defaultdict(int)
     address_first_seen: dict[str, int] = {}
     address_last_seen: dict[str, int] = {}
-
-    for evt in transfer_events:
-        actor = evt.get("actor", "")
-        recipient = evt.get("recipient", "")
-        bn = evt.get("block_number", 0)
-        if actor and actor != "0x0000000000000000000000000000000000000000":
-            unique_addresses.add(actor)
-            address_tx_count[actor] += 1
-            if actor not in address_first_seen or bn < address_first_seen[actor]:
-                address_first_seen[actor] = bn
-            if actor not in address_last_seen or bn > address_last_seen[actor]:
-                address_last_seen[actor] = bn
-        if recipient and recipient != "0x0000000000000000000000000000000000000000":
-            unique_addresses.add(recipient)
-            address_tx_count[recipient] += 1
-            if recipient not in address_first_seen or bn < address_first_seen[recipient]:
-                address_first_seen[recipient] = bn
-            if recipient not in address_last_seen or bn > address_last_seen[recipient]:
-                address_last_seen[recipient] = bn
-
-    # --- Step 2: Query balanceOf for each address ---
-    token_contract = get_contract(w3, token_address, "erc20")
     balances: dict[str, str] = {}
-    query_timestamp = int(datetime.now(timezone.utc).timestamp())
+    dune_error: Optional[str] = None
 
-    for addr in sorted(unique_addresses):
+    prefer_dune = source_norm == "dune"
+    if source_norm == "auto":
+        from ..data.dune_holdings import dune_api_key_configured
+        prefer_dune = dune_api_key_configured()
+
+    if prefer_dune:
         try:
-            checksum_addr = w3.to_checksum_address(addr)
-            bal = token_contract.functions.balanceOf(checksum_addr).call()
+            from ..data.dune_holdings import (
+                fetch_token_balances_from_dune,
+                fetch_transfer_addresses_from_dune,
+            )
+            for row in fetch_transfer_addresses_from_dune(
+                token_address, from_block, to_block
+            ):
+                addr = row["address"]
+                unique_addresses.add(addr)
+                address_tx_count[addr] = int(row.get("tx_count") or 0)
+                address_first_seen[addr] = int(row.get("first_seen_block") or 0)
+                address_last_seen[addr] = int(row.get("last_seen_block") or 0)
+            balances.update(
+                fetch_token_balances_from_dune(
+                    token_address, sorted(unique_addresses)
+                )
+            )
+            used_source = "dune"
+        except Exception as exc:
+            dune_error = str(exc)
+            if source_norm == "dune":
+                raise
+            unique_addresses.clear()
+            address_tx_count.clear()
+            address_first_seen.clear()
+            address_last_seen.clear()
+            balances.clear()
+
+    if used_source != "dune":
+        used_source = "rpc"
+        for evt in transfer_events:
+            bn = int(evt.get("block_number", 0) or 0)
+            for key in ("actor", "recipient"):
+                raw = evt.get(key, "")
+                if not raw or raw == "0x0000000000000000000000000000000000000000":
+                    continue
+                try:
+                    addr = Web3.to_checksum_address(raw)
+                except Exception:
+                    continue
+                unique_addresses.add(addr)
+                address_tx_count[addr] += 1
+                if addr not in address_first_seen or bn < address_first_seen[addr]:
+                    address_first_seen[addr] = bn
+                if addr not in address_last_seen or bn > address_last_seen[addr]:
+                    address_last_seen[addr] = bn
+
+    # Always include verified pools for labeling / balance snapshot
+    for p in verified_pools:
+        for raw in (p.pool_address, p.custody_address or ""):
+            if not raw:
+                continue
+            try:
+                addr = Web3.to_checksum_address(raw)
+            except Exception:
+                continue
+            unique_addresses.add(addr)
+            address_tx_count.setdefault(addr, 0)
+            address_first_seen.setdefault(addr, from_block)
+            address_last_seen.setdefault(addr, to_block)
+
+    # Fill missing balances via RPC balanceOf
+    token_contract = get_contract(w3, token_address, "erc20")
+    query_timestamp = int(datetime.now(timezone.utc).timestamp())
+    missing = [a for a in sorted(unique_addresses) if a not in balances]
+    for addr in missing:
+        try:
+            bal = token_contract.functions.balanceOf(
+                Web3.to_checksum_address(addr)
+            ).call()
             balances[addr] = str(bal)
         except Exception:
             balances[addr] = "0"
 
-    # --- Step 3: Identify pool addresses ---
-    pool_addresses: set[str] = set()
-    for p in verified_pools:
-        pool_addresses.add(p.pool_address.lower())
-        if p.custody_address:
-            pool_addresses.add(p.custody_address.lower())
+    if used_source == "dune" and missing and len(missing) < len(unique_addresses):
+        balance_source = "dune+rpc"
+    elif used_source == "dune" and not missing:
+        balance_source = "dune"
+    else:
+        balance_source = "rpc"
 
+    # Identify pool addresses
+    pool_addresses: set[str] = set()
     pool_by_addr: dict[str, VerifiedPool] = {}
     for p in verified_pools:
+        pool_addresses.add(p.pool_address.lower())
         pool_by_addr[p.pool_address.lower()] = p
         if p.custody_address:
+            pool_addresses.add(p.custody_address.lower())
             pool_by_addr[p.custody_address.lower()] = p
 
-    # --- Build holdings table ---
     holdings_rows: list[dict[str, Any]] = []
     for addr in sorted(unique_addresses):
         bal_raw = balances.get(addr, "0")
@@ -119,7 +177,6 @@ def analyze_holdings(
 
     holdings_rows.sort(key=lambda r: r["balance_decimal"], reverse=True)
 
-    # --- Build pool identification table ---
     pool_rows: list[dict[str, Any]] = []
     for p in verified_pools:
         pool_addr_lower = p.pool_address.lower()
@@ -139,7 +196,6 @@ def analyze_holdings(
             "in_holders_list": holder_info is not None,
         })
 
-    # --- Write outputs ---
     result = {
         "total_unique_addresses": len(unique_addresses),
         "query_timestamp": query_timestamp,
@@ -148,6 +204,9 @@ def analyze_holdings(
         ).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "holdings_count": len(holdings_rows),
         "pool_count": len(pool_rows),
+        "source": used_source,
+        "balance_source": balance_source,
+        "dune_error": dune_error,
         "holdings": holdings_rows,
         "pool_identification": pool_rows,
     }
