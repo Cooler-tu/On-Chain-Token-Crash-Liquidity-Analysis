@@ -1,49 +1,63 @@
-"""Uniswap V4 pool discovery.
-
-V4 uses a singleton PoolManager architecture. All pools are managed
-by a single PoolManager contract. Events are identified by pool ID.
-
-Key references:
-  - PoolManager deploys at a deterministic CREATE2 address
-  - PoolCreated(Currency currency0, Currency currency1, uint24 fee,
-                 int24 tickSpacing, address hooks, uint256 poolId)
-  - Pool key: (currency0, currency1, fee, tickSpacing, hooks)
-"""
+"""Uniswap V4 pool discovery via PoolKey hash + StateView + Initialize / PM activity."""
 from __future__ import annotations
 
 from typing import Optional
 
+from eth_abi import decode as abi_decode
+from eth_abi import encode
+from eth_utils import keccak
 from web3 import Web3
 
 from ..client import get_contract
-from ..models import ProtocolDeployment, VerifiedPool
-from ..registry.loader import get_chain_id, load_registry
+from ..models import VerifiedPool
+from ..registry.loader import get_chain_id, get_v4_fee_tiers, load_registry
 from .base import PoolDiscoveryAdapter
-from .log_utils import address_topic, dedupe_pools
+from .log_utils import address_topic, dedupe_pools, get_logs_chunked, get_logs_with_topics
 
-# Uniswap V4 PoolManager event signatures (keccak256 of event signatures)
-# event PoolCreated(Currency indexed currency0, Currency indexed currency1,
-#                   uint24 fee, int24 tickSpacing, address hooks, uint256 poolId)
-POOL_CREATED_V4_TOPIC = "0x9a7b8f0ba5d0c9e7a5a1e1f2d6d5c4b3a2a1f0e9d8c7b6a5a4b3c2d1e0f"
+_ZERO = "0x0000000000000000000000000000000000000000"
 
-# V4 fee tiers (similar to V3 but V4 supports dynamic fees)
-V4_FEE_TIERS = [100, 500, 3000, 10000]
+# keccak256("Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)")
+INITIALIZE_TOPIC = (
+    "0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438"
+)
 
-# Default tick spacing per fee tier
-FEE_TICK_SPACING = {
-    100: 1,
-    500: 10,
-    3000: 60,
-    10000: 200,
-}
+
+def compute_pool_id(
+    currency0: str,
+    currency1: str,
+    fee: int,
+    tick_spacing: int,
+    hooks: str = _ZERO,
+) -> str:
+    """Off-chain PoolId = keccak256(abi.encode(PoolKey))."""
+    c0 = Web3.to_checksum_address(currency0)
+    c1 = Web3.to_checksum_address(currency1)
+    if c0.lower() > c1.lower():
+        c0, c1 = c1, c0
+    h = Web3.to_checksum_address(hooks)
+    encoded = encode(
+        ["address", "address", "uint24", "int24", "address"],
+        [c0, c1, int(fee), int(tick_spacing), h],
+    )
+    return "0x" + keccak(encoded).hex()
+
+
+def _sign_extend_24(value: int) -> int:
+    value &= 0xFFFFFF
+    if value & 0x800000:
+        value -= 0x1000000
+    return value
+
+
+def decode_position_info(info: int) -> tuple[int, int]:
+    """Decode tickLower / tickUpper from V4 PositionInfo packed uint256."""
+    tick_lower = _sign_extend_24(info >> 8)
+    tick_upper = _sign_extend_24(info >> 32)
+    return tick_lower, tick_upper
 
 
 class UniswapV4Adapter(PoolDiscoveryAdapter):
-    """Discover V4 pools via the PoolManager singleton.
-
-    V4 pools are identified by their PoolKey, not by individual contract addresses.
-    The PoolManager tracks all pool states internally.
-    """
+    """Discover V4 pools via PoolKey probe + Initialize + PM transfers."""
 
     def discover(
         self,
@@ -53,84 +67,230 @@ class UniswapV4Adapter(PoolDiscoveryAdapter):
         quote_assets: Optional[list[dict]] = None,
     ) -> list[VerifiedPool]:
         token = Web3.to_checksum_address(token_address)
-        chain_id = get_chain_id(load_registry())
+        registry = load_registry()
+        chain_id = get_chain_id(registry)
+        fee_tiers = get_v4_fee_tiers(registry) or [
+            {"fee": 100, "tick_spacing": 1},
+            {"fee": 500, "tick_spacing": 10},
+            {"fee": 3000, "tick_spacing": 60},
+            {"fee": 10000, "tick_spacing": 200},
+        ]
+
+        state_view_addr = self.deployment.state_view
+        if not state_view_addr:
+            return []
+
+        state_view = get_contract(self.w3, state_view_addr, "uniswap_v4_state_view")
+        pool_manager = self.deployment.factory
         seen: set[str] = set()
         pools: list[VerifiedPool] = []
 
-        # V4 doesn't have getPair/getPool-like calls on the PoolManager.
-        # Instead, we need to:
-        # 1. Try to construct pool keys with known quote assets
-        # 2. Check if each pool exists by calling the PoolManager methods
-
-        pool_manager = get_contract(
-            self.w3, self.deployment.factory, "uniswap_v4_pool_manager"
-        )
-
+        quotes: list[str] = [_ZERO]  # native ETH
         if quote_assets:
             for qa in quote_assets:
-                q_addr = Web3.to_checksum_address(qa["address"])
-                for fee in V4_FEE_TIERS:
-                    tick_spacing = FEE_TICK_SPACING.get(fee, 60)
-                    # V4 pools: currency0 < currency1 (like V3, must be sorted)
-                    c0 = token.lower() if token.lower() < q_addr.lower() else q_addr
-                    c1 = q_addr if c0 == token else token
-                    try:
-                        # Try to get pool ID via PoolManager.getPoolId or getId
-                        # V4 uses: PoolKey(currency0, currency1, fee, tickSpacing, hooks)
-                        # hooks address can be 0x0 for no hooks
-                        pool_id = pool_manager.functions.getId(
-                            (Web3.to_checksum_address(c0),
-                             Web3.to_checksum_address(c1),
-                             fee,
-                             tick_spacing,
-                             "0x0000000000000000000000000000000000000000")
-                        ).call()
+                quotes.append(Web3.to_checksum_address(qa["address"]))
 
-                        # Check if pool exists (poolId != 0)
-                        if pool_id != 0 and pool_id.to_bytes(32, 'big').hex()[:64] != "0"*64:
-                            pool_id_key = str(pool_id)
-                            if pool_id_key in seen:
-                                continue
-                            seen.add(pool_id_key)
+        # Fast path: probe known fee/tick + zero hooks
+        for q in quotes:
+            if q.lower() == token.lower():
+                continue
+            for tier in fee_tiers:
+                fee = int(tier["fee"])
+                tick_spacing = int(tier.get("tick_spacing", 60))
+                pid = compute_pool_id(token, q, fee, tick_spacing, _ZERO)
+                if pid.lower() in seen:
+                    continue
+                if not self._pool_exists(state_view, pid, to_block):
+                    continue
+                seen.add(pid.lower())
+                c0, c1 = (token, q) if token.lower() < q.lower() else (q, token)
+                pools.append(self._make_pool(
+                    chain_id, pid, c0, c1, fee, _ZERO, pool_manager
+                ))
 
-                            pools.append(VerifiedPool(
-                                chain_id=chain_id,
-                                protocol="uniswap",
-                                version="v4",
-                                architecture="singleton",
-                                factory_address=self.deployment.factory,
-                                router_addresses=(
-                                    [self.deployment.router]
-                                    if self.deployment.router else []
-                                ),
-                                pool_address=f"V4_POOL_{pool_id}",
-                                custody_address=self.deployment.factory,
-                                position_manager_address=(
-                                    self.deployment.position_manager
-                                ),
-                                token0=Web3.to_checksum_address(c0),
-                                token1=Web3.to_checksum_address(c1),
-                                fee=fee,
-                                verified=False,
-                                verification_confidence=0.0,
-                            ))
-                    except Exception:
-                        # Pool doesn't exist or method not available
-                        pass
+        search_from = max(from_block, self.deployment.deployment_block)
+        total_blocks = to_block - search_from + 1
+
+        # Exhaustive Initialize scan for small windows (catches hooks ≠ 0 created in-window)
+        if total_blocks <= 1000 and total_blocks > 0:
+            self._scan_initialize(
+                token, chain_id, pool_manager, search_from, to_block, seen, pools
+            )
+
+        # PM Transfer activity in window → PoolKey (catches hooked pools with LP activity)
+        if self.deployment.position_manager and total_blocks > 0:
+            self._scan_pm_transfers(
+                token, chain_id, pool_manager, search_from, to_block, seen, pools
+            )
 
         return dedupe_pools(pools)
 
-    def _build_pool_key(
-        self, token0: str, token1: str, fee: int, tick_spacing: int,
-        hooks: str = "0x0000000000000000000000000000000000000000"
-    ) -> tuple:
-        """Build a V4 PoolKey tuple sorted by address."""
-        if token0.lower() > token1.lower():
-            token0, token1 = token1, token0
-        return (
-            Web3.to_checksum_address(token0),
-            Web3.to_checksum_address(token1),
-            fee,
-            tick_spacing,
-            Web3.to_checksum_address(hooks),
+    def _pool_exists(self, state_view, pool_id: str, block: int) -> bool:
+        try:
+            kwargs = {}
+            if block and block > 0:
+                kwargs["block_identifier"] = block
+            slot0 = state_view.functions.getSlot0(pool_id).call(**kwargs)
+            return int(slot0[0]) > 0
+        except Exception:
+            return False
+
+    def _scan_initialize(
+        self,
+        token: str,
+        chain_id: int,
+        pool_manager: str,
+        from_block: int,
+        to_block: int,
+        seen: set[str],
+        pools: list[VerifiedPool],
+    ) -> None:
+        token_topic = address_topic(token)
+        for topics in (
+            [INITIALIZE_TOPIC, None, token_topic, None],
+            [INITIALIZE_TOPIC, None, None, token_topic],
+        ):
+            try:
+                logs = get_logs_with_topics(
+                    self.w3, pool_manager, topics, from_block, to_block
+                )
+            except Exception:
+                continue
+            for log in logs:
+                try:
+                    pool = self._pool_from_initialize_log(log, chain_id, pool_manager)
+                except Exception:
+                    continue
+                if pool.pool_id and pool.pool_id.lower() not in seen:
+                    seen.add(pool.pool_id.lower())
+                    pools.append(pool)
+
+    def _scan_pm_transfers(
+        self,
+        token: str,
+        chain_id: int,
+        pool_manager: str,
+        from_block: int,
+        to_block: int,
+        seen: set[str],
+        pools: list[VerifiedPool],
+    ) -> None:
+        pm_addr = self.deployment.position_manager
+        if not pm_addr:
+            return
+        try:
+            pm = get_contract(self.w3, pm_addr, "uniswap_v4_position_manager")
+            transfers = get_logs_chunked(pm.events.Transfer, from_block, to_block)
+        except Exception:
+            return
+
+        token_l = token.lower()
+        checked: set[int] = set()
+        for evt in transfers:
+            try:
+                tid = int(evt["args"].get("id", evt["args"].get("tokenId")))
+            except Exception:
+                continue
+            if tid in checked:
+                continue
+            checked.add(tid)
+            try:
+                pool_key, _info = pm.functions.getPoolAndPositionInfo(tid).call(
+                    block_identifier=to_block
+                )
+            except Exception:
+                try:
+                    pool_key, _info = pm.functions.getPoolAndPositionInfo(tid).call()
+                except Exception:
+                    continue
+            c0 = Web3.to_checksum_address(pool_key[0])
+            c1 = Web3.to_checksum_address(pool_key[1])
+            if token_l not in (c0.lower(), c1.lower()):
+                continue
+            fee = int(pool_key[2])
+            tick_spacing = int(pool_key[3])
+            hooks = Web3.to_checksum_address(pool_key[4])
+            pid = compute_pool_id(c0, c1, fee, tick_spacing, hooks)
+            if pid.lower() in seen:
+                continue
+            seen.add(pid.lower())
+            pools.append(self._make_pool(
+                chain_id, pid, c0, c1, fee, hooks, pool_manager
+            ))
+
+    def _pool_from_initialize_log(
+        self, log: dict, chain_id: int, pool_manager: str
+    ) -> VerifiedPool:
+        topics = log["topics"]
+        pool_id = topics[1].hex() if hasattr(topics[1], "hex") else topics[1]
+        if not str(pool_id).startswith("0x"):
+            pool_id = "0x" + pool_id
+        t2 = topics[2].hex() if hasattr(topics[2], "hex") else str(topics[2])
+        t3 = topics[3].hex() if hasattr(topics[3], "hex") else str(topics[3])
+        currency0 = Web3.to_checksum_address("0x" + t2[-40:])
+        currency1 = Web3.to_checksum_address("0x" + t3[-40:])
+        data = log["data"]
+        if hasattr(data, "hex"):
+            data_hex = data.hex()
+        else:
+            data_hex = data if str(data).startswith("0x") else "0x" + str(data)
+        raw = bytes.fromhex(data_hex[2:] if data_hex.startswith("0x") else data_hex)
+        fee, tick_spacing, hooks, _sqrt, _tick = abi_decode(
+            ["uint24", "int24", "address", "uint160", "int24"], raw
         )
+        return self._make_pool(
+            chain_id,
+            pool_id,
+            currency0,
+            currency1,
+            int(fee),
+            Web3.to_checksum_address(hooks),
+            pool_manager,
+            creation_block=log.get("blockNumber", 0),
+            creation_tx=_tx_hex(log.get("transactionHash")),
+        )
+
+    def _make_pool(
+        self,
+        chain_id: int,
+        pool_id: str,
+        token0: str,
+        token1: str,
+        fee: int,
+        hooks: str,
+        pool_manager: str,
+        creation_block: int = 0,
+        creation_tx: str = "",
+    ) -> VerifiedPool:
+        return VerifiedPool(
+            chain_id=chain_id,
+            protocol="uniswap",
+            version="v4",
+            architecture="singleton",
+            factory_address=pool_manager,
+            router_addresses=(
+                [self.deployment.router] if self.deployment.router else []
+            ),
+            pool_address=pool_id,
+            pool_id=pool_id,
+            custody_address=pool_manager,
+            position_manager_address=self.deployment.position_manager,
+            hooks_address=hooks if hooks.lower() != _ZERO.lower() else None,
+            token0=Web3.to_checksum_address(token0),
+            token1=Web3.to_checksum_address(token1),
+            fee=fee,
+            creation_block=creation_block or 0,
+            creation_transaction=creation_tx or "",
+            verified=False,
+            verification_confidence=0.0,
+        )
+
+
+def _tx_hex(value) -> str:
+    if value is None:
+        return ""
+    if hasattr(value, "hex"):
+        h = value.hex()
+        return h if h.startswith("0x") else "0x" + h
+    s = str(value)
+    return s if s.startswith("0x") else "0x" + s

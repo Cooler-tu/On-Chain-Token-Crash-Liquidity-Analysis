@@ -18,6 +18,7 @@ from ..registry.loader import (
 
 MIN_CONFIDENCE = 0.3
 _RPC_DELAY = 0.0
+_ZERO = "0x0000000000000000000000000000000000000000"
 
 
 def verify_pool(
@@ -42,6 +43,16 @@ def verify_pool(
         return pool
 
     pool = _resolve_custody(w3, pool, registry)
+
+    if pool.version == "v4":
+        return _verify_v4_pool(
+            w3, pool, registry, target_token, from_block, to_block,
+            checks_passed, checks_total,
+        )
+    if pool.version == "v1":
+        return _verify_v1_pool(
+            w3, pool, target_token, checks_passed, checks_total,
+        )
 
     _time.sleep(_RPC_DELAY)
     checks_total += 1
@@ -121,8 +132,6 @@ def verify_pools(
     for i, pool in enumerate(pools):
         result = verify_pool(w3, pool, target_token, from_block, to_block)
         results.append(result)
-        # Extra delay every 3 pools for rate limiting
-        # HTTP layer handles rate limiting
     return results
 
 
@@ -141,6 +150,116 @@ def _resolve_custody(w3: Web3, pool: VerifiedPool, registry: dict) -> VerifiedPo
             pool.position_manager_address = deployment.position_manager
         if deployment.router and not pool.router_addresses:
             pool.router_addresses = [deployment.router]
+    elif pool.version == "v4":
+        pool.custody_address = pool.factory_address  # PoolManager
+        if deployment.position_manager:
+            pool.position_manager_address = deployment.position_manager
+        if deployment.router and not pool.router_addresses:
+            pool.router_addresses = [deployment.router]
+    elif pool.version == "v1":
+        pool.custody_address = pool.pool_address
+    return pool
+
+
+def _verify_v4_pool(
+    w3: Web3,
+    pool: VerifiedPool,
+    registry: dict,
+    target_token: Optional[str],
+    from_block: int,
+    to_block: int,
+    checks_passed: int,
+    checks_total: int,
+) -> VerifiedPool:
+    deployment = get_protocol_by_factory(registry, pool.factory_address)
+    state_view_addr = deployment.state_view if deployment else None
+
+    checks_total += 1
+    if has_bytecode(w3, pool.factory_address):
+        checks_passed += 1
+
+    if not pool.pool_id:
+        pool.pool_id = pool.pool_address
+
+    if state_view_addr:
+        checks_total += 1
+        try:
+            sv = get_contract(w3, state_view_addr, "uniswap_v4_state_view")
+            kwargs = {}
+            if to_block and to_block > 0:
+                kwargs["block_identifier"] = to_block
+            slot0 = sv.functions.getSlot0(pool.pool_id).call(**kwargs)
+            if int(slot0[0]) > 0:
+                checks_passed += 1
+            checks_total += 1
+            sv.functions.getLiquidity(pool.pool_id).call(**kwargs)
+            checks_passed += 1
+        except Exception:
+            pass
+
+    if pool.token0 and pool.token1:
+        checks_total += 1
+        checks_passed += 1
+
+    if target_token:
+        checks_total += 1
+        target = Web3.to_checksum_address(target_token)
+        t0 = Web3.to_checksum_address(pool.token0) if pool.token0 else None
+        t1 = Web3.to_checksum_address(pool.token1) if pool.token1 else None
+        if target in (t0, t1):
+            checks_passed += 1
+
+    if pool.position_manager_address:
+        checks_total += 1
+        if has_bytecode(w3, pool.position_manager_address):
+            checks_passed += 1
+
+    confidence = checks_passed / max(checks_total, 1)
+    pool.verified = confidence >= MIN_CONFIDENCE
+    pool.verification_confidence = round(confidence, 4)
+    return pool
+
+
+def _verify_v1_pool(
+    w3: Web3,
+    pool: VerifiedPool,
+    target_token: Optional[str],
+    checks_passed: int,
+    checks_total: int,
+) -> VerifiedPool:
+    checks_total += 1
+    if has_bytecode(w3, pool.pool_address):
+        checks_passed += 1
+
+    try:
+        exchange = get_contract(w3, pool.pool_address, "uniswap_v1_exchange")
+        checks_total += 1
+        onchain_token = Web3.to_checksum_address(
+            exchange.functions.tokenAddress().call()
+        )
+        if target_token:
+            if onchain_token == Web3.to_checksum_address(target_token):
+                checks_passed += 1
+                # Normalize token fields: ETH = token0 zero, ERC20 = token1
+                pool.token0 = _ZERO
+                pool.token1 = onchain_token
+        else:
+            pool.token0 = _ZERO
+            pool.token1 = onchain_token
+            checks_passed += 1
+
+        checks_total += 1
+        onchain_factory = Web3.to_checksum_address(
+            exchange.functions.factoryAddress().call()
+        )
+        if onchain_factory == Web3.to_checksum_address(pool.factory_address):
+            checks_passed += 1
+    except Exception:
+        pass
+
+    confidence = checks_passed / max(checks_total, 1)
+    pool.verified = confidence >= MIN_CONFIDENCE
+    pool.verification_confidence = round(confidence, 4)
     return pool
 
 
@@ -281,4 +400,6 @@ def _verify_event_provenance(w3: Web3, pool: VerifiedPool, from_block: int, to_b
 def _abi_name(pool: VerifiedPool) -> str:
     if pool.version == "v2":
         return "uniswap_v2_pair"
+    if pool.version == "v1":
+        return "uniswap_v1_exchange"
     return "uniswap_v3_pool"

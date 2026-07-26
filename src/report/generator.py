@@ -158,7 +158,12 @@ def _add_token_profile(lines: list[str], profile: dict):
     lines.append("| Address | {} |".format(_addr_link(profile.get("address", ""))))
     lines.append("| Symbol | {} |".format(profile.get("symbol", "N/A")))
     lines.append("| Name | {} |".format(profile.get("name", "N/A")))
-    lines.append("| Decimals | {} |".format(profile.get("decimals", "N/A")))
+    lines.append(
+        "| Decimals | {} ({}) |".format(
+            profile.get("decimals", "N/A"),
+            profile.get("decimals_source", "unknown"),
+        )
+    )
     lines.append("| Total Supply | {} |".format(_format_amount(str(profile.get("total_supply", "N/A")))))
     lines.append("| Is Contract | {} |".format(profile.get("is_contract", False)))
     lines.append("| Proxy Address | {} |".format(profile.get("proxy_address", "None") or "None"))

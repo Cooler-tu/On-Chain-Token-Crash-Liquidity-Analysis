@@ -1,0 +1,23 @@
+[
+  {
+    "chain_id": 1,
+    "protocol": "uniswap",
+    "version": "v3",
+    "architecture": "concentrated_pool",
+    "factory_address": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+    "router_addresses": [
+      "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+    ],
+    "pool_address": "0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9",
+    "custody_address": "0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9",
+    "position_manager_address": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
+    "gauge_addresses": [],
+    "token0": "0x390661D13ACB3204419f9Bf7612aB072E944E8Cd",
+    "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "fee": 3000,
+    "creation_block": 0,
+    "creation_transaction": "",
+    "verified": true,
+    "verification_confidence": 1.0
+  }
+]

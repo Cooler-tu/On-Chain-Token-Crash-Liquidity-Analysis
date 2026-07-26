@@ -269,11 +269,12 @@ def _normalize_v3_pool_event(
             source_event="Mint",
         )
     if evt_name == "Burn":
+        owner = Web3.to_checksum_address(args["owner"])
         return NormalizedEvent(
             **base,
             event_type="LIQUIDITY_REMOVE",
-            actor=Web3.to_checksum_address(args["sender"]),
-            recipient=Web3.to_checksum_address(args["owner"]),
+            actor=owner,
+            recipient=owner,
             token0_amount=str(args["amount0"]),
             token1_amount=str(args["amount1"]),
             liquidity_delta="-{}".format(args['amount']),
@@ -322,6 +323,7 @@ def _normalize_v3_position_event(
             recipient=Web3.to_checksum_address(args["to"]),
             pool_address=pool_addr,
             source_event="Transfer",
+            nft_token_id=token_id,
         )
     if evt_name == "IncreaseLiquidity":
         return NormalizedEvent(
@@ -334,6 +336,7 @@ def _normalize_v3_position_event(
             token1_amount=str(args["amount1"]),
             liquidity_delta=str(args["liquidity"]),
             source_event="IncreaseLiquidity",
+            nft_token_id=token_id,
         )
     if evt_name == "DecreaseLiquidity":
         return NormalizedEvent(
@@ -346,6 +349,7 @@ def _normalize_v3_position_event(
             token1_amount=str(args["amount1"]),
             liquidity_delta="-{}".format(args['liquidity']),
             source_event="DecreaseLiquidity",
+            nft_token_id=token_id,
         )
     if evt_name == "Collect":
         return NormalizedEvent(
@@ -357,6 +361,132 @@ def _normalize_v3_position_event(
             token0_amount=str(args["amount0"]),
             token1_amount=str(args["amount1"]),
             source_event="Collect",
+            nft_token_id=token_id,
+        )
+    return None
+
+
+def _pool_id_hex(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return "0x" + value.hex()
+    if isinstance(value, int):
+        return "0x" + value.to_bytes(32, "big").hex()
+    s = str(value)
+    if s.startswith("0x"):
+        return s
+    return "0x" + s
+
+
+def _normalize_v4_pool_event(
+    evt: EventData,
+    pools_by_id: dict[str, VerifiedPool],
+    block_timestamps: dict[int, int],
+) -> Optional[NormalizedEvent]:
+    args = evt["args"]
+    bn = evt["blockNumber"]
+    evt_name = evt.get("event", "")
+    pool_id = _pool_id_hex(args.get("id"))
+    pool = pools_by_id.get(pool_id.lower())
+    if pool is None:
+        return None
+    base = {
+        "block_number": bn,
+        "block_timestamp": block_timestamps.get(bn, 0),
+        "transaction_hash": _tx_hash_hex(evt["transactionHash"]),
+        "log_index": evt.get("logIndex", 0),
+        "protocol": "uniswap",
+        "version": "v4",
+        "pool_address": pool.pool_address,
+        "verified": True,
+    }
+    if evt_name == "Swap":
+        amount0 = int(args["amount0"])
+        amount1 = int(args["amount1"])
+        return NormalizedEvent(
+            **base,
+            event_type="SWAP",
+            actor=Web3.to_checksum_address(args["sender"]),
+            recipient="",
+            token0_amount=str(abs(amount0)),
+            token1_amount=str(abs(amount1)),
+            source_event="Swap",
+        )
+    if evt_name == "ModifyLiquidity":
+        delta = int(args["liquidityDelta"])
+        # PositionManager uses bytes32(tokenId) as salt
+        nft_id = None
+        salt = args.get("salt")
+        if salt is not None:
+            try:
+                if isinstance(salt, (bytes, bytearray)):
+                    nft_id = int.from_bytes(salt, "big")
+                elif isinstance(salt, int):
+                    nft_id = int(salt)
+                else:
+                    s = str(salt)
+                    if s.startswith("0x"):
+                        nft_id = int(s, 16)
+                    else:
+                        nft_id = int(s)
+            except Exception:
+                nft_id = None
+        return NormalizedEvent(
+            **base,
+            event_type="LIQUIDITY_ADD" if delta >= 0 else "LIQUIDITY_REMOVE",
+            actor=Web3.to_checksum_address(args["sender"]),
+            recipient=Web3.to_checksum_address(args["sender"]),
+            liquidity_delta=str(delta),
+            source_event="ModifyLiquidity",
+            nft_token_id=nft_id,
+        )
+    return None
+
+
+def _normalize_v4_position_event(
+    evt: EventData,
+    pool_map: dict,
+    block_timestamps: dict[int, int],
+) -> Optional[NormalizedEvent]:
+    args = evt["args"]
+    bn = evt["blockNumber"]
+    evt_name = evt.get("event", "")
+    token_id = int(args.get("id", args.get("tokenId", 0)))
+    base = {
+        "block_number": bn,
+        "block_timestamp": block_timestamps.get(bn, 0),
+        "transaction_hash": _tx_hash_hex(evt["transactionHash"]),
+        "log_index": evt.get("logIndex", 0),
+        "protocol": "uniswap",
+        "version": "v4",
+        "verified": True,
+    }
+    pm_pool = pool_map.get(token_id)
+    pool_addr = pm_pool.pool_address if isinstance(pm_pool, VerifiedPool) else (
+        pm_pool if isinstance(pm_pool, str) else ""
+    )
+    if evt_name == "Transfer":
+        return NormalizedEvent(
+            **base,
+            event_type="POSITION_TRANSFER",
+            actor=Web3.to_checksum_address(args["from"]),
+            recipient=Web3.to_checksum_address(args["to"]),
+            pool_address=pool_addr,
+            source_event="Transfer",
+            nft_token_id=token_id,
+        )
+    if evt_name == "ModifyLiquidity":
+        delta = int(args.get("liquidityChange", 0))
+        return NormalizedEvent(
+            **base,
+            event_type="LIQUIDITY_ADD" if delta >= 0 else "LIQUIDITY_REMOVE",
+            pool_address=pool_addr,
+            actor="",
+            recipient="",
+            liquidity_delta=str(delta),
+            source_event="ModifyLiquidity",
+            nft_token_id=token_id,
         )
     return None
 
@@ -499,8 +629,11 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
             transfers.append(pub)
             all_events.append(pub)
         elif stream.startswith("v3_pm:"):
-            if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE"):
-                liquidity.append(pub)
+            # Keep PM liquidity + NFT transfers so position analysis can recover tokenIds.
+            if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES", "POSITION_TRANSFER"):
+                if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES"):
+                    liquidity.append(pub)
+                all_events.append(pub)
         elif stream.startswith("v2:") or stream.startswith("v3:"):
             if et == "SWAP":
                 swaps.append(pub)
@@ -715,6 +848,132 @@ def index_token_transfers(
     return stream.run(contract.events.Transfer)
 
 
+def index_v4_pool_events(
+    w3: Web3,
+    pool_manager: str,
+    v4_pools: list[VerifiedPool],
+    from_block: int,
+    to_block: int,
+    checkpoint: dict,
+    checkpoint_path: Path,
+    cache_dir: Path,
+    ts_cache: dict[int, int],
+) -> list[dict]:
+    """Index Swap/ModifyLiquidity on PoolManager, filtered to discovered pool IDs."""
+    if not v4_pools:
+        return []
+    contract = get_contract(w3, pool_manager, "uniswap_v4_pool_manager")
+    pools_by_id: dict[str, VerifiedPool] = {}
+    for p in v4_pools:
+        pid = (p.pool_id or p.pool_address or "").lower()
+        if pid:
+            pools_by_id[pid] = p
+
+    events: list[dict] = []
+    for evt_name in ("Swap", "ModifyLiquidity"):
+        key = _stream_key("v4", pool_manager, evt_name)
+
+        def make_norm(name=evt_name):
+            def _norm(evt: EventData, timestamps: dict[int, int]):
+                if not evt.get("event"):
+                    evt = dict(evt)
+                    evt["event"] = name
+                return _normalize_v4_pool_event(evt, pools_by_id, timestamps)
+            return _norm
+
+        stream = _StreamIndexer(
+            w3, key, from_block, to_block, checkpoint, checkpoint_path,
+            cache_dir, ts_cache, make_norm(),
+        )
+        events.extend(stream.run(getattr(contract.events, evt_name)))
+    return events
+
+
+def index_v4_position_events(
+    w3: Web3,
+    position_manager_address: str,
+    verified_pools: list[VerifiedPool],
+    from_block: int,
+    to_block: int,
+    checkpoint: dict,
+    checkpoint_path: Path,
+    cache_dir: Path,
+    ts_cache: dict[int, int],
+) -> tuple[list[dict], dict]:
+    pm_contract = get_contract(
+        w3, position_manager_address, "uniswap_v4_position_manager"
+    )
+    v4_by_id: dict[str, VerifiedPool] = {}
+    for p in verified_pools:
+        if p.version == "v4" and p.verified:
+            pid = (p.pool_id or p.pool_address or "").lower()
+            if pid:
+                v4_by_id[pid] = p
+
+    addr_map = _load_pm_token_map(cache_dir, position_manager_address)
+    pool_map: dict = dict(addr_map)
+
+    def resolve_token(token_id: int) -> None:
+        if token_id in pool_map and isinstance(pool_map[token_id], str):
+            pid = pool_map[token_id].lower()
+            if pid in v4_by_id:
+                pool_map[token_id] = v4_by_id[pid]
+            return
+        if token_id in pool_map:
+            return
+        try:
+            from ..discovery.uniswap_v4 import compute_pool_id
+            pool_key, _info = pm_contract.functions.getPoolAndPositionInfo(
+                token_id
+            ).call()
+            pid = compute_pool_id(
+                pool_key[0], pool_key[1], pool_key[2], pool_key[3], pool_key[4]
+            ).lower()
+            match = v4_by_id.get(pid)
+            if match:
+                pool_map[token_id] = match
+                addr_map[token_id] = match.pool_address
+            else:
+                addr_map[token_id] = pid
+                pool_map[token_id] = pid
+        except Exception:
+            pass
+
+    def on_raw(entries: list[EventData]) -> None:
+        for evt in entries:
+            args = evt.get("args", {})
+            tid = args.get("id", args.get("tokenId"))
+            if tid is None:
+                continue
+            resolve_token(int(tid))
+        _save_pm_token_map(cache_dir, position_manager_address, addr_map)
+
+    events: list[dict] = []
+    for evt_name in ("Transfer", "ModifyLiquidity"):
+        if not hasattr(pm_contract.events, evt_name):
+            continue
+        key = _stream_key("v4pm", position_manager_address, evt_name)
+
+        def make_norm(name=evt_name):
+            def _norm(evt: EventData, timestamps: dict[int, int]):
+                if not evt.get("event"):
+                    evt = dict(evt)
+                    evt["event"] = name
+                return _normalize_v4_position_event(evt, pool_map, timestamps)
+            return _norm
+
+        stream = _StreamIndexer(
+            w3, key, from_block, to_block, checkpoint, checkpoint_path,
+            cache_dir, ts_cache, make_norm(), on_raw_chunk=on_raw,
+        )
+        try:
+            events.extend(stream.run(getattr(pm_contract.events, evt_name)))
+        except Exception as exc:
+            _progress("v4pm {} skipped: {}".format(evt_name, exc))
+    _save_pm_token_map(cache_dir, position_manager_address, addr_map)
+    return events, pool_map
+
+
 def index_events(
     w3: Web3,
     verified_pools: list[VerifiedPool],
@@ -741,6 +1000,7 @@ def index_events(
 
     v3_pools = [p for p in verified_pools if p.version == "v3" and p.verified]
     v2_pools = [p for p in verified_pools if p.version == "v2" and p.verified]
+    v4_pools = [p for p in verified_pools if p.version == "v4" and p.verified]
 
     for pool in v2_pools:
         evts = index_v2_pool_events(
@@ -763,6 +1023,29 @@ def index_events(
     }
     for pm_addr in pm_addresses:
         pm_evts, _token_map = index_v3_position_events(
+            w3, pm_addr, verified_pools, from_block, to_block,
+            checkpoint, cp_path, cache_dir, ts_cache,
+        )
+        collected.extend(pm_evts)
+        _flush_outputs(out, collected, from_block, to_block)
+
+    v4_managers = {p.factory_address for p in v4_pools if p.factory_address}
+    for mgr in v4_managers:
+        mgr_pools = [p for p in v4_pools if p.factory_address == mgr]
+        evts = index_v4_pool_events(
+            w3, mgr, mgr_pools, from_block, to_block,
+            checkpoint, cp_path, cache_dir, ts_cache,
+        )
+        collected.extend(evts)
+        _flush_outputs(out, collected, from_block, to_block)
+
+    v4_pm_addresses = {
+        p.position_manager_address
+        for p in v4_pools
+        if p.position_manager_address
+    }
+    for pm_addr in v4_pm_addresses:
+        pm_evts, _token_map = index_v4_position_events(
             w3, pm_addr, verified_pools, from_block, to_block,
             checkpoint, cp_path, cache_dir, ts_cache,
         )

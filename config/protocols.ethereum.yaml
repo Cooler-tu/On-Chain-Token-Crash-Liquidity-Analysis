@@ -16,6 +16,15 @@ quote_assets:
 
 protocols:
   - protocol: uniswap
+    version: v1
+    architecture: eth_erc20_exchange
+    factory: "0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95"
+    adapter: UniswapV1Adapter
+    deployment_block: 6627917
+    enabled: true
+    notes: "Thin support: getExchange discovery + LP share snapshot"
+
+  - protocol: uniswap
     version: v2
     architecture: direct_pair
     factory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
@@ -37,15 +46,26 @@ protocols:
   - protocol: uniswap
     version: v4
     architecture: singleton
-    factory: "0x0000000000000000000000000000000000000044"
-    router: "0xE592427A0AEce92De3Edee1F18E0157C05861564"
-    position_manager: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+    factory: "0x000000000004444c5dc75cB358380D2e3dE08A90"
+    router: "0x66a9893cC07D91D95644CFDCE5591279A7DD6748"
+    position_manager: "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e"
+    state_view: "0x7ffe42c4a5deea5b0fec41c94c136cf115597227"
     adapter: UniswapV4Adapter
-    deployment_block: 20500000
+    deployment_block: 21688329
     enabled: true
-    notes: "V4 singleton architecture; pool IDs are used instead of pool addresses"
+    notes: "V4 singleton; pool IDs identify pools; StateView for slot0/liquidity"
 
 v3_fee_tiers:
+  - fee: 100
+    tick_spacing: 1
+  - fee: 500
+    tick_spacing: 10
+  - fee: 3000
+    tick_spacing: 60
+  - fee: 10000
+    tick_spacing: 200
+
+v4_fee_tiers:
   - fee: 100
     tick_spacing: 1
   - fee: 500

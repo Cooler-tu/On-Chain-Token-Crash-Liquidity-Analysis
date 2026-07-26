@@ -91,7 +91,11 @@ def analyze(
     typer.echo("[1/12] Profiling token ...")
     profile = profile_token(w3, token_address, chain_id_val)
     _write_json(out / "token_profile.json", profile.__dict__)
-    typer.echo("  Symbol: {}, Decimals: {}".format(profile.symbol, profile.decimals))
+    typer.echo(
+        "  Symbol: {}, Decimals: {} ({})".format(
+            profile.symbol, profile.decimals, profile.decimals_source
+        )
+    )
     target_token = profile.address
 
     # Step 2: Discover pools
@@ -370,7 +374,11 @@ def holdings(
     typer.echo("[1] Profiling token ...")
     profile = _profile(w3, token_address, chain_id_val)
     _write_json(out / "token_profile.json", profile.__dict__)
-    typer.echo("  Symbol: {}, Decimals: {}".format(profile.symbol, profile.decimals))
+    typer.echo(
+        "  Symbol: {}, Decimals: {} ({})".format(
+            profile.symbol, profile.decimals, profile.decimals_source
+        )
+    )
     target_token = profile.address
     token_decimals = profile.decimals or 18
 

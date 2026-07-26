@@ -1,0 +1,14 @@
+{
+  "chain_id": 1,
+  "address": "0x390661D13ACB3204419f9Bf7612aB072E944E8Cd",
+  "symbol": "SPX",
+  "name": "SPX6900",
+  "decimals": 18,
+  "is_contract": true,
+  "proxy_address": null,
+  "implementation_address": null,
+  "behavior_flags": [
+    "minting"
+  ],
+  "total_supply": 1000000000000000000000000000
+}

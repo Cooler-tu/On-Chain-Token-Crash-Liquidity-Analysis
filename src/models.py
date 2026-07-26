@@ -12,6 +12,7 @@ class TokenProfile:
     symbol: str = ""
     name: str = ""
     decimals: int = 18
+    decimals_source: str = "default"  # "onchain" if decimals() succeeded, else "default"
     is_contract: bool = False
     proxy_address: Optional[str] = None
     implementation_address: Optional[str] = None
@@ -27,6 +28,7 @@ class ProtocolDeployment:
     factory: str
     router: Optional[str] = None
     position_manager: Optional[str] = None
+    state_view: Optional[str] = None
     adapter: str = ""
     deployment_block: int = 0
     enabled: bool = True
@@ -72,6 +74,7 @@ class NormalizedEvent:
     liquidity_delta: str = "0"
     source_event: str = ""
     verified: bool = False
+    nft_token_id: Optional[int] = None
 
 
 @dataclass
@@ -85,6 +88,11 @@ class Position:
     beneficial_owner: Optional[str] = None
     resolution_method: str = ""
     confidence: float = 0.0
+    # V3 tick-based token amounts at snapshot (raw units)
+    tick_lower: Optional[int] = None
+    tick_upper: Optional[int] = None
+    token0_amount: Optional[str] = None
+    token1_amount: Optional[str] = None
 
 
 @dataclass

@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "target_token": "0x390661D13ACB3204419f9Bf7612aB072E944E8Cd",
+    "from_block": 25560000,
+    "to_block": 25578400
+  },
+  "streams": {
+    "v3:0xd91cda90a79d424fc2ce22beedbff4878a3fafe9:Swap": 25578400,
+    "v3:0xd91cda90a79d424fc2ce22beedbff4878a3fafe9:Mint": 25578400,
+    "v3:0xd91cda90a79d424fc2ce22beedbff4878a3fafe9:Burn": 25578400,
+    "v3:0xd91cda90a79d424fc2ce22beedbff4878a3fafe9:Collect": 25578400,
+    "v3_pm:0xc36442b4a4522e871399cd717abdd847ab11fe88:IncreaseLiquidity": 25577841
+  }
+}

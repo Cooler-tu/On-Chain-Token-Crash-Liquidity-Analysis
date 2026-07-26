@@ -1,0 +1,25 @@
+[
+  {
+    "type": "function",
+    "name": "getExchange",
+    "stateMutability": "view",
+    "inputs": [{"name": "token", "type": "address"}],
+    "outputs": [{"name": "", "type": "address"}]
+  },
+  {
+    "type": "function",
+    "name": "getToken",
+    "stateMutability": "view",
+    "inputs": [{"name": "exchange", "type": "address"}],
+    "outputs": [{"name": "", "type": "address"}]
+  },
+  {
+    "type": "event",
+    "name": "NewExchange",
+    "inputs": [
+      {"indexed": true, "name": "token", "type": "address"},
+      {"indexed": true, "name": "exchange", "type": "address"}
+    ],
+    "anonymous": false
+  }
+]

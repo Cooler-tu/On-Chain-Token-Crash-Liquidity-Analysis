@@ -53,7 +53,7 @@ def get_logs_chunked(event, from_block, to_block, argument_filters=None,
                 consecutive_ok = 0
             else:
                 adaptive_size = size
-        except Exception:
+        except Exception as exc:
             consecutive_ok = 0
             if size > 1:
                 if size > TOPIC_CHUNK_SIZE * 2:
@@ -63,8 +63,10 @@ def get_logs_chunked(event, from_block, to_block, argument_filters=None,
                     ceiling = max(1, size // 2)
                     adaptive_size = ceiling
             else:
-                start = end + 1
-                adaptive_size = min(ceiling, chunk_size)
+                # Do not silently skip single-block failures (drops Swap/Mint/Burn).
+                raise RuntimeError(
+                    "eth_getLogs failed for blocks {}-{}: {}".format(start, end, exc)
+                ) from exc
 
     if argument_filters:
         filtered = []
@@ -171,9 +173,10 @@ def dedupe_pools(pools):
     seen = set()
     result = []
     for pool in pools:
-        addr = Web3.to_checksum_address(pool.pool_address)
-        if addr in seen:
+        # V4 uses bytes32 pool_id as pool_address — not always a 20-byte address
+        key = (pool.pool_address or pool.pool_id or "").lower()
+        if not key or key in seen:
             continue
-        seen.add(addr)
+        seen.add(key)
         result.append(pool)
     return result

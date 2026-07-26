@@ -130,7 +130,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="info-bar">
     <div class="info-item">Analysis &middot; <span>{query_time}</span></div>
     <div class="info-item">Token &middot; <span>{token_name}</span></div>
-    <div class="info-item">Decimals &middot; <span>{decimals}</span></div>
+    <div class="info-item">Decimals &middot; <span>{decimals}</span> <span style="opacity:.6">({decimals_source})</span></div>
     {supply_info}
   </div>
 
@@ -236,6 +236,7 @@ def generate_dashboard(
     token_addr = token_profile.get("address", "")
     token_name = token_profile.get("name", symbol)
     decimals = token_profile.get("decimals", 18)
+    decimals_source = token_profile.get("decimals_source", "unknown")
     total_supply = token_profile.get("total_supply_decimal", 0) or 0
     holdings_count = holdings.get("holdings_count", 0)
     total_addresses = holdings.get("total_unique_addresses", 0)
@@ -283,7 +284,7 @@ def generate_dashboard(
     pool_section = "\n".join(pool_section_parts)
 
     # Build TVL chart JS
-    tvl_chart = _build_tvl_chart_js(tvl_data)
+    tvl_chart = _build_tvl_chart_js(tvl_data, token_decimals=decimals, symbol=symbol)
 
     # Build JS
     js_vars = {
@@ -311,6 +312,7 @@ def generate_dashboard(
         "token_address": token_addr or "N/A",
         "query_time": query_time or "N/A",
         "decimals": decimals,
+        "decimals_source": decimals_source,
         "supply_info": supply_info,
         "empty_note": empty_note,
         "total_addresses": total_addresses,
@@ -335,7 +337,11 @@ def generate_dashboard(
     return str(dashboard_path.resolve())
 
 
-def _build_tvl_chart_js(tvl_data: list) -> str:
+def _build_tvl_chart_js(
+    tvl_data: list,
+    token_decimals: int = 18,
+    symbol: str = "TOKEN",
+) -> str:
     if not tvl_data:
         return (
             "tc('c4',{type:'line',data:{labels:['No Data'],datasets:[{data:[0],"
@@ -345,21 +351,31 @@ def _build_tvl_chart_js(tvl_data: list) -> str:
             "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
         )
 
+    scale = 10 ** max(0, int(token_decimals or 18))
     labels_json = json.dumps([t.get("block_number", i) for i, t in enumerate(tvl_data)])
-    values_json = json.dumps([t.get("tvl", 0) for t in tvl_data])
+    # metrics writes tvl_in_token (raw units), not "tvl" / USD
+    values = []
+    for t in tvl_data:
+        raw = t.get("tvl_in_token", t.get("tvl", 0))
+        try:
+            values.append(float(raw) / scale)
+        except (TypeError, ValueError):
+            values.append(0.0)
+    values_json = json.dumps(values)
+    label = "TVL ({})".format(symbol or "token")
 
     return (
         "const tvlLabels = %s;\n"
         "const tvlValues = %s;\n"
-        "tc('c4',{type:'line',data:{labels:tvlLabels,datasets:[{label:'TVL (USD)',"
+        "tc('c4',{type:'line',data:{labels:tvlLabels,datasets:[{label:%s,"
         "data:tvlValues,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',"
         "fill:true,tension:0.3,pointRadius:3}]},"
         "options:{responsive:true,maintainAspectRatio:false,"
         "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
         "scales:{y:{beginAtZero:true,ticks:{color:'#64748b',"
-        "callback:function(v){return '$'+v.toLocaleString();}},grid:{color:'#1e293b'}},"
+        "callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}},"
         "x:{ticks:{color:'#64748b'},grid:{display:false}}}}})"
-    ) % (labels_json, values_json)
+    ) % (labels_json, values_json, json.dumps(label))
 
 
 def _table_top_holders(holders: list, symbol: str) -> str:

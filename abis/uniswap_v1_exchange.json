@@ -1,0 +1,60 @@
+[
+  {
+    "type": "function",
+    "name": "tokenAddress",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "address"}]
+  },
+  {
+    "type": "function",
+    "name": "factoryAddress",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "address"}]
+  },
+  {
+    "type": "function",
+    "name": "totalSupply",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "uint256"}]
+  },
+  {
+    "type": "function",
+    "name": "balanceOf",
+    "stateMutability": "view",
+    "inputs": [{"name": "owner", "type": "address"}],
+    "outputs": [{"name": "", "type": "uint256"}]
+  },
+  {
+    "type": "event",
+    "name": "Transfer",
+    "inputs": [
+      {"indexed": true, "name": "_from", "type": "address"},
+      {"indexed": true, "name": "_to", "type": "address"},
+      {"indexed": false, "name": "_value", "type": "uint256"}
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AddLiquidity",
+    "inputs": [
+      {"indexed": true, "name": "provider", "type": "address"},
+      {"indexed": false, "name": "eth_amount", "type": "uint256"},
+      {"indexed": false, "name": "token_amount", "type": "uint256"}
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RemoveLiquidity",
+    "inputs": [
+      {"indexed": true, "name": "provider", "type": "address"},
+      {"indexed": false, "name": "eth_amount", "type": "uint256"},
+      {"indexed": false, "name": "token_amount", "type": "uint256"}
+    ],
+    "anonymous": false
+  }
+]

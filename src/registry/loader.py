@@ -40,11 +40,17 @@ def get_enabled_protocols(registry: dict) -> list[ProtocolDeployment]:
             factory=entry["factory"],
             router=entry.get("router"),
             position_manager=entry.get("position_manager"),
+            state_view=entry.get("state_view"),
             adapter=entry.get("adapter", ""),
             deployment_block=entry.get("deployment_block", 0),
             enabled=True,
         ))
     return result
+
+
+def get_v4_fee_tiers(registry: dict) -> list[dict]:
+    """Return the configured V4 fee tiers (falls back to V3 tiers)."""
+    return registry.get("v4_fee_tiers") or registry.get("v3_fee_tiers", [])
 
 
 def get_trusted_factories(registry: dict) -> set[str]:

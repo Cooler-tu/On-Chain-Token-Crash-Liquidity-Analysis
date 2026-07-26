@@ -1,0 +1,335 @@
+[
+  {
+    "address": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+    "label": "Factory (uniswap)_v2",
+    "category": "protocol_deployment",
+    "confidence": 1.0,
+    "evidence": [
+      "Whitelisted protocol factory"
+    ]
+  },
+  {
+    "address": "0x21ff5cf76f562c6fb3871b59133a9E214eBc0078",
+    "label": "Uniswap V2 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xC02aaA39"
+    ]
+  },
+  {
+    "address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "label": "Router (uniswap_v2)",
+    "category": "router",
+    "confidence": 1.0,
+    "evidence": [
+      "Protocol router for swaps"
+    ]
+  },
+  {
+    "address": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+    "label": "Factory (uniswap)_v3",
+    "category": "protocol_deployment",
+    "confidence": 1.0,
+    "evidence": [
+      "Whitelisted protocol factory"
+    ]
+  },
+  {
+    "address": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+    "label": "Uniswap V3 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xC02aaA39"
+    ]
+  },
+  {
+    "address": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
+    "label": "PositionManager (uniswap_v3)",
+    "category": "position_manager",
+    "confidence": 1.0,
+    "evidence": [
+      "Manages LP position NFTs"
+    ]
+  },
+  {
+    "address": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+    "label": "Router (uniswap_v3)",
+    "category": "router",
+    "confidence": 1.0,
+    "evidence": [
+      "Protocol router for swaps"
+    ]
+  },
+  {
+    "address": "0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890",
+    "label": "Uniswap V3 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xA0b86991"
+    ]
+  },
+  {
+    "address": "0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230",
+    "label": "Uniswap V3 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xA0b86991"
+    ]
+  },
+  {
+    "address": "0x02eD43292C6be3F49f2B287C499C77560E426E83",
+    "label": "Deployer",
+    "category": "token_creator",
+    "confidence": 1.0,
+    "evidence": [
+      "Token contract creator address"
+    ]
+  },
+  {
+    "address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 269 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 105 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x163F3103De041d25464E2C8A4f8f3187EC1856E0",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 77 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x7f54F05635d15Cde17A49502fEdB9D1803A3Be8A",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 40 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x4C82D1fBFe28C977cBB58D8C7FF8FCF9F70a2cCA",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 34 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x37008364eaE6688966Ffd81d4e6F0E8189Bd236A",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 26 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xb300000b72DEAEb607a12d5f54773D1C19c7028d",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 25 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 24 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 23 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x6A93eF5f666eebE84bA130F8404AD56ee197006c",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 19 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 18 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x6747BcaF9bD5a5F0758Cbe08903490E45DdfACB5",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 18 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x74de5d4FCbf63E00296fd95d33236B9794016631",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 16 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xA5F91E598668040055dC861a7316e677a5B730B0",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 12 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x41A5548196A371050B7388EdE2683f32576F9997",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 12 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x3611B82c7B13e72b26eb0E9BE0613bEE7A45aC7c",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 10 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xba4c928807450c57E4F5Aa18cd507987840847bf",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 10 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xC10eE9031F2a0B84766A86B55a8D90F357910fb4",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 10 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xF1fa70f061fDD3021819Aa77deDBb7554652CEbA",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 9 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xB2fcE99E88f9c2a5A9C522D0BB1AcF1Cddf7e1b9",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 9 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x88538812e41b89689f5e23871ef5d5CE2be0F987",
+    "label": "Frequent Token Sender",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Sent token in 22 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xe9f9840b805a1C2807C1c0E07EB3d19AbF05B4C5",
+    "label": "Frequent Token Sender",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Sent token in 10 transfer(s)"
+    ]
+  },
+  {
+    "address": "0xF24be3404B723e35d9EbC60977B646d2581F57F0",
+    "label": "Frequent Token Sender",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Sent token in 9 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x8F10B468b06c6FD214B65F87778827F7D113f996",
+    "label": "Frequent Token Sender",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Sent token in 8 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x000000000000000000000000000000000000dead",
+    "label": "Burn Address",
+    "category": "burn",
+    "confidence": 1.0,
+    "evidence": [
+      "Standard burn/destroy address"
+    ]
+  },
+  {
+    "address": "0x000000000000000000000000000000000000dEaD",
+    "label": "Burn Address",
+    "category": "burn",
+    "confidence": 1.0,
+    "evidence": [
+      "Standard burn/destroy address"
+    ]
+  },
+  {
+    "address": "0x0000000000000000000000000000000000000000",
+    "label": "Burn Address",
+    "category": "burn",
+    "confidence": 1.0,
+    "evidence": [
+      "Standard burn/destroy address"
+    ]
+  }
+]

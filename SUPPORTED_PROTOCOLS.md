@@ -11,8 +11,8 @@
 |---|----------|---------|-------------|--------|-------|
 | 1 | Uniswap | V2 | Direct Pair | ✅ 完整支持 | Factory: `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` |
 | 2 | Uniswap | V3 | Concentrated Pool | ✅ 完整支持 | Factory: `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
-| 3 | Uniswap | V4 | Singleton | ✅ 已支持 | PoolManager: `0x0000000000000000000000000000000000000044` |
-| 4 | Uniswap | V1 | ETH-ERC20 Swap | 🔧 V1 excluded | 已废弃，无流动性，暂不实现 |
+| 3 | Uniswap | V4 | Singleton | ✅ 完整支持 | PoolManager + StateView + PositionManager |
+| 4 | Uniswap | V1 | ETH-ERC20 Exchange | 🔧 薄支持 | `getExchange` 发现 + LP 份额快照 |
 
 ## Uniswap V2
 
@@ -36,16 +36,27 @@
 
 ## Uniswap V4
 
-- **状态**: ✅ 已支持 (基础发现)
-- **PoolManager**: `0x0000000000000000000000000000000000000044` (CREATE2 地址)
-- **架构**: Singleton 模式，所有池子由 PoolManager 统一管理
-- **池子识别**: `getId(PoolKey)` 快速发现
-- **池子 Key**: `(currency0, currency1, fee, tickSpacing, hooks)`
-- **V4 特点**:
-  - 池子由 PoolKey 标识，而非独立合约地址
-  - Hooks 机制允许自定义逻辑
-  - 支持动态费率
-- **待完善**: Swap/ModifyLiquidity 事件索引
+- **状态**: ✅ 完整支持
+- **PoolManager**: `0x000000000004444c5dc75cB358380D2e3dE08A90`
+- **PositionManager**: `0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e`
+- **StateView**: `0x7ffe42c4a5deea5b0fec41c94c136cf115597227`
+- **部署区块**: 21688329
+- **架构**: Singleton；池子由 `PoolId = keccak256(abi.encode(PoolKey))` 标识
+- **池子识别**:
+  - 快速：已知 quote（含 native ETH `0x0`）× fee/tick × hooks=0 → `StateView.getSlot0`
+  - 穷举（窗口 ≤1000 块）：PoolManager `Initialize` 日志（可捕获非零 hooks）
+  - 窗口内 PositionManager `Transfer` → `getPoolAndPositionInfo`（捕获动态费率 / hooks 活跃池）
+- **事件索引**: PoolManager `Swap` / `ModifyLiquidity`；PositionManager `Transfer` / `ModifyLiquidity`
+- **仓位份额**: tick → amount0/amount1；`share_pct` = 区间内仓位 `L / StateView.getLiquidity(poolId)`（活跃流动性占比，链上可对；区间外为 0）
+
+## Uniswap V1
+
+- **状态**: 🔧 薄支持
+- **Factory**: `0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95`
+- **部署区块**: 6627917
+- **池子识别**: `factory.getExchange(token)`
+- **仓位**: exchange LP `balanceOf` / `totalSupply` 在 `to_block` 快照
+- **说明**: 协议已基本无流动性；不做完整事件时间线
 
 ## 未来计划 (TODO)
 

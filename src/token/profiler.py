@@ -131,9 +131,15 @@ def profile_token(
 
     name = _safe_call(contract, "name", "")
     symbol = _safe_call(contract, "symbol", "")
-    decimals_raw = _safe_call(contract, "decimals", 18)
+    # Use None sentinel so we can tell on-chain 18 apart from call failure.
+    decimals_raw = _safe_call(contract, "decimals", None)
+    decimals_source = "default"
     try:
-        decimals = int(decimals_raw) if decimals_raw is not None else 18
+        if decimals_raw is None:
+            decimals = 18
+        else:
+            decimals = int(decimals_raw)
+            decimals_source = "onchain"
     except (TypeError, ValueError):
         decimals = 18
 
@@ -153,6 +159,7 @@ def profile_token(
         symbol=str(symbol) if symbol else "???",
         name=str(name) if name else "???",
         decimals=decimals,
+        decimals_source=decimals_source,
         is_contract=is_contract,
         proxy_address=proxy_address,
         implementation_address=implementation_address,

@@ -128,6 +128,17 @@ def label_positions(
     return labels
 
 
+def _is_eth_address(value: str) -> bool:
+    """True for 20-byte hex addresses; False for V4 bytes32 pool IDs etc."""
+    if not value or not isinstance(value, str):
+        return False
+    try:
+        Web3.to_checksum_address(value)
+        return True
+    except Exception:
+        return False
+
+
 def label_pool_addresses(
     pools: list[VerifiedPool],
     events: list[dict],
@@ -148,32 +159,43 @@ def label_pool_addresses(
             ))
             seen.add(factory)
 
-        pool_addr = Web3.to_checksum_address(pool.pool_address)
-        if pool_addr not in seen:
-            label = "{} {} Pool".format(pool.protocol.title(), pool.version.upper())
-            labels.append(AddressLabel(
-                address=pool_addr,
-                label=label,
-                category="pool",
-                confidence=1.0 if pool.verified else pool.verification_confidence,
-                evidence=[
-                    "Verified pool for token pair {}/{}".format(
-                        pool.token0[:10], pool.token1[:10]
-                    ),
-                ],
-            ))
-            seen.add(pool_addr)
+        # V4 uses bytes32 poolId as pool_address — not an ETH address
+        pool_addr = None
+        if _is_eth_address(pool.pool_address):
+            pool_addr = Web3.to_checksum_address(pool.pool_address)
+            if pool_addr not in seen:
+                label = "{} {} Pool".format(pool.protocol.title(), pool.version.upper())
+                labels.append(AddressLabel(
+                    address=pool_addr,
+                    label=label,
+                    category="pool",
+                    confidence=1.0 if pool.verified else pool.verification_confidence,
+                    evidence=[
+                        "Verified pool for token pair {}/{}".format(
+                            pool.token0[:10], pool.token1[:10]
+                        ),
+                    ],
+                ))
+                seen.add(pool_addr)
 
-        custody = Web3.to_checksum_address(pool.custody_address)
-        if custody not in seen and custody != pool_addr:
-            labels.append(AddressLabel(
-                address=custody,
-                label="Custody ({})_{}".format(pool.protocol, pool.version),
-                category="custody",
-                confidence=1.0,
-                evidence=["Asset custody address"],
-            ))
-            seen.add(custody)
+        if pool.custody_address and _is_eth_address(pool.custody_address):
+            custody = Web3.to_checksum_address(pool.custody_address)
+            if custody not in seen and custody != pool_addr:
+                evidence = ["Asset custody address"]
+                if pool.version == "v4" and (pool.pool_id or pool.pool_address):
+                    evidence.append(
+                        "V4 PoolManager for poolId {}".format(
+                            (pool.pool_id or pool.pool_address)[:18]
+                        )
+                    )
+                labels.append(AddressLabel(
+                    address=custody,
+                    label="Custody ({})_{}".format(pool.protocol, pool.version),
+                    category="custody",
+                    confidence=1.0,
+                    evidence=evidence,
+                ))
+                seen.add(custody)
 
         if pool.position_manager_address:
             pm = Web3.to_checksum_address(pool.position_manager_address)
