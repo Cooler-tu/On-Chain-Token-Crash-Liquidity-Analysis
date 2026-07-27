@@ -21,6 +21,8 @@ def _load_templates():
 const poolH = {pool_h_json};
 const poolI = {pool_i_json};
 const tvlD = {tvl_json};
+const portfolioData = {portfolio_json};
+const tokenSymbol = "{symbol}";
 
 (function(){
   function tc(id,cfg){ new Chart(document.getElementById(id),cfg); }
@@ -109,6 +111,19 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 .empty-note{padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:var(--red);font-size:13px;margin-bottom:16px}
 .footer{margin-top:32px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-dim)}
 .footer a{color:var(--accent-light);text-decoration:none}
+.holder-row{cursor:pointer;transition:background .15s}
+.holder-row:hover{background:var(--bg-card-hover,#1e293b)}
+.expand-icon{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;border-radius:4px;background:var(--bg-card,#0f172a);color:var(--accent);font-weight:700;font-size:14px;transition:transform .2s}
+.badge-eoa{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,.15);color:#22c55e}
+.badge-contract{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(234,179,8,.15);color:#eab308}
+.badge-pool{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:#3b82f6}
+.portfolio-row>td{padding:0!important;background:var(--bg-card,#0f172a)}
+.portfolio-inner{padding:12px 16px 16px}
+.portfolio-table{width:100%;border-collapse:collapse;font-size:12px}
+.portfolio-table th{padding:6px 8px;text-align:left;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:600}
+.portfolio-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+.portfolio-table tr:last-child td{border-bottom:none}
+.no-positions{padding:16px;text-align:center;color:var(--text-dim);font-size:13px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}.nav-bar{flex-direction:column;gap:10px;align-items:flex-start}.nav-links a{margin-left:0;margin-right:14px}.stat-value{font-size:24px}}
 </style>
 </head>
@@ -207,6 +222,7 @@ def generate_dashboard(
     verified_pools = _load_json(out / "verified_pools.json", [])
     metrics = _load_json(out / "metrics.json", {})
     risk = _load_json(out / "risk_assessment.json", {})
+    positions_data = _load_json(out / "positions.json", [])
 
     holdings_data = holdings.get("holdings", [])
     pool_ident = holdings.get("pool_identification", [])
@@ -223,6 +239,31 @@ def generate_dashboard(
             }
             for p in verified_pools if p.get("verified", True)
         ]
+
+    # Build portfolio map: owner → [position, ...] (only positions with share > 0)
+    holdings_by_addr = {h.get("address","").lower(): h for h in holdings_data}
+    portfolio_map: dict[str, list] = {}
+    for pos in positions_data:
+        owner = (pos.get("owner") or "").strip()
+        if not owner:
+            continue
+        share = float(pos.get("share_pct") or 0)
+        if share <= 0:
+            continue
+        portfolio_map.setdefault(owner.lower(), []).append({
+            "pool": pos.get("pool_address", ""),
+            "owner": owner,
+            "protocol": pos.get("resolution_method", "").split("_")[0] if "_" in (pos.get("resolution_method") or "") else "",
+            "version": "v2" if "v2" in (pos.get("resolution_method") or "") else ("v3" if "v3" in (pos.get("resolution_method") or "") else ("v4" if "v4" in (pos.get("resolution_method") or "") else "v1")),
+            "share_pct": round(share, 4),
+            "liquidity": pos.get("liquidity", "0"),
+            "token0_amount": pos.get("token0_amount", ""),
+            "token1_amount": pos.get("token1_amount", ""),
+            "tick_lower": pos.get("tick_lower"),
+            "tick_upper": pos.get("tick_upper"),
+        })
+    portfolio_json = json.dumps(portfolio_map, indent=2)
+    _write_json(out / "portfolios.json", portfolio_map)
 
     top_holders = [h for h in holdings_data if not h.get("is_pool")][:20]
     pool_holders = [h for h in holdings_data if h.get("is_pool")]
@@ -380,16 +421,22 @@ def _build_tvl_chart_js(
 
 def _table_top_holders(holders: list, symbol: str) -> str:
     if not holders:
-        return '<tr><td colspan="5" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
+        return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
     rows = []
     for i, h in enumerate(holders[:20], 1):
-        lbl = ""
-        if h.get("pool_label"):
-            lbl = f'<span class="plabel">{h["pool_label"]}</span>'
+        addr = h.get('address','')
+        addr_short = addr[:6] + "..." + addr[-4:]
+        banner = h.get("address_type", "eoa") if h.get("address_type") else ("pool" if h.get("is_pool") else "eoa")
         rows.append(
-            f"<tr><td>{i}</td><td class=\"addr\">{h.get('address','')}</td>"
+            f'<tr class="holder-row" onclick="togglePortfolio(\'{addr}\')" data-owner="{addr}">'
+            f"<td>{i}</td>"
+            f'<td class="addr">{addr_short}</td>'
+            f'<td><span class="badge-{banner}">{banner}</span></td>'
             f"<td>{_fmt_bal(h.get('balance_decimal',0),symbol)}</td>"
-            f"<td>{h.get('tx_count',0)}</td><td>{lbl}</td></tr>"
+            f"<td>{h.get('tx_count',0)}</td>"
+            f'<td><span class="expand-icon">+</span></td></tr>'
+            f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
+            f'<td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>'
         )
     return "\n".join(rows)
 
@@ -454,3 +501,9 @@ def _load_json(path: Path, default: Any) -> Any:
         except Exception:
             return default
     return default
+
+
+
+def _write_json(path: Path, data):
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2, default=str)
