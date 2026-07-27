@@ -15,7 +15,7 @@ from typing import Any, Optional
 
 from web3 import Web3
 
-from ..client import get_contract
+from ..client import get_contract, has_bytecode
 from ..models import VerifiedPool
 
 
@@ -150,6 +150,18 @@ def analyze_holdings(
             pool_addresses.add(p.custody_address.lower())
             pool_by_addr[p.custody_address.lower()] = p
 
+    # Check which addresses are contracts (has bytecode on-chain)
+    _contract_cache: dict[str, bool] = {}
+
+    def _is_contract(addr: str) -> bool:
+        a = addr.lower()
+        if a not in _contract_cache:
+            try:
+                _contract_cache[a] = has_bytecode(w3, Web3.to_checksum_address(addr))
+            except Exception:
+                _contract_cache[a] = False
+        return _contract_cache[a]
+
     holdings_rows: list[dict[str, Any]] = []
     for addr in sorted(unique_addresses):
         bal_raw = balances.get(addr, "0")
@@ -163,12 +175,22 @@ def analyze_holdings(
         if is_pool and pool_info:
             pool_label = "{} {}".format(pool_info.protocol, pool_info.version).upper()
 
+        is_contract_addr = _is_contract(addr)
+        if is_pool:
+            addr_type = "pool"
+        elif is_contract_addr:
+            addr_type = "contract"
+        else:
+            addr_type = "eoa"
+
         holdings_rows.append({
             "address": addr,
             "balance_raw": bal_raw,
             "balance_decimal": round(bal_decimal, 6),
             "is_pool": is_pool,
             "pool_label": pool_label,
+            "is_contract": is_contract_addr,
+            "address_type": addr_type,
             "tx_count": address_tx_count.get(addr, 0),
             "first_seen_block": address_first_seen.get(addr, 0),
             "last_seen_block": address_last_seen.get(addr, 0),
@@ -196,8 +218,21 @@ def analyze_holdings(
             "in_holders_list": holder_info is not None,
         })
 
+    eoa_count = sum(1 for r in holdings_rows if r["address_type"] == "eoa")
+    contract_count = sum(1 for r in holdings_rows if r["address_type"] == "contract")
+    real_holder_balance = sum(
+        r["balance_decimal"] for r in holdings_rows if r["address_type"] == "eoa"
+    )
+    contract_balance = sum(
+        r["balance_decimal"] for r in holdings_rows if r["address_type"] != "eoa"
+    )
+
     result = {
         "total_unique_addresses": len(unique_addresses),
+        "real_holder_count": eoa_count,
+        "contract_count": contract_count,
+        "real_holder_balance": round(real_holder_balance, 6),
+        "contract_balance": round(contract_balance, 6),
         "query_timestamp": query_timestamp,
         "query_time_human": datetime.fromtimestamp(
             query_timestamp, tz=timezone.utc

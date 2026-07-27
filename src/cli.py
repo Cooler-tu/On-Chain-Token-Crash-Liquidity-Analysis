@@ -270,9 +270,11 @@ def analyze(
         ))
         if holdings_result.get("dune_error"):
             typer.echo("  dune fallback: {}".format(holdings_result["dune_error"]))
-        typer.echo("  {} unique addresses, {} holders with balance".format(
+        eoa = holdings_result.get("real_holder_count", 0)
+    ctr = holdings_result.get("contract_count", 0)
+    typer.echo("  {} unique addresses: {} EOA (real holders), {} contracts".format(
             holdings_result.get("total_unique_addresses", 0),
-            holdings_result.get("holdings_count", 0),
+            eoa, ctr,
         ))
 
     # Step 12: Dashboard
