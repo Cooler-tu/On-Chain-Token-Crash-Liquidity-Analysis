@@ -89,6 +89,11 @@ class UniswapV4Adapter(PoolDiscoveryAdapter):
         if quote_assets:
             for qa in quote_assets:
                 quotes.append(Web3.to_checksum_address(qa["address"]))
+        # Also probe token vs itself as a fallback (catches single-sided pools)
+        # and use known canonical tokens from the registry
+        for known in ("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",):  # WETH
+            if Web3.to_checksum_address(known).lower() != token.lower():
+                quotes.append(Web3.to_checksum_address(known))
 
         # Fast path: probe known fee/tick + zero hooks
         for q in quotes:
@@ -112,7 +117,7 @@ class UniswapV4Adapter(PoolDiscoveryAdapter):
         total_blocks = to_block - search_from + 1
 
         # Exhaustive Initialize scan for small windows (catches hooks ≠ 0 created in-window)
-        if total_blocks <= 1000 and total_blocks > 0:
+        if total_blocks <= 5000 and total_blocks > 0:
             self._scan_initialize(
                 token, chain_id, pool_manager, search_from, to_block, seen, pools
             )

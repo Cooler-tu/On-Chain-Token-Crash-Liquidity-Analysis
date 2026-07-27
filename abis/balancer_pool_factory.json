@@ -1,0 +1,5 @@
+[
+  {"name":"PoolCreated","type":"event","inputs":[
+    {"name":"pool","type":"address","indexed":true}
+  ]}
+]

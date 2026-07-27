@@ -658,6 +658,7 @@ def analyze_positions(
     for dep in get_enabled_protocols(registry):
         if dep.version == "v4" and dep.state_view:
             state_view_by_factory[dep.factory.lower()] = dep.state_view
+            state_view_by_factory[dep.position_manager.lower()] = dep.state_view  # PM→state_view alias
 
     v4_pm_addresses = {
         p.position_manager_address
@@ -667,15 +668,19 @@ def analyze_positions(
     for pm_addr in v4_pm_addresses:
         # Pick any matching factory's state_view
         state_view = None
+        pm_lower = pm_addr.lower()
         for p in verified_pools:
             if (
                 p.version == "v4"
                 and p.position_manager_address
-                and p.position_manager_address.lower() == pm_addr.lower()
+                and p.position_manager_address.lower() == pm_lower
             ):
                 state_view = state_view_by_factory.get(p.factory_address.lower())
                 if state_view:
                     break
+        # Fallback: also try looking up by PM address directly
+        if not state_view:
+            state_view = state_view_by_factory.get(pm_lower)
         if not state_view:
             continue
         positions.extend(reconstruct_v4_position_owners(

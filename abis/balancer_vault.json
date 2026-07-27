@@ -1,0 +1,28 @@
+[
+  {"name":"Swap","type":"event","inputs":[
+    {"name":"poolId","type":"bytes32","indexed":true},
+    {"name":"tokenIn","type":"address","indexed":true},
+    {"name":"tokenOut","type":"address","indexed":true},
+    {"name":"amountIn","type":"uint256","indexed":false},
+    {"name":"amountOut","type":"uint256","indexed":false}
+  ]},
+  {"name":"PoolBalanceChanged","type":"event","inputs":[
+    {"name":"poolId","type":"bytes32","indexed":true},
+    {"name":"liquidityProvider","type":"address","indexed":true},
+    {"name":"tokens","type":"address[]","indexed":false},
+    {"name":"deltas","type":"int256[]","indexed":false},
+    {"name":"protocolFeeAmounts","type":"uint256[]","indexed":false}
+  ]},
+  {"name":"PoolBalanceManaged","type":"event","inputs":[
+    {"name":"poolId","type":"bytes32","indexed":true},
+    {"name":"assetManager","type":"address","indexed":true},
+    {"name":"token","type":"address","indexed":true},
+    {"name":"cashDelta","type":"int256","indexed":false},
+    {"name":"managedDelta","type":"int256","indexed":false}
+  ]},
+  {"name":"getPoolTokens","type":"function","stateMutability":"view","inputs":[{"name":"poolId","type":"bytes32"}],"outputs":[
+    {"name":"tokens","type":"address[]"},
+    {"name":"balances","type":"uint256[]"},
+    {"name":"lastChangeBlock","type":"uint256"}
+  ]}
+]

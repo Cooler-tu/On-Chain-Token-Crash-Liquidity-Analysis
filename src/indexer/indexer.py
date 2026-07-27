@@ -634,11 +634,46 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
                 if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES"):
                     liquidity.append(pub)
                 all_events.append(pub)
-        elif stream.startswith("v2:") or stream.startswith("v3:"):
+        # V2 / V3 / V4 pool events
+        elif stream.startswith("v2:") or stream.startswith("v3:") or stream.startswith("v4:"):
             if et == "SWAP":
                 swaps.append(pub)
                 all_events.append(pub)
-            elif src in ("Mint", "Burn", "Collect"):
+            elif src in ("Mint", "Burn", "Collect", "ModifyLiquidity"):
+                liquidity.append(pub)
+                all_events.append(pub)
+
+        # V4 Position Manager events
+        elif stream.startswith("v4pm:"):
+            if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "POSITION_TRANSFER"):
+                if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE"):
+                    liquidity.append(pub)
+                all_events.append(pub)
+
+        # V1 pool events
+        elif stream.startswith("v1:"):
+            if et == "SWAP":
+                swaps.append(pub)
+                all_events.append(pub)
+            elif src in ("AddLiquidity", "RemoveLiquidity"):
+                liquidity.append(pub)
+                all_events.append(pub)
+
+        # Curve pool events
+        elif stream.startswith("curve:"):
+            if et == "SWAP":
+                swaps.append(pub)
+                all_events.append(pub)
+            elif src in ("AddLiquidity", "RemoveLiquidity", "RemoveLiquidityOne", "RemoveLiquidityImbalance"):
+                liquidity.append(pub)
+                all_events.append(pub)
+
+        # Balancer V2 pool events
+        elif stream.startswith("balancer:"):
+            if et == "SWAP":
+                swaps.append(pub)
+                all_events.append(pub)
+            elif et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE"):
                 liquidity.append(pub)
                 all_events.append(pub)
 
@@ -667,6 +702,341 @@ def _flush_outputs(
         "liquidity_events": liquidity,
         "transfers": transfers,
     }
+
+
+
+# ---------------------------------------------------------------------------
+# Curve normalizer
+# ---------------------------------------------------------------------------
+
+def _normalize_curve_event(evt, pool, block_timestamps):
+    from ..models import NormalizedEvent
+    from web3 import Web3
+    args = evt.get("args", {})
+    bn = evt["blockNumber"]
+    evt_name = evt.get("event", "")
+    base = {
+        "block_number": bn,
+        "block_timestamp": block_timestamps.get(bn, 0),
+        "transaction_hash": _tx_hash_hex(evt["transactionHash"]),
+        "log_index": evt.get("logIndex", 0),
+        "protocol": "curve",
+        "version": pool.version or "v1",
+        "pool_address": pool.pool_address,
+        "verified": True,
+    }
+    try:
+        if evt_name == "TokenExchange" or evt_name == "TokenExchangeUnderlying":
+            buyer = Web3.to_checksum_address(args.get("buyer", ""))
+            tokens_sold = int(args.get("tokens_sold", 0))
+            tokens_bought = int(args.get("tokens_bought", 0))
+            return NormalizedEvent(
+                **base,
+                event_type="SWAP",
+                actor=buyer,
+                recipient=buyer,
+                token0_amount=str(tokens_sold),
+                token1_amount=str(tokens_bought),
+                source_event=evt_name,
+            )
+        if evt_name in ("AddLiquidity",):
+            provider = Web3.to_checksum_address(args.get("provider", ""))
+            return NormalizedEvent(
+                **base,
+                event_type="LIQUIDITY_ADD",
+                actor=provider,
+                recipient=provider,
+                token0_amount=str(args.get("token_amounts", [0])[0]),
+                token1_amount=str(args.get("token_amounts", [0, 0])[1]),
+                source_event=evt_name,
+            )
+        if evt_name in ("RemoveLiquidity", "RemoveLiquidityImbalance"):
+            provider = Web3.to_checksum_address(args.get("provider", ""))
+            return NormalizedEvent(
+                **base,
+                event_type="LIQUIDITY_REMOVE",
+                actor=provider,
+                recipient=provider,
+                token0_amount=str(args.get("token_amounts", [0])[0]),
+                token1_amount=str(args.get("token_amounts", [0, 0])[1]),
+                source_event=evt_name,
+            )
+        if evt_name == "RemoveLiquidityOne":
+            provider = Web3.to_checksum_address(args.get("provider", ""))
+            return NormalizedEvent(
+                **base,
+                event_type="LIQUIDITY_REMOVE",
+                actor=provider,
+                recipient=provider,
+                token0_amount=str(args.get("coin_amount", 0)),
+                token1_amount="0",
+                source_event=evt_name,
+            )
+    except Exception:
+        pass
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Balancer V2 normalizer
+# ---------------------------------------------------------------------------
+
+def _normalize_balancer_event(evt, pool_id_map, block_timestamps):
+    from ..models import NormalizedEvent
+    from web3 import Web3
+    args = evt.get("args", {})
+    bn = evt["blockNumber"]
+    evt_name = evt.get("event", "")
+    try:
+        pool_id = evt.get("topics", [None])[0]
+        if pool_id is not None:
+            if hasattr(pool_id, "hex"):
+                pool_id_hex = pool_id.hex()
+            else:
+                pool_id_hex = str(pool_id)
+        else:
+            return None
+    except Exception:
+        return None
+
+    pool_addr = pool_id_map.get(pool_id_hex.lower(), "")
+    base = {
+        "block_number": bn,
+        "block_timestamp": block_timestamps.get(bn, 0),
+        "transaction_hash": _tx_hash_hex(evt["transactionHash"]),
+        "log_index": evt.get("logIndex", 0),
+        "protocol": "balancer",
+        "version": "v2",
+        "pool_address": pool_addr,
+        "verified": True,
+    }
+    try:
+        if evt_name == "Swap":
+            token_in = Web3.to_checksum_address(args.get("tokenIn", ""))
+            token_out = Web3.to_checksum_address(args.get("tokenOut", ""))
+            amount_in = int(args.get("amountIn", 0))
+            amount_out = int(args.get("amountOut", 0))
+            actor = Web3.to_checksum_address(args.get("sender", args.get("liquidityProvider", "")))
+            return NormalizedEvent(
+                **base,
+                event_type="SWAP",
+                actor=actor,
+                recipient=actor,
+                token0_amount=str(amount_in),
+                token1_amount=str(amount_out),
+                source_event="Swap",
+            )
+        if evt_name == "PoolBalanceChanged":
+            provider = Web3.to_checksum_address(args.get("liquidityProvider", ""))
+            deltas = [int(d) for d in args.get("deltas", [0])]
+            total_delta = sum(abs(d) for d in deltas)
+            event_type = "LIQUIDITY_ADD" if any(d > 0 for d in deltas) else "LIQUIDITY_REMOVE"
+            return NormalizedEvent(
+                **base,
+                event_type=event_type,
+                actor=provider,
+                recipient=provider,
+                token0_amount=str(total_delta),
+                token1_amount="0",
+                source_event=evt_name,
+            )
+    except Exception:
+        pass
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Curve indexer
+# ---------------------------------------------------------------------------
+
+def index_curve_pool_events(
+    w3, pool, from_block, to_block, checkpoint, checkpoint_path, cache_dir, ts_cache,
+):
+    from ..client import get_contract
+    contract = get_contract(w3, pool.pool_address, "curve_pool")
+    events = []
+    for evt_name in ("TokenExchange", "AddLiquidity", "RemoveLiquidity",
+                     "RemoveLiquidityOne", "RemoveLiquidityImbalance", "TokenExchangeUnderlying"):
+        if not hasattr(contract.events, evt_name):
+            continue
+        key = _stream_key("curve", pool.pool_address, evt_name)
+
+        def make_norm(name=evt_name):
+            def _norm(evt, timestamps):
+                if not getattr(evt, "event", None):
+                    evt = dict(evt)
+                    evt["event"] = name
+                return _normalize_curve_event(evt, pool, timestamps)
+            return _norm
+
+        stream = _StreamIndexer(
+            w3, key, from_block, to_block, checkpoint, checkpoint_path,
+            cache_dir, ts_cache, make_norm(),
+        )
+        try:
+            events.extend(stream.run(getattr(contract.events, evt_name)))
+        except Exception:
+            pass
+    return events
+
+
+# ---------------------------------------------------------------------------
+# Balancer V2 indexer
+# ---------------------------------------------------------------------------
+
+def index_balancer_events(
+    w3, vault_address, verified_pools, from_block, to_block,
+    checkpoint, checkpoint_path, cache_dir, ts_cache,
+):
+    from ..client import get_contract
+    vault_addr = Web3.to_checksum_address(vault_address)
+    contract = get_contract(w3, vault_addr, "balancer_vault")
+
+    # Build pool ID -> pool address map
+    pool_id_map = {}
+    for p in verified_pools:
+        if p.protocol == "balancer" and p.verified:
+            pid = p.pool_address.lower() + "0" * 24
+            pool_id_map[pid] = p.pool_address
+
+    events = []
+    for evt_name in ("Swap", "PoolBalanceChanged"):
+        if not hasattr(contract.events, evt_name):
+            continue
+        key = _stream_key("balancer", vault_addr, evt_name)
+
+        def make_norm(name=evt_name, pim=pool_id_map):
+            def _norm(evt, timestamps):
+                if not getattr(evt, "event", None):
+                    evt = dict(evt)
+                    evt["event"] = name
+                return _normalize_balancer_event(evt, pim, timestamps)
+            return _norm
+
+        stream = _StreamIndexer(
+            w3, key, from_block, to_block, checkpoint, checkpoint_path,
+            cache_dir, ts_cache, make_norm(),
+        )
+        try:
+            events.extend(stream.run(getattr(contract.events, evt_name)))
+        except Exception:
+            pass
+    return events
+
+
+def _normalize_v1_event(
+    evt,
+    pool,
+    block_timestamps,
+):
+    """Normalize V1 exchange events into NormalizedEvent format."""
+    from ..models import NormalizedEvent
+    from web3 import Web3
+    args = evt.get("args", {})
+    bn = evt["blockNumber"]
+    evt_name = evt.get("event", "")
+    base = {
+        "block_number": bn,
+        "block_timestamp": block_timestamps.get(bn, 0),
+        "transaction_hash": _tx_hash_hex(evt["transactionHash"]),
+        "log_index": evt.get("logIndex", 0),
+        "protocol": "uniswap",
+        "version": "v1",
+        "pool_address": pool.pool_address,
+        "verified": True,
+    }
+    try:
+        if evt_name == "EthPurchase":
+            buyer_key = "buyer" if "buyer" in args else "_buyer"
+            tokens_key = "tokens_bought" if "tokens_bought" in args else "_tokens_bought"
+            return NormalizedEvent(
+                **base,
+                event_type="SWAP",
+                actor=Web3.to_checksum_address(args[buyer_key]),
+                recipient=Web3.to_checksum_address(args[buyer_key]),
+                token0_amount="0",
+                token1_amount=str(args[tokens_key]),
+                source_event="EthPurchase",
+            )
+        if evt_name == "TokenPurchase":
+            buyer_key = "buyer" if "buyer" in args else "_buyer"
+            sold_key = "tokens_sold" if "tokens_sold" in args else "_tokens_sold"
+            return NormalizedEvent(
+                **base,
+                event_type="SWAP",
+                actor=Web3.to_checksum_address(args[buyer_key]),
+                recipient=Web3.to_checksum_address(args[buyer_key]),
+                token0_amount=str(args[sold_key]),
+                token1_amount="0",
+                source_event="TokenPurchase",
+            )
+        if evt_name in ("AddLiquidity",):
+            provider_key = "provider" if "provider" in args else "_provider"
+            eth_key = "eth_amount" if "eth_amount" in args else "_eth_amount"
+            token_key = "token_amount" if "token_amount" in args else "_token_amount"
+            return NormalizedEvent(
+                **base,
+                event_type="LIQUIDITY_ADD",
+                actor=Web3.to_checksum_address(args[provider_key]),
+                recipient=Web3.to_checksum_address(args[provider_key]),
+                token0_amount=str(args.get(eth_key, 0)),
+                token1_amount=str(args.get(token_key, 0)),
+                source_event="AddLiquidity",
+            )
+        if evt_name in ("RemoveLiquidity",):
+            provider_key = "provider" if "provider" in args else "_provider"
+            eth_key = "eth_amount" if "eth_amount" in args else "_eth_amount"
+            token_key = "token_amount" if "token_amount" in args else "_token_amount"
+            return NormalizedEvent(
+                **base,
+                event_type="LIQUIDITY_REMOVE",
+                actor=Web3.to_checksum_address(args[provider_key]),
+                recipient=Web3.to_checksum_address(args[provider_key]),
+                token0_amount=str(args.get(eth_key, 0)),
+                token1_amount=str(args.get(token_key, 0)),
+                source_event="RemoveLiquidity",
+            )
+    except Exception:
+        pass
+    return None
+
+
+def index_v1_pool_events(
+    w3,
+    pool,
+    from_block,
+    to_block,
+    checkpoint,
+    checkpoint_path,
+    cache_dir,
+    ts_cache,
+):
+    """Index V1 exchange events: EthPurchase, TokenPurchase, AddLiquidity, RemoveLiquidity."""
+    from ..client import get_contract
+    contract = get_contract(w3, pool.pool_address, "uniswap_v1_exchange")
+    events = []
+    for evt_name in ("EthPurchase", "TokenPurchase", "AddLiquidity", "RemoveLiquidity"):
+        if not hasattr(contract.events, evt_name):
+            continue
+        key = _stream_key("v1", pool.pool_address, evt_name)
+
+        def make_norm(name=evt_name):
+            def _norm(evt, timestamps):
+                if not getattr(evt, "event", None):
+                    evt = dict(evt)
+                    evt["event"] = name
+                return _normalize_v1_event(evt, pool, timestamps)
+            return _norm
+
+        stream = _StreamIndexer(
+            w3, key, from_block, to_block, checkpoint, checkpoint_path,
+            cache_dir, ts_cache, make_norm(),
+        )
+        try:
+            events.extend(stream.run(getattr(contract.events, evt_name)))
+        except Exception:
+            pass
+    return events
 
 
 def index_v2_pool_events(
@@ -1005,6 +1375,35 @@ def index_events(
     for pool in v2_pools:
         evts = index_v2_pool_events(
             w3, pool, from_block, to_block, checkpoint, cp_path, cache_dir, ts_cache
+        )
+        collected.extend(evts)
+        _flush_outputs(out, collected, from_block, to_block)
+
+    v1_pools = [p for p in verified_pools if p.version == "v1" and p.verified]
+    for pool in v1_pools:
+        evts = index_v1_pool_events(
+            w3, pool, from_block, to_block, checkpoint, cp_path, cache_dir, ts_cache
+        )
+        collected.extend(evts)
+        _flush_outputs(out, collected, from_block, to_block)
+
+    curve_pools = [p for p in verified_pools if p.protocol == "curve" and p.verified]
+    for pool in curve_pools:
+        evts = index_curve_pool_events(
+            w3, pool, from_block, to_block, checkpoint, cp_path, cache_dir, ts_cache
+        )
+        collected.extend(evts)
+        _flush_outputs(out, collected, from_block, to_block)
+
+    balancer_vaults = {
+        p.factory_address
+        for p in verified_pools
+        if p.protocol == "balancer" and p.verified and p.factory_address
+    }
+    for vault_addr in balancer_vaults:
+        evts = index_balancer_events(
+            w3, vault_addr, verified_pools, from_block, to_block,
+            checkpoint, cp_path, cache_dir, ts_cache,
         )
         collected.extend(evts)
         _flush_outputs(out, collected, from_block, to_block)

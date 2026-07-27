@@ -53,6 +53,14 @@ def verify_pool(
         return _verify_v1_pool(
             w3, pool, target_token, checks_passed, checks_total,
         )
+    if pool.protocol == "curve":
+        return _verify_curve_pool(
+            w3, pool, target_token, checks_passed, checks_total,
+        )
+    if pool.protocol == "balancer":
+        return _verify_balancer_pool(
+            w3, pool, target_token, checks_passed, checks_total,
+        )
 
     _time.sleep(_RPC_DELAY)
     checks_total += 1
@@ -402,4 +410,90 @@ def _abi_name(pool: VerifiedPool) -> str:
         return "uniswap_v2_pair"
     if pool.version == "v1":
         return "uniswap_v1_exchange"
+    if pool.protocol == "curve":
+        return "curve_pool"
     return "uniswap_v3_pool"
+
+
+
+def _verify_curve_pool(
+    w3,
+    pool,
+    target_token,
+    checks_passed,
+    checks_total,
+):
+    """Verify a Curve pool via bytecode + coin consistency."""
+    from ..client import get_contract, has_bytecode
+
+    checks_total += 1
+    if has_bytecode(w3, pool.pool_address):
+        checks_passed += 1
+
+    # Check token0/token1 are present
+    if target_token:
+        checks_total += 1
+        target = Web3.to_checksum_address(str(target_token))
+        t0 = Web3.to_checksum_address(pool.token0) if pool.token0 else None
+        t1 = Web3.to_checksum_address(pool.token1) if pool.token1 else None
+        if target in (t0, t1):
+            checks_passed += 1
+
+    # Try to read coins from the pool directly
+    try:
+        contract = get_contract(w3, pool.pool_address, "curve_pool")
+        checks_total += 1
+        coin0 = Web3.to_checksum_address(contract.functions.coins(0).call())
+        if coin0.lower() != _ZERO.lower():
+            checks_passed += 1
+    except Exception:
+        pass
+
+    confidence = checks_passed / max(checks_total, 1)
+    pool.verified = confidence >= MIN_CONFIDENCE
+    pool.verification_confidence = round(confidence, 4)
+    return pool
+
+
+def _verify_balancer_pool(
+    w3,
+    pool,
+    target_token,
+    checks_passed,
+    checks_total,
+):
+    """Verify a Balancer V2 pool via bytecode + Vault token check."""
+    from ..client import get_contract, has_bytecode
+
+    checks_total += 1
+    if has_bytecode(w3, pool.pool_address):
+        checks_passed += 1
+
+    # Check token0/token1
+    if target_token:
+        checks_total += 1
+        target = Web3.to_checksum_address(str(target_token))
+        t0 = Web3.to_checksum_address(pool.token0) if pool.token0 else None
+        t1 = Web3.to_checksum_address(pool.token1) if pool.token1 else None
+        if target in (t0, t1):
+            checks_passed += 1
+
+    # Check Vault consistency
+    vault_addr = pool.factory_address
+    if vault_addr:
+        checks_total += 1
+        try:
+            vault = get_contract(w3, vault_addr, "balancer_vault")
+            pool_id_hex = pool.pool_address.lower() + "0" * 24  # poolId = addr + nonce padding
+            tokens, _, _ = vault.functions.getPoolTokens(pool_id_hex).call()
+            token_addrs = [t.lower() for t in tokens]
+            if target_token and target_token.lower() in token_addrs:
+                checks_passed += 1
+        except Exception:
+            pass
+
+    confidence = checks_passed / max(checks_total, 1)
+    pool.verified = confidence >= MIN_CONFIDENCE
+    pool.verification_confidence = round(confidence, 4)
+    return pool
+

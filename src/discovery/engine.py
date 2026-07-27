@@ -17,6 +17,8 @@ from .uniswap_v1 import UniswapV1Adapter
 from .uniswap_v2 import UniswapV2Adapter
 from .uniswap_v3 import UniswapV3Adapter
 from .uniswap_v4 import UniswapV4Adapter
+from .curve import CurveAdapter
+from .balancer_v2 import BalancerV2Adapter
 
 
 _ADAPTER_MAP: dict[str, type[PoolDiscoveryAdapter]] = {
@@ -24,6 +26,8 @@ _ADAPTER_MAP: dict[str, type[PoolDiscoveryAdapter]] = {
     "UniswapV2Adapter": UniswapV2Adapter,
     "UniswapV3Adapter": UniswapV3Adapter,
     "UniswapV4Adapter": UniswapV4Adapter,
+    "CurveAdapter": CurveAdapter,
+    "BalancerV2Adapter": BalancerV2Adapter,
 }
 
 

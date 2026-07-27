@@ -55,6 +55,34 @@ protocols:
     enabled: true
     notes: "V4 singleton; pool IDs identify pools; StateView for slot0/liquidity"
 
+  - protocol: curve
+    version: v1
+    architecture: stableswap
+    factory: "0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
+    adapter: CurveAdapter
+    deployment_block: 10356917
+    enabled: true
+    notes: "StableSwap (x³y+y³x=k); registry-based discovery"
+
+  - protocol: curve
+    version: v2
+    architecture: cryptoswap
+    factory: "0xF18056Bbd320E96A48e3Fbf8bC0613221a1Ff0Ab"
+    adapter: CurveAdapter
+    deployment_block: 14722229
+    enabled: true
+    notes: "CryptoSwap (different bonding curve); registry-based discovery"
+
+  - protocol: balancer
+    version: v2
+    architecture: weighted_pool
+    factory: "0xBA12222222228d8Ba445958a75a0704d566BF2C8"
+    router: "0xBA12222222228d8Ba445958a75a0704d566BF2C8"
+    adapter: BalancerV2Adapter
+    deployment_block: 12272146
+    enabled: true
+    notes: "Vault architecture; multi-token weighted pools"
+
 v3_fee_tiers:
   - fee: 100
     tick_spacing: 1

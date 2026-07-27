@@ -1,0 +1,9 @@
+[
+  {"name":"pool_count","type":"function","stateMutability":"view","inputs":[],"outputs":[{"name":"","type":"uint256"}]},
+  {"name":"pool_list","type":"function","stateMutability":"view","inputs":[{"name":"arg0","type":"uint256"}],"outputs":[{"name":"","type":"address"}]},
+  {"name":"get_coins","type":"function","stateMutability":"view","inputs":[{"name":"_pool","type":"address"}],"outputs":[{"name":"","type":"address","internalType":"address[8]"}]},
+  {"name":"get_n_coins","type":"function","stateMutability":"view","inputs":[{"name":"_pool","type":"address"}],"outputs":[{"name":"","type":"uint256[2]"}]},
+  {"name":"get_pool_name","type":"function","stateMutability":"view","inputs":[{"name":"_pool","type":"address"}],"outputs":[{"name":"","type":"string"}]},
+  {"name":"get_pool_asset_type","type":"function","stateMutability":"view","inputs":[{"name":"_pool","type":"address"}],"outputs":[{"name":"","type":"uint256"}]},
+  {"name":"get_balances","type":"function","stateMutability":"view","inputs":[{"name":"_pool","type":"address"}],"outputs":[{"name":"","type":"uint256[8]"}]}
+]

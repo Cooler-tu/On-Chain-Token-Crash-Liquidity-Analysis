@@ -4,6 +4,10 @@
 
 ## ✅ Completed
 
+- **V4 event output assembly fix** —  now includes  and  streams (critical bugfix)
+- **V4 pool discovery enhancement** — exhaustive scan window 1000→5000 blocks, fallback WETH probe
+- **V4 state_view lookup fix** — added PM→state_view alias fallback in position analysis
+- **V1 event indexing added** —  +  for EthPurchase/TokenPurchase/AddLiquidity/RemoveLiquidity
 - **Core analysis pipeline** — 12-step pipeline: token resolve → profile → discover pools → verify → index → positions → labels → metrics → timeline → risk → report → dashboard
 - **Uniswap V2/V3 discovery** — pool detection via factory events + position manager
 - **Uniswap V4 discovery** — exists but needs validation

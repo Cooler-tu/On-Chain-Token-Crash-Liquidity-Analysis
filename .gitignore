@@ -1,7 +1,10 @@
+output/
+output-*/
+site/
+.DS_Store
 __pycache__/
 *.pyc
-*.pyo
 .env
 .venv/
-.DS_Store
-output-test/
+output/
+output-*/
