@@ -232,10 +232,13 @@
     }
   ],
   "protocols_used": [
+    "curve_v1",
     "uniswap_v4",
-    "uniswap_v2",
+    "uniswap_v1",
     "uniswap_v3",
-    "uniswap_v1"
+    "uniswap_v2",
+    "balancer_v2",
+    "curve_v2"
   ],
   "errors": []
 }

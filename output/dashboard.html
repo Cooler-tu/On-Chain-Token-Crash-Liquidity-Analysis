@@ -52,6 +52,24 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 .empty-note{padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:var(--red);font-size:13px;margin-bottom:16px}
 .footer{margin-top:32px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-dim)}
 .footer a{color:var(--accent-light);text-decoration:none}
+.holder-row{cursor:pointer;transition:background .15s}
+.holder-row:hover{background:var(--bg-card-hover,#1e293b)}
+.expand-icon{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;border-radius:4px;background:var(--bg-card,#0f172a);color:var(--accent);font-weight:700;font-size:14px;transition:transform .2s}
+.badge-eoa{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,.15);color:#22c55e}
+.badge-contract{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(234,179,8,.15);color:#eab308}
+.badge-pool{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:#3b82f6}
+.badge-uniswap{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(255,0,122,.15);color:#ff007a;margin:1px}
+.badge-curve{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(0,0,0,.35);color:#a0aec0;margin:1px;border:1px solid #4a5568}
+.badge-balancer{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(30,144,255,.15);color:#1e90ff;margin:1px}
+.badge-dex-other{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(148,163,184,.15);color:#94a3b8;margin:1px}
+.dex-muted{color:var(--text-dim);font-size:11px}
+.portfolio-row>td{padding:0!important;background:var(--bg-card,#0f172a)}
+.portfolio-inner{padding:12px 16px 16px}
+.portfolio-table{width:100%;border-collapse:collapse;font-size:12px}
+.portfolio-table th{padding:6px 8px;text-align:left;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:600}
+.portfolio-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+.portfolio-table tr:last-child td{border-bottom:none}
+.no-positions{padding:16px;text-align:center;color:var(--text-dim);font-size:13px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}.nav-bar{flex-direction:column;gap:10px;align-items:flex-start}.nav-links a{margin-left:0;margin-right:14px}.stat-value{font-size:24px}}
 </style>
 </head>
@@ -71,7 +89,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   
 
   <div class="info-bar">
-    <div class="info-item">Analysis &middot; <span>2026-07-26 13:26:10 UTC</span></div>
+    <div class="info-item">Analysis &middot; <span>2026-07-28 03:52:04 UTC</span></div>
     <div class="info-item">Token &middot; <span>Unipeg</span></div>
     <div class="info-item">Decimals &middot; <span>18</span> <span style="opacity:.6">(onchain)</span></div>
     
@@ -92,7 +110,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     </div>
     <div class="card glow">
       <div class="stat-value"><span class="badge bg-medium">MEDIUM</span></div>
-      <div class="stat-label">Risk Index &middot; Score <span style="color:#facc15">0.4365</span></div>
+      <div class="stat-label">Risk Index &middot; Score <span style="color:#facc15">0.4364</span></div>
     </div>
   </div>
 
@@ -114,35 +132,36 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card fw">
       <h2>All Non-Pool Holders</h2>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (uPEG)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr><td>1</td><td class="addr">0x9642b23Ed1E01Df1092B92641051881a322F5D4E</td><td>84.1388 uPEG</td><td>13</td><td></td></tr>
-<tr><td>2</td><td class="addr">0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1</td><td>49.6086 uPEG</td><td>3</td><td></td></tr>
-<tr><td>3</td><td class="addr">0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16</td><td>18.0320 uPEG</td><td>3</td><td></td></tr>
-<tr><td>4</td><td class="addr">0x023aB8e20a4682d315Daef4c91DB96bD77934D66</td><td>9.7301 uPEG</td><td>3</td><td></td></tr>
-<tr><td>5</td><td class="addr">0xa673e962941E0F87CE557989cbc7901560d349D6</td><td>7.4135 uPEG</td><td>2</td><td></td></tr>
-<tr><td>6</td><td class="addr">0x662d5DFE4039cC69412654C818aD0F7352C3F5F1</td><td>7.2134 uPEG</td><td>2</td><td></td></tr>
-<tr><td>7</td><td class="addr">0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F</td><td>5.3212 uPEG</td><td>2</td><td></td></tr>
-<tr><td>8</td><td class="addr">0x2102202E25c69F14e0E1a2915CFd5b74Db30594a</td><td>5.0228 uPEG</td><td>1</td><td></td></tr>
-<tr><td>9</td><td class="addr">0xf5eA7526473d5d95c9c956d29A098661F2A46728</td><td>4.9123 uPEG</td><td>3</td><td></td></tr>
-<tr><td>10</td><td class="addr">0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc</td><td>3.1839 uPEG</td><td>1</td><td></td></tr>
-<tr><td>11</td><td class="addr">0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05</td><td>2.7073 uPEG</td><td>2</td><td></td></tr>
-<tr><td>12</td><td class="addr">0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7</td><td>2.1084 uPEG</td><td>2</td><td></td></tr>
-<tr><td>13</td><td class="addr">0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F</td><td>2.0133 uPEG</td><td>2</td><td></td></tr>
-<tr><td>14</td><td class="addr">0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E</td><td>1.8810 uPEG</td><td>1</td><td></td></tr>
-<tr><td>15</td><td class="addr">0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c</td><td>1.3945 uPEG</td><td>23</td><td></td></tr>
-<tr><td>16</td><td class="addr">0x989b473579b938fFC956C6d12A01Ad53C0953329</td><td>1.2832 uPEG</td><td>1</td><td></td></tr>
-<tr><td>17</td><td class="addr">0x5F1C5951c5B1cC112bA9E89B9467edca33063453</td><td>1.2392 uPEG</td><td>5</td><td></td></tr>
-<tr><td>18</td><td class="addr">0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a</td><td>1.1799 uPEG</td><td>1</td><td></td></tr>
-<tr><td>19</td><td class="addr">0x88538812e41b89689f5e23871ef5d5CE2be0F987</td><td>1.1311 uPEG</td><td>22</td><td></td></tr>
-<tr><td>20</td><td class="addr">0x0Ac277B643dA45329D6779C7897688D87ac29A7A</td><td>1.1000 uPEG</td><td>1</td><td></td></tr></tbody></table></div>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>Balance (uPEG)</th><th>Tx Count</th><th></th></tr></thead><tbody><tr class="holder-row" onclick="togglePortfolio('0x9642b23Ed1E01Df1092B92641051881a322F5D4E')" data-owner="0x9642b23Ed1E01Df1092B92641051881a322F5D4E"><td>1</td><td class="addr">0x9642...5D4E</td><td><span class="badge-eoa">eoa</span></td><td><span class="dex-muted">—</span></td><td>96.9124 uPEG</td><td>13</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x9642b23Ed1E01Df1092B92641051881a322F5D4E" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1')" data-owner="0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1"><td>2</td><td class="addr">0x4Ff1...09A1</td><td><span class="badge-contract">contract</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>47.5625 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16')" data-owner="0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16"><td>3</td><td class="addr">0x7b6a...2D16</td><td><span class="badge-contract">contract</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>20.0120 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xa673e962941E0F87CE557989cbc7901560d349D6')" data-owner="0xa673e962941E0F87CE557989cbc7901560d349D6"><td>4</td><td class="addr">0xa673...49D6</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>7.4135 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xa673e962941E0F87CE557989cbc7901560d349D6" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x662d5DFE4039cC69412654C818aD0F7352C3F5F1')" data-owner="0x662d5DFE4039cC69412654C818aD0F7352C3F5F1"><td>5</td><td class="addr">0x662d...F5F1</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>6.0134 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x662d5DFE4039cC69412654C818aD0F7352C3F5F1" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x2102202E25c69F14e0E1a2915CFd5b74Db30594a')" data-owner="0x2102202E25c69F14e0E1a2915CFd5b74Db30594a"><td>6</td><td class="addr">0x2102...594a</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>5.0228 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x2102202E25c69F14e0E1a2915CFd5b74Db30594a" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xf5eA7526473d5d95c9c956d29A098661F2A46728')" data-owner="0xf5eA7526473d5d95c9c956d29A098661F2A46728"><td>7</td><td class="addr">0xf5eA...6728</td><td><span class="badge-contract">contract</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>4.9123 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xf5eA7526473d5d95c9c956d29A098661F2A46728" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x88538812e41b89689f5e23871ef5d5CE2be0F987')" data-owner="0x88538812e41b89689f5e23871ef5d5CE2be0F987"><td>8</td><td class="addr">0x8853...F987</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>3.6271 uPEG</td><td>22</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x88538812e41b89689f5e23871ef5d5CE2be0F987" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc')" data-owner="0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc"><td>9</td><td class="addr">0xae5b...2eFc</td><td><span class="badge-eoa">eoa</span></td><td><span class="dex-muted">—</span></td><td>3.1839 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05')" data-owner="0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05"><td>10</td><td class="addr">0x88a6...4D05</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>2.7073 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7')" data-owner="0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7"><td>11</td><td class="addr">0x1bfF...17B7</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>2.1084 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F')" data-owner="0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F"><td>12</td><td class="addr">0x8941...192F</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>2.0133 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E')" data-owner="0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E"><td>13</td><td class="addr">0xfA9b...567E</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="LP+Swap">Uniswap</span></td><td>1.8810 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c')" data-owner="0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c"><td>14</td><td class="addr">0xD730...210c</td><td><span class="badge-contract">contract</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>1.3945 uPEG</td><td>23</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x989b473579b938fFC956C6d12A01Ad53C0953329')" data-owner="0x989b473579b938fFC956C6d12A01Ad53C0953329"><td>15</td><td class="addr">0x989b...3329</td><td><span class="badge-contract">contract</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>1.2832 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x989b473579b938fFC956C6d12A01Ad53C0953329" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a')" data-owner="0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a"><td>16</td><td class="addr">0x7D92...Be5a</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>1.1799 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x3E803Afe748E911BB6FC0317D304555B65541eC0')" data-owner="0x3E803Afe748E911BB6FC0317D304555B65541eC0"><td>17</td><td class="addr">0x3E80...1eC0</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>1.1786 uPEG</td><td>5</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x3E803Afe748E911BB6FC0317D304555B65541eC0" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x0Ac277B643dA45329D6779C7897688D87ac29A7A')" data-owner="0x0Ac277B643dA45329D6779C7897688D87ac29A7A"><td>18</td><td class="addr">0x0Ac2...9A7A</td><td><span class="badge-contract">contract</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>1.1000 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x0Ac277B643dA45329D6779C7897688D87ac29A7A" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x617e24fcdF3e283Cf374E950918ecB960253FFB2')" data-owner="0x617e24fcdF3e283Cf374E950918ecB960253FFB2"><td>19</td><td class="addr">0x617e...FFB2</td><td><span class="badge-eoa">eoa</span></td><td><span class="badge-uniswap" title="Swap">Uniswap</span></td><td>1.0648 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x617e24fcdF3e283Cf374E950918ecB960253FFB2" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x95974B05b72921B6622731e1EDBb43eF398E0fCF')" data-owner="0x95974B05b72921B6622731e1EDBb43eF398E0fCF"><td>20</td><td class="addr">0x9597...0fCF</td><td><span class="badge-eoa">eoa</span></td><td><span class="dex-muted">—</span></td><td>1.0000 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x95974B05b72921B6622731e1EDBb43eF398E0fCF" style="display:none"><td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr></tbody></table></div>
     </div>
   </div>
 
   <div class="grid">
     <div class="card fw">
       <h2>Pool-Labeled Addresses</h2>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody><tr><td class="addr">0x000000000004444c5dc75cB358380D2e3dE08A90</td><td>UNISWAP V4</td><td>1.03K uPEG</td><td><span class="plabel">POOL</span></td></tr>
-<tr><td class="addr">0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775</td><td>UNISWAP V3</td><td>4.8987 uPEG</td><td><span class="plabel">POOL</span></td></tr>
-<tr><td class="addr">0x21ff5cf76f562c6fb3871b59133a9E214eBc0078</td><td>UNISWAP V2</td><td>0.0278 uPEG</td><td><span class="plabel">POOL</span></td></tr>
+      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody><tr><td class="addr">0x000000000004444c5dc75cB358380D2e3dE08A90</td><td>UNISWAP V4</td><td>1.12K uPEG</td><td><span class="plabel">POOL</span></td></tr>
+<tr><td class="addr">0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775</td><td>UNISWAP V3</td><td>5.0113 uPEG</td><td><span class="plabel">POOL</span></td></tr>
+<tr><td class="addr">0x21ff5cf76f562c6fb3871b59133a9E214eBc0078</td><td>UNISWAP V2</td><td>0.0326 uPEG</td><td><span class="plabel">POOL</span></td></tr>
 <tr><td class="addr">0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890</td><td>UNISWAP V3</td><td>0.0037 uPEG</td><td><span class="plabel">POOL</span></td></tr>
 <tr><td class="addr">0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230</td><td>UNISWAP V3</td><td>0.0000 uPEG</td><td><span class="plabel">POOL</span></td></tr></tbody></table></div>
     </div>
@@ -179,47 +198,62 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 const topH = [
   {
     "address": "0x9642b23Ed1E01Df1092B92641051881a322F5D4E",
-    "balance_raw": "84138791367587441320",
-    "balance_decimal": 84.138791,
+    "balance_raw": "96912431655319732976",
+    "balance_decimal": 96.912432,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 13,
     "first_seen_block": 25003791,
     "last_seen_block": 25003953,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   },
   {
     "address": "0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1",
-    "balance_raw": "49608607601625512218",
-    "balance_decimal": 49.608608,
+    "balance_raw": "47562507601625512218",
+    "balance_decimal": 47.562508,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": true,
+    "address_type": "contract",
     "tx_count": 3,
     "first_seen_block": 25003700,
     "last_seen_block": 25003886,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16",
-    "balance_raw": "18031990068678733834",
-    "balance_decimal": 18.03199,
+    "balance_raw": "20011990068678733834",
+    "balance_decimal": 20.01199,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": true,
+    "address_type": "contract",
     "tx_count": 3,
     "first_seen_block": 25003609,
     "last_seen_block": 25003764,
-    "query_timestamp": 1785072370
-  },
-  {
-    "address": "0x023aB8e20a4682d315Daef4c91DB96bD77934D66",
-    "balance_raw": "9730078380748490655",
-    "balance_decimal": 9.730078,
-    "is_pool": false,
-    "pool_label": "",
-    "tx_count": 3,
-    "first_seen_block": 25003688,
-    "last_seen_block": 25003706,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0xa673e962941E0F87CE557989cbc7901560d349D6",
@@ -227,32 +261,43 @@ const topH = [
     "balance_decimal": 7.413463,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 2,
     "first_seen_block": 25003850,
     "last_seen_block": 25003867,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x662d5DFE4039cC69412654C818aD0F7352C3F5F1",
-    "balance_raw": "7213427196639828038",
-    "balance_decimal": 7.213427,
+    "balance_raw": "6013427196639828038",
+    "balance_decimal": 6.013427,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 2,
     "first_seen_block": 25003985,
     "last_seen_block": 25003985,
-    "query_timestamp": 1785072370
-  },
-  {
-    "address": "0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F",
-    "balance_raw": "5321169266154250219",
-    "balance_decimal": 5.321169,
-    "is_pool": false,
-    "pool_label": "",
-    "tx_count": 2,
-    "first_seen_block": 25003793,
-    "last_seen_block": 25003896,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x2102202E25c69F14e0E1a2915CFd5b74Db30594a",
@@ -260,10 +305,21 @@ const topH = [
     "balance_decimal": 5.022836,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 1,
     "first_seen_block": 25003788,
     "last_seen_block": 25003788,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0xf5eA7526473d5d95c9c956d29A098661F2A46728",
@@ -271,10 +327,43 @@ const topH = [
     "balance_decimal": 4.91226,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": true,
+    "address_type": "contract",
     "tx_count": 3,
     "first_seen_block": 25003938,
     "last_seen_block": 25003938,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
+  },
+  {
+    "address": "0x88538812e41b89689f5e23871ef5d5CE2be0F987",
+    "balance_raw": "3627098929707456185",
+    "balance_decimal": 3.627099,
+    "is_pool": false,
+    "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
+    "tx_count": 22,
+    "first_seen_block": 25003626,
+    "last_seen_block": 25003844,
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc",
@@ -282,10 +371,14 @@ const topH = [
     "balance_decimal": 3.183932,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 1,
     "first_seen_block": 25003994,
     "last_seen_block": 25003994,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   },
   {
     "address": "0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05",
@@ -293,10 +386,21 @@ const topH = [
     "balance_decimal": 2.707256,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 2,
     "first_seen_block": 25003868,
     "last_seen_block": 25003868,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7",
@@ -304,10 +408,21 @@ const topH = [
     "balance_decimal": 2.108355,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 2,
     "first_seen_block": 25003596,
     "last_seen_block": 25003708,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F",
@@ -315,10 +430,21 @@ const topH = [
     "balance_decimal": 2.013343,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 2,
     "first_seen_block": 25003706,
     "last_seen_block": 25003706,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E",
@@ -326,10 +452,21 @@ const topH = [
     "balance_decimal": 1.881,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 1,
     "first_seen_block": 25003974,
     "last_seen_block": 25003974,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": true,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c",
@@ -337,10 +474,21 @@ const topH = [
     "balance_decimal": 1.3945,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": true,
+    "address_type": "contract",
     "tx_count": 23,
     "first_seen_block": 25003808,
     "last_seen_block": 25003842,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x989b473579b938fFC956C6d12A01Ad53C0953329",
@@ -348,21 +496,21 @@ const topH = [
     "balance_decimal": 1.283222,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": true,
+    "address_type": "contract",
     "tx_count": 1,
     "first_seen_block": 25003749,
     "last_seen_block": 25003749,
-    "query_timestamp": 1785072370
-  },
-  {
-    "address": "0x5F1C5951c5B1cC112bA9E89B9467edca33063453",
-    "balance_raw": "1239204968196432560",
-    "balance_decimal": 1.239205,
-    "is_pool": false,
-    "pool_label": "",
-    "tx_count": 5,
-    "first_seen_block": 25003842,
-    "last_seen_block": 25003934,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a",
@@ -370,21 +518,43 @@ const topH = [
     "balance_decimal": 1.179903,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
     "tx_count": 1,
     "first_seen_block": 25003799,
     "last_seen_block": 25003799,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
-    "address": "0x88538812e41b89689f5e23871ef5d5CE2be0F987",
-    "balance_raw": "1131096924184182467",
-    "balance_decimal": 1.131097,
+    "address": "0x3E803Afe748E911BB6FC0317D304555B65541eC0",
+    "balance_raw": "1178614034228252420",
+    "balance_decimal": 1.178614,
     "is_pool": false,
     "pool_label": "",
-    "tx_count": 22,
-    "first_seen_block": 25003626,
-    "last_seen_block": 25003844,
-    "query_timestamp": 1785072370
+    "is_contract": false,
+    "address_type": "eoa",
+    "tx_count": 5,
+    "first_seen_block": 25003846,
+    "last_seen_block": 25003949,
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0x0Ac277B643dA45329D6779C7897688D87ac29A7A",
@@ -392,45 +562,112 @@ const topH = [
     "balance_decimal": 1.099963,
     "is_pool": false,
     "pool_label": "",
+    "is_contract": true,
+    "address_type": "contract",
     "tx_count": 1,
     "first_seen_block": 25003693,
     "last_seen_block": 25003693,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
+  },
+  {
+    "address": "0x617e24fcdF3e283Cf374E950918ecB960253FFB2",
+    "balance_raw": "1064833293536493155",
+    "balance_decimal": 1.064833,
+    "is_pool": false,
+    "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
+    "tx_count": 3,
+    "first_seen_block": 25003874,
+    "last_seen_block": 25003874,
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
+  },
+  {
+    "address": "0x95974B05b72921B6622731e1EDBb43eF398E0fCF",
+    "balance_raw": "1000000000000000000",
+    "balance_decimal": 1.0,
+    "is_pool": false,
+    "pool_label": "",
+    "is_contract": false,
+    "address_type": "eoa",
+    "tx_count": 2,
+    "first_seen_block": 25003807,
+    "last_seen_block": 25003826,
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   }
 ];
 const poolH = [
   {
     "address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
-    "balance_raw": "1032298163266603878642",
-    "balance_decimal": 1032.298163,
+    "balance_raw": "1123973623118824942520",
+    "balance_decimal": 1123.973623,
     "is_pool": true,
     "pool_label": "UNISWAP V4",
+    "is_contract": true,
+    "address_type": "pool",
     "tx_count": 595,
     "first_seen_block": 25003546,
     "last_seen_block": 25003999,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [
+      "uniswap"
+    ],
+    "dex_roles": {
+      "uniswap": {
+        "lp": false,
+        "swap": true
+      }
+    }
   },
   {
     "address": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
-    "balance_raw": "4898693426846611063",
-    "balance_decimal": 4.898693,
+    "balance_raw": "5011337027098247927",
+    "balance_decimal": 5.011337,
     "is_pool": true,
     "pool_label": "UNISWAP V3",
+    "is_contract": true,
+    "address_type": "pool",
     "tx_count": 231,
     "first_seen_block": 25003548,
     "last_seen_block": 25004000,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   },
   {
     "address": "0x21ff5cf76f562c6fb3871b59133a9E214eBc0078",
-    "balance_raw": "27770676945924809",
-    "balance_decimal": 0.027771,
+    "balance_raw": "32587206904057912",
+    "balance_decimal": 0.032587,
     "is_pool": true,
     "pool_label": "UNISWAP V2",
+    "is_contract": true,
+    "address_type": "pool",
     "tx_count": 0,
     "first_seen_block": 25003546,
     "last_seen_block": 25004000,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   },
   {
     "address": "0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890",
@@ -438,10 +675,14 @@ const poolH = [
     "balance_decimal": 0.003686,
     "is_pool": true,
     "pool_label": "UNISWAP V3",
+    "is_contract": true,
+    "address_type": "pool",
     "tx_count": 0,
     "first_seen_block": 25003546,
     "last_seen_block": 25004000,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   },
   {
     "address": "0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230",
@@ -449,10 +690,14 @@ const poolH = [
     "balance_decimal": 0.0,
     "is_pool": true,
     "pool_label": "UNISWAP V3",
+    "is_contract": true,
+    "address_type": "pool",
     "tx_count": 0,
     "first_seen_block": 25003546,
     "last_seen_block": 25004000,
-    "query_timestamp": 1785072370
+    "query_timestamp": 1785210724,
+    "dex_protocols": [],
+    "dex_roles": {}
   }
 ];
 const poolI = [
@@ -463,8 +708,8 @@ const poolI = [
     "token0": "0x44b28991B167582F18BA0259e0173176ca125505",
     "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "fee": null,
-    "balance_raw": "27770676945924809",
-    "balance_decimal": 0.027771,
+    "balance_raw": "32587206904057912",
+    "balance_decimal": 0.032587,
     "in_holders_list": true
   },
   {
@@ -474,8 +719,8 @@ const poolI = [
     "token0": "0x44b28991B167582F18BA0259e0173176ca125505",
     "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "fee": 10000,
-    "balance_raw": "4898693426846611063",
-    "balance_decimal": 4.898693,
+    "balance_raw": "5011337027098247927",
+    "balance_decimal": 5.011337,
     "in_holders_list": true
   },
   {
@@ -4904,6 +5149,517 @@ const tvlD = [
     "quote_symbol": "N/A"
   }
 ];
+const portfolioData = {
+  "0xfa9bacd043ecf8c1cc07cfbaf760135aee05567e": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 2.2114,
+      "liquidity": "2395004636705961105",
+      "token0_amount": "1671710752001572510",
+      "token1_amount": "1186997528884953180",
+      "tick_lower": -16600,
+      "tick_upper": 19600,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0xb3aa9923489bc2bfec323bf05346acd4afbc92a0": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0xB3aA9923489Bc2BFEc323Bf05346AcD4afbc92A0",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 31.3464,
+      "liquidity": "75948947826472357745",
+      "token0_amount": "16798224632811551615",
+      "token1_amount": "22813779813261922876",
+      "tick_lower": -9200,
+      "tick_upper": 3200,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0x9297dc79c071be4233011fd8b8939bec77f6e938": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0x9297DC79C071Be4233011fd8b8939BEc77F6e938",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 0.055,
+      "liquidity": "144257445942236549",
+      "token0_amount": "36726432635746688",
+      "token1_amount": "33755142115854715",
+      "tick_lower": -7200,
+      "tick_upper": 4000,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0x10c5bc67bd88aeea42f9fbfd860a2b735333d675": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0x10c5BC67bd88AEea42F9fBfD860a2b735333D675",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 0.0069,
+      "liquidity": "41014287037032302",
+      "token0_amount": "3415592809655260",
+      "token1_amount": "5297144114571281",
+      "tick_lower": -4400,
+      "tick_upper": 200,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0xfe8e9273ab86b12c0102202f3daa073eb14a509f": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 5.7839,
+      "liquidity": "28553696361391228374",
+      "token0_amount": "23528909780133272",
+      "token1_amount": "6879560509342021601",
+      "tick_lower": -7400,
+      "tick_upper": -1400,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0x0504b6c68792c5e2e6aa75779dd09ce426a39ef9": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0x0504B6c68792c5E2E6aA75779DD09CE426a39ef9",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 1.6681,
+      "liquidity": "16501867261038245795",
+      "token0_amount": "0",
+      "token1_amount": "1989999999999999999",
+      "tick_lower": -4400,
+      "tick_upper": -1600,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0x9a5a354519902937dce80e8524c712e22b5a665c": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0x9a5a354519902937dcE80e8524c712E22B5a665C",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 7.5442,
+      "liquidity": "39546870500359946085",
+      "token0_amount": "0",
+      "token1_amount": "8999999999999999999",
+      "tick_lower": -8600,
+      "tick_upper": -2600,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0x115d731c7d556448eb4dc8a1aaa36a3d510443e0": [
+    {
+      "pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "owner": "0x115D731C7d556448EB4Dc8a1Aaa36A3D510443e0",
+      "protocol": "uniswap",
+      "version": "v3",
+      "share_pct": 1.1213,
+      "liquidity": "1996177363125103081",
+      "token0_amount": "540566478490777454",
+      "token1_amount": "868493999033431060",
+      "tick_lower": -14000,
+      "tick_upper": 4400,
+      "resolution_method": "v3_tick_amounts_at_to_block"
+    }
+  ],
+  "0x190fb3b4118e5633820184fe9217049a88f07fcf": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x190fb3B4118e5633820184fE9217049A88f07FCF",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "543870898540558",
+      "token0_amount": "0",
+      "token1_amount": "5999999999",
+      "tick_lower": -208800,
+      "tick_upper": -202400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x59ffbdf6beae9e6be68ec10f31ed48b98ef67c25": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x59fFBDf6BEae9E6bE68EC10f31eD48B98eF67C25",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "169294599143065",
+      "token0_amount": "0",
+      "token1_amount": "2061848741",
+      "tick_lower": -209600,
+      "tick_upper": -202400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x711845b607f9cf587e784dca8f0ff2cb3ee9ce18": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x711845b607F9Cf587E784dca8f0FF2cB3eE9cE18",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "341772164553191",
+      "token0_amount": "0",
+      "token1_amount": "4999999999",
+      "tick_lower": -210800,
+      "tick_upper": -202000,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x920a25ab35b733285efc067a5eb72639c1a3cd42": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x920a25Ab35b733285EFC067A5EB72639c1a3cD42",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "817243857646609",
+      "token0_amount": "0",
+      "token1_amount": "9999999999",
+      "tick_lower": -210800,
+      "tick_upper": -203200,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0xcf392f62151fe078a5c26c6fd7e6bc5f15d9735a": [
+    {
+      "pool": "0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433",
+      "owner": "0xcf392F62151fe078A5C26c6fd7E6bC5F15D9735A",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 2.6383,
+      "liquidity": "1593205873061982599",
+      "token0_amount": "185868844885476194",
+      "token1_amount": "94072636949729194",
+      "tick_lower": 190,
+      "tick_upper": 3990,
+      "resolution_method": "v4_active_liquidity_share_at_to_block"
+    }
+  ],
+  "0x8484c5501a6b5d19b5bc2e14c9e486a7b50ec1f2": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x8484c5501a6B5D19b5BC2e14C9E486A7B50eC1f2",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "53892969496183",
+      "token0_amount": "0",
+      "token1_amount": "379752274",
+      "tick_lower": -204800,
+      "tick_upper": -201200,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x08a791db7805a6655de229c475d42864c56f9d2b": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "130215777642389",
+      "token0_amount": "0",
+      "token1_amount": "110294116",
+      "tick_lower": -201600,
+      "tick_upper": -201200,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "265692357216477",
+      "token0_amount": "0",
+      "token1_amount": "220588234",
+      "tick_lower": -202000,
+      "tick_upper": -201600,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "406589141124034",
+      "token0_amount": "0",
+      "token1_amount": "330882351",
+      "tick_lower": -202400,
+      "tick_upper": -202000,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "553069829955937",
+      "token0_amount": "0",
+      "token1_amount": "441176469",
+      "tick_lower": -202800,
+      "tick_upper": -202400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "705302522445387",
+      "token0_amount": "0",
+      "token1_amount": "551470587",
+      "tick_lower": -203200,
+      "tick_upper": -202800,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "863459830042069",
+      "token0_amount": "0",
+      "token1_amount": "661764704",
+      "tick_lower": -203600,
+      "tick_upper": -203200,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "1027718994627465",
+      "token0_amount": "0",
+      "token1_amount": "772058822",
+      "tick_lower": -204000,
+      "tick_upper": -203600,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "1198261997244884",
+      "token0_amount": "0",
+      "token1_amount": "882352940",
+      "tick_lower": -204400,
+      "tick_upper": -204000,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "1375275681153308",
+      "token0_amount": "0",
+      "token1_amount": "992647057",
+      "tick_lower": -204800,
+      "tick_upper": -204400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "1558951878244814",
+      "token0_amount": "0",
+      "token1_amount": "1102941175",
+      "tick_lower": -205200,
+      "tick_upper": -204800,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "1749487525949871",
+      "token0_amount": "0",
+      "token1_amount": "1213235293",
+      "tick_lower": -205600,
+      "tick_upper": -205200,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "1947084799381468",
+      "token0_amount": "0",
+      "token1_amount": "1323529410",
+      "tick_lower": -206000,
+      "tick_upper": -205600,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "2151951247080743",
+      "token0_amount": "0",
+      "token1_amount": "1433823528",
+      "tick_lower": -206400,
+      "tick_upper": -206000,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "2364299916692829",
+      "token0_amount": "0",
+      "token1_amount": "1544117646",
+      "tick_lower": -206800,
+      "tick_upper": -206400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "2584349496854966",
+      "token0_amount": "0",
+      "token1_amount": "1654411763",
+      "tick_lower": -207200,
+      "tick_upper": -206800,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x08a791db7805A6655DE229c475d42864C56f9d2b",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "2812324475689773",
+      "token0_amount": "0",
+      "token1_amount": "1764705889",
+      "tick_lower": -207600,
+      "tick_upper": -207200,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x9733dd7281f85bf60e08ecd1dc952a46cca9da15": [
+    {
+      "pool": "0x294e13af91517ae55dce220995256ce91354c706e149c42ece7b2e832c6aff50",
+      "owner": "0x9733dd7281f85Bf60E08eCd1Dc952a46CCA9Da15",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 100.0,
+      "liquidity": "1899130351473735",
+      "token0_amount": "856308139854178632",
+      "token1_amount": "8241767677",
+      "tick_lower": -202288,
+      "tick_upper": -199844,
+      "resolution_method": "v4_active_liquidity_share_at_to_block"
+    }
+  ],
+  "0x65e7e4b9932e0397ac0655d7953178ba24c4c69e": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x65e7E4B9932E0397AC0655D7953178Ba24c4c69e",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "584292054736059",
+      "token0_amount": "0",
+      "token1_amount": "1999999999",
+      "tick_lower": -202000,
+      "tick_upper": -200400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x89b585df208c727829232d892a50806c3a20a4e6": [
+    {
+      "pool": "0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433",
+      "owner": "0x89B585dF208c727829232d892A50806C3A20a4E6",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "106084137394240409139",
+      "token0_amount": "18542951160423890428",
+      "token1_amount": "0",
+      "tick_lower": 1520,
+      "tick_upper": 5700,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    },
+    {
+      "pool": "0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433",
+      "owner": "0x89B585dF208c727829232d892A50806C3A20a4E6",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "72136432124395715670",
+      "token0_amount": "8963839873485231450",
+      "token1_amount": "0",
+      "tick_lower": 1330,
+      "tick_upper": 4180,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0xfd07345e7433ba954ddfea2e2a0bf8c860178aa2": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0xFD07345e7433bA954DDfEa2e2A0Bf8c860178aa2",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "397264220151552",
+      "token0_amount": "0",
+      "token1_amount": "1999999999",
+      "tick_lower": -202800,
+      "tick_upper": -200400,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ],
+  "0x76450fe69fbf5efe18e014fd19d15202d1b238d0": [
+    {
+      "pool": "0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21",
+      "owner": "0x76450FE69FbF5EfE18E014Fd19D15202d1B238d0",
+      "protocol": "uniswap",
+      "version": "v4",
+      "share_pct": 0.0,
+      "liquidity": "948556357823341",
+      "token0_amount": "0",
+      "token1_amount": "19999999999",
+      "tick_lower": -214000,
+      "tick_upper": -200800,
+      "resolution_method": "v4_tick_amounts_out_of_range_at_to_block"
+    }
+  ]
+};
+const tokenSymbol = "uPEG";
 
 (function(){
   function tc(id,cfg){ new Chart(document.getElementById(id),cfg); }
@@ -4921,7 +5677,7 @@ const tvlD = [
     type:'doughnut',
     data:{
       labels:['Main Pool Share','Other Pools'],
-      datasets:[{data:[99.362,0.6380000000000052],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
+      datasets:[{data:[99.28139999999999,0.7186000000000092],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
   });
@@ -4938,6 +5694,51 @@ const tvlD = [
 const tvlValues = [1.0864211566276838, 0.046636919893549955, 0.15101236172275273, 0.000153045034387706, 0.8708116631791758, 0.8407485295942139, 0.4225031685076035, 0.013865035697039988, 0.11085479322661, 0.0, 0.0, 0.0, 0.0, 0.1377133912302263, 0.13822450729682884, 0.3133567711379592, 0.4158159026772912, 0.260822817151842, 0.13538391350995976, 0.04574840816228052, 0.20743200476667034, 0.02376879793689508, 0.1248252924928547, 0.06748287871312221, 0.11868725683140247, 0.03166510421737436, 1.1800327168106468, 0.0, 0.0, 0.07899552380580434, 0.056743902074731595, 0.0, 0.0, 0.2408703689319643, 0.09982336283966928, 0.09982336283966928, 0.2, 0.08243876288492936, 0.026892168724587558, 0.6497282871521542, 0.006358697193841763, 0.026684548017131143, 1.1536156543750622, 0.001316052837043924, 0.37889612774146203, 0.03649351148660153, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01309504728709364, 0.25, 0.0, 0.301273064396676, 0.3601, 0.33314929381722286, 0.02911142211231016, 0.02911142211231016, 0.014, 0.13, 0.12, 0.34, 0.26, 0.5108375831350258, 0.2515757926951156, 0.997, 0.08066962704921983, 0.09941199637661219, 0.5753405988663924, 0.25, 0.09809181831149637, 0.4068618742319759, 0.0174133264857433, 0.19545688975916564, 0.31546167983059636, 0.44007192692523006, 0.0380041723786395, 6.111409471288526, 0.21111947744787002, 0.3941, 1.1234561032007127, 1.230265971775551, 0.495, 0.9491026185535256, 0.8034719128920093, 0.2838393541417895, 0.08511319076298243, 0.25320594432636095, 0.0, 0.0, 0.3042257894823731, 0.7590270911718063, 0.7636280233860158, 0.09224719019258922, 0.2, 0.010150776422552849, 0.010150776422552849, 0.12943992555234785, 0.014625521392925068, 1.8406028085366668, 0.4999999923556, 1.1700600523778457, 0.23509999999999998, 0.5000014112146164, 0.0, 0.0, 0.4027974854626719, 0.5116944939312573, 0.30849118411694415, 0.07973905320292554, 0.5075565153225878, 0.15005, 0.3532283906996146, 0.05, 1.1140012009622073, 0.99, 0.005229171268391703, 4.060754821362663, 0.5, 0.17209827900000002, 0.016375215261870357, 0.5246324096658253, 0.05, 0.24295008430961182, 0.07, 0.33984545804748456, 0.024148652778680328, 0.09127507652096765, 0.5198, 0.05540695962145101, 0.73, 0.0, 0.0, 0.7, 0.186740337046413, 0.001995878323856906, 0.061537660507868165, 0.13385380641656888, 0.46448099168037704, 0.0, 0.0, 0.0, 0.9273761571909126, 0.9273761571909126, 1.1964, 0.8779675024713222, 0.0, 0.0, 2.2803601355686514, 0.4336717003556614, 1.1758840546834128, 0.5017137280406362, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.23798529213214026, 0.395094159642779, 0.18, 0.1363369146235822, 0.028040935518243416, 0.019378398835617837, 0.003366281316986585, 0.35, 0.10216178496738416, 2.207030536838809, 0.5226533889417411, 0.229, 0.16447817733351516, 0.20632350484749587, 0.2, 0.3505543872690822, 1.008807757572435, 0.028402804874313344, 0.495, 0.2829327019189333, 0.152577518404085, 0.28038137927655965, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.04080712366809005, 0.6321358893894181, 0.530961, 0.14387379118658747, 0.2001, 0.13452044936362298, 0.37222740567025536, 0.0503, 0.058895389635226794, 0.24, 0.7704909822509252, 0.7704909822509252, 0.06114543293022872, 0.24744555, 0.6507109502536874, 0.10069340706407884, 0.807927639655405, 0.807927639655405, 0.11127169534966316, 0.08933981037067755, 0.432, 0.230364, 0.19916568453214287, 0.2250421516944478, 0.22423284005928537, 0.018039550270092127, 0.9090686379064757, 0.09153962571881101, 0.0, 0.0, 0.0113213020080363, 0.0, 0.0, 1.0797, 0.04582637434398928, 0.16321556581020014, 0.647708168087724, 0.10156587657395111, 0.41711869929391543, 0.179991, 0.004927282729375896, 0.02021790877561985, 0.2305133606912636, 0.0, 0.0, 0.005852518741187384, 0.3713460946900323, 1.4, 0.5134810729438708, 0.06394373671684707, 0.0213835187953803, 0.1164151246605292, 0.39997, 0.10257582722663437, 0.43944256523703845, 0.47328471998290406, 0.0, 0.0, 2.0247239120202867, 0.0019, 0.10316091420835215, 0.8484177846239983, 0.10221552684824912, 0.12479246920842323, 0.6363680454944004, 1.0, 0.12973169848525304, 0.26682300835197514, 0.1502481363841021, 0.7388206268718832, 0.13590507214327832, 0.004669441116294043, 0.35088764005823986, 0.003668144453866357, 0.9980163940818328, 0.0, 0.2912280938830634, 0.3720411189772172, 0.3983496169164312, 0.8065333530173562, 1.032187382703979, 1.032187382703979, 0.11527035104035539, 0.4947769121178003, 0.2296332587746611, 0.35682201641619854, 0.05216490675217797, 0.0613, 0.04, 0.04];
 tc('c4',{type:'line',data:{labels:tvlLabels,datasets:[{label:"TVL (uPEG)",data:tvlValues,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},scales:{y:{beginAtZero:true,ticks:{color:'#64748b',callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}})
 })();
+
+function togglePortfolio(addr) {
+  var row = document.getElementById('portfolio-' + addr);
+  if (!row) return;
+  var holderRow = row.previousElementSibling;
+  var icon = holderRow ? holderRow.querySelector('.expand-icon') : null;
+  var open = row.style.display !== 'none';
+  if (open) {
+    row.style.display = 'none';
+    if (icon) icon.textContent = '+';
+    return;
+  }
+  row.style.display = '';
+  if (icon) icon.textContent = '-';
+  var inner = row.querySelector('.portfolio-inner');
+  if (!inner) return;
+  var key = (addr || '').toLowerCase();
+  var positions = (portfolioData && portfolioData[key]) || [];
+  if (!positions.length) {
+    inner.innerHTML = '<div style="color:#64748b;padding:8px 0">No LP positions with share &gt; 0 for this address in the analysis window.</div>';
+    return;
+  }
+  var html = '<table class="portfolio-table"><thead><tr>'
+    + '<th>Protocol</th><th>Pool</th><th>Share %</th><th>Liquidity</th><th>Token0</th><th>Token1</th><th>Ticks</th>'
+    + '</tr></thead><tbody>';
+  for (var i = 0; i < positions.length; i++) {
+    var p = positions[i];
+    var pool = (p.pool || '');
+    var poolShort = pool.length > 14 ? pool.slice(0, 8) + '...' + pool.slice(-4) : pool;
+    var ticks = (p.tick_lower != null && p.tick_upper != null)
+      ? (p.tick_lower + ' / ' + p.tick_upper) : '-';
+    var proto = ((p.protocol || '') + ' ' + (p.version || '')).trim() || '-';
+    html += '<tr>'
+      + '<td>' + proto + '</td>'
+      + '<td class="addr" title="' + pool + '">' + poolShort + '</td>'
+      + '<td>' + (p.share_pct != null ? p.share_pct : '-') + '</td>'
+      + '<td>' + (p.liquidity || '-') + '</td>'
+      + '<td>' + (p.token0_amount || '-') + '</td>'
+      + '<td>' + (p.token1_amount || '-') + '</td>'
+      + '<td>' + ticks + '</td>'
+      + '</tr>';
+  }
+  html += '</tbody></table>';
+  inner.innerHTML = html;
+}
 
 </script>
 </body>

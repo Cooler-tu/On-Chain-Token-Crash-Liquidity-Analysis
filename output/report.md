@@ -6,13 +6,13 @@
 - **Chain:** Ethereum (Chain ID: 1)
 - **Analysis Window:** Block 25003546 to 25004000
 - **Incident Block:** Not specified
-- **Report Generated:** 2026-07-26 13:26:03 UTC
+- **Report Generated:** 2026-07-28 03:51:57 UTC
 
 ### Risk Score
 
 | Metric | Value |
 |--------|-------|
-| **Final Risk Score** | **0.4365 / 1.00** |
+| **Final Risk Score** | **0.4364 / 1.00** |
 | **Risk Level** | **MEDIUM** |
 | Evidence Confidence | 100.00% |
 | Visual | `████████░░░░░░░░░░░░` |
@@ -97,25 +97,25 @@
 | [0xe9f9840b...05B4C5](https://etherscan.io/address/0xe9f9840b805a1C2807C1c0E07EB3d19AbF05B4C5) | Frequent Token Sender | frequent_interactor | 50% |
 | [0xF24be340...1F57F0](https://etherscan.io/address/0xF24be3404B723e35d9EbC60977B646d2581F57F0) | Frequent Token Sender | frequent_interactor | 50% |
 | [0x8F10B468...13f996](https://etherscan.io/address/0x8F10B468b06c6FD214B65F87778827F7D113f996) | Frequent Token Sender | frequent_interactor | 50% |
-| [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
 | [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
 | [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
+| [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
 
 
 ## TVL & Price History
 
 | Metric | Value |
 |--------|-------|
-| Total TVL (in token units) | 9.8603 |
+| Total TVL (in token units) | 10.0952 |
 | Active Pools | 0 |
 | Main Pool | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) |
-| Main Pool Share | 99.36% |
+| Main Pool Share | 99.28% |
 
 
 ## Liquidity Events
 
-- **Liquidity Additions:** 99 events
-- **Liquidity Removals:** 85 events
+- **Liquidity Additions:** 148 events
+- **Liquidity Removals:** 130 events
 
 ### Significant Liquidity Removals
 
@@ -134,8 +134,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total LP Positions | 33 |
-| Unique LPs | 17 |
+| Total LP Positions | 36 |
+| Unique LPs | 20 |
 | Top LP Share | 100.00% |
 | Top 5 LP Share | 147.31% |
 
@@ -159,9 +159,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Pre-Crash Withdrawals | 85 |
+| Pre-Crash Withdrawals | 130 |
 | Total Removed (token0) | 83.7553 |
-| Pre-Event TVL | 9.8603 |
+| Pre-Event TVL | 10.0952 |
 | Withdrawal Severity | 100.00% of pre-event TVL |
 
 
@@ -169,9 +169,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Events | 2078 |
-| Swaps | 215 |
-| Liquidity Events | 507 |
+| Total Events | 2626 |
+| Swaps | 536 |
+| Liquidity Events | 601 |
 | Block Range | 25003546 → 25004000 |
 | Time Range | 2026-05-02 00:00:11 UTC → 2026-05-02 01:31:11 UTC |
 
@@ -192,22 +192,17 @@ The following migration candidates were found:
 
 | Block | Timestamp | Event | Pool | Actor | Detail |
 |-------|-----------|-------|------|-------|--------|
-| 25003992 | 2026-05-02 01:29:35 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0xC10eE903...910fb4](https://etherscan.io/address/0xC10eE9031F2a0B84766A86B55a8D90F357910fb4) | Value: 651711899.48 |
-| 25003992 | 2026-05-02 01:29:35 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0xC10eE903...910fb4](https://etherscan.io/address/0xC10eE9031F2a0B84766A86B55a8D90F357910fb4) | Value: 659215301702.00 |
-| 25003992 | 2026-05-02 01:29:35 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x1231DEB6...6F4EaE](https://etherscan.io/address/0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE) | Value: 659215301702.00 |
-| 25003992 | 2026-05-02 01:29:35 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Value: 229633258774.66 |
-| 25003992 | 2026-05-02 01:29:35 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x15E2CBb7...9C5F16](https://etherscan.io/address/0x15E2CBb7Df22d15A40C7Bf6F5A3544FCd09C5F16) | Value: 229633258774.66 |
-| 25003992 | 2026-05-02 01:29:35 UTC | SWAP (Swap) | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | [0x15E2CBb7...9C5F16](https://etherscan.io/address/0x15E2CBb7Df22d15A40C7Bf6F5A3544FCd09C5F16) | Amount0: 229633258774.66 |
-| 25003993 | 2026-05-02 01:29:47 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Value: 343386498090.26 |
-| 25003993 | 2026-05-02 01:29:47 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x9A981cE6...bA776F](https://etherscan.io/address/0x9A981cE637f2638Ee2B7e4083Eb287a697bA776F) | Value: 1.0000 |
-| 25003994 | 2026-05-02 01:29:59 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0xae5b9D2b...aa2eFc](https://etherscan.io/address/0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc) | Value: 1.0000 |
+| 25003994 | 2026-05-02 01:29:59 UTC | LIQUIDITY_REMOVE (ModifyLiquidity) | [0x2a1c3953...59cd21](https://etherscan.io/address/0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21) | [0xbD216513...64ee9e](https://etherscan.io/address/0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e) | Δ: 0 / 0 |
 | 25003994 | 2026-05-02 01:29:59 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x3F6bF69E...E2BB67](https://etherscan.io/address/0x3F6bF69Ef37E6C28D767ceEEe233c3679FE2BB67) | Value: 50000000000.00 |
 | 25003994 | 2026-05-02 01:29:59 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0xb300000b...c7028d](https://etherscan.io/address/0xb300000b72DEAEb607a12d5f54773D1C19c7028d) | Value: 50000000000.00 |
+| 25003994 | 2026-05-02 01:29:59 UTC | SWAP (Swap) | [0xc28dd8d8...b54433](https://etherscan.io/address/0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433) | [0x6A93eF5f...97006c](https://etherscan.io/address/0x6A93eF5f666eebE84bA130F8404AD56ee197006c) | Amount0: 42874318482.70 |
 | 25003994 | 2026-05-02 01:29:59 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x6A93eF5f...97006c](https://etherscan.io/address/0x6A93eF5f666eebE84bA130F8404AD56ee197006c) | Value: 50000000000.00 |
+| 25003995 | 2026-05-02 01:30:11 UTC | SWAP (Swap) | [0xc28dd8d8...b54433](https://etherscan.io/address/0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433) | [0x6A93eF5f...97006c](https://etherscan.io/address/0x6A93eF5f666eebE84bA130F8404AD56ee197006c) | Amount0: 119400000000.00 |
 | 25003995 | 2026-05-02 01:30:11 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Value: 136428132537.07 |
 | 25003995 | 2026-05-02 01:30:11 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x67D66FBe...7B7881](https://etherscan.io/address/0x67D66FBe8710cb32a7cE055D271877b3A57B7881) | Value: 1.0000 |
 | 25003996 | 2026-05-02 01:30:23 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x750E7049...1869a4](https://etherscan.io/address/0x750E70496C9EBe5a13551F0147E02206861869a4) | Value: 356822016416.20 |
 | 25003996 | 2026-05-02 01:30:23 UTC | SWAP (Swap) | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | [0x4C82D1fB...0a2cCA](https://etherscan.io/address/0x4C82D1fBFe28C977cBB58D8C7FF8FCF9F70a2cCA) | Amount0: 356822016416.20 |
+| 25003996 | 2026-05-02 01:30:23 UTC | LIQUIDITY_REMOVE (ModifyLiquidity) | [0x2a1c3953...59cd21](https://etherscan.io/address/0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21) | [0xbD216513...64ee9e](https://etherscan.io/address/0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e) | Δ: 0 / 0 |
 | 25003996 | 2026-05-02 01:30:23 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Value: 9944910625.21 |
 | 25003996 | 2026-05-02 01:30:23 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x9A981cE6...bA776F](https://etherscan.io/address/0x9A981cE637f2638Ee2B7e4083Eb287a697bA776F) | Value: 1.0000 |
 | 25003997 | 2026-05-02 01:30:35 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x115D731C...0443e0](https://etherscan.io/address/0x115D731C7d556448EB4Dc8a1Aaa36A3D510443e0) | Value: 52164906752.18 |
@@ -216,9 +211,14 @@ The following migration candidates were found:
 | 25003997 | 2026-05-02 01:30:35 UTC | LIQUIDITY_REMOVE (DecreaseLiquidity) | [N/A...N/A](https://etherscan.io/address/N/A) | [...](https://etherscan.io/address/) | Δ: 0 / 3722.5069 |
 | 25003997 | 2026-05-02 01:30:35 UTC | COLLECT_FEES (Collect) | [N/A...N/A](https://etherscan.io/address/N/A) | [...](https://etherscan.io/address/) |  |
 | 25003998 | 2026-05-02 01:30:47 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x9A981cE6...bA776F](https://etherscan.io/address/0x9A981cE637f2638Ee2B7e4083Eb287a697bA776F) | Value: 1.0000 |
+| 25003999 | 2026-05-02 01:30:59 UTC | POSITION_TRANSFER (Transfer) | [0x2a1c3953...59cd21](https://etherscan.io/address/0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21) | [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) |  |
+| 25003999 | 2026-05-02 01:30:59 UTC | LIQUIDITY_ADD (ModifyLiquidity) | [0x2a1c3953...59cd21](https://etherscan.io/address/0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21) | [0xbD216513...64ee9e](https://etherscan.io/address/0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e) | Δ: 0 / 0 |
+| 25003999 | 2026-05-02 01:30:59 UTC | SWAP (Swap) | [0xc28dd8d8...b54433](https://etherscan.io/address/0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433) | [0x4C82D1fB...0a2cCA](https://etherscan.io/address/0x4C82D1fBFe28C977cBB58D8C7FF8FCF9F70a2cCA) | Amount0: 230000000000.00 |
 | 25003999 | 2026-05-02 01:30:59 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Value: 261191834334.53 |
 | 25003999 | 2026-05-02 01:30:59 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0xB0Ad50a9...4ca895](https://etherscan.io/address/0xB0Ad50a94D030A2D887F9eB59c144A3D5D4ca895) | Value: 61300000000.00 |
 | 25003999 | 2026-05-02 01:30:59 UTC | SWAP (Swap) | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | [0x4313C378...96b27f](https://etherscan.io/address/0x4313C378Cc91eA583C91387B9216e2c03096b27f) | Amount0: 61300000000.00 |
+| 25003999 | 2026-05-02 01:30:59 UTC | POSITION_TRANSFER (Transfer) | [0xc28dd8d8...b54433](https://etherscan.io/address/0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433) | [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) |  |
+| 25003999 | 2026-05-02 01:30:59 UTC | LIQUIDITY_ADD (ModifyLiquidity) | [0xc28dd8d8...b54433](https://etherscan.io/address/0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433) | [0xbD216513...64ee9e](https://etherscan.io/address/0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e) | Δ: 0 / 0 |
 | 25004000 | 2026-05-02 01:31:11 UTC | TOKEN_TRANSFER (Transfer) | [N/A...N/A](https://etherscan.io/address/N/A) | [0x115D731C...0443e0](https://etherscan.io/address/0x115D731C7d556448EB4Dc8a1Aaa36A3D510443e0) | Value: 20000000000.00 |
 | 25004000 | 2026-05-02 01:31:11 UTC | LIQUIDITY_ADD (Mint) | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | [0xC36442b4...11FE88](https://etherscan.io/address/0xC36442b4a4522E871399CD717aBDD847Ab11FE88) | Δ: 20000000000.00 / 32132736068.22 |
 | 25004000 | 2026-05-02 01:31:11 UTC | LIQUIDITY_ADD (IncreaseLiquidity) | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | [...](https://etherscan.io/address/) | Δ: 20000000000.00 / 32132736068.22 |
@@ -228,14 +228,14 @@ The following migration candidates were found:
 
 | Feature | Value | Weight | Contribution | Description |
 |---------|-------|--------|-------------|-------------|
-| Pool Concentration | 0.9936 | 0.15 | 0.1490 | Main pool holds 99.36% of total DEX liquidity. |
+| Pool Concentration | 0.9928 | 0.15 | 0.1489 | Main pool holds 99.28% of total DEX liquidity. |
 | Lp Concentration | 1.0000 | 0.15 | 0.1500 | Largest LP holds 100.00% of pool shares. |
 | Withdrawal Severity | 1.0000 | 0.20 | 0.2000 | Liquidity removed is 100.00% of reference TVL. |
-| Temporal Proximity | 0.4500 | 0.15 | 0.0675 | No incident block — 85 liquidity removals in window. |
+| Temporal Proximity | 0.4500 | 0.15 | 0.0675 | No incident block — 130 liquidity removals in window. |
 | Role Sensitivity | 0.8000 | 0.15 | 0.1200 | Deployer is directly involved in pool(s). |
 | Market Impact | 0.0000 | 0.15 | 0.0000 | No incident block — market impact requires a crash reference. |
-| Combined Activity | 1.0000 | 0.05 | 0.0500 | Suspicious activity: 85 withdrawals and large sells detected. |
-| **Raw Score** | | | **0.7365** | |
+| Combined Activity | 1.0000 | 0.05 | 0.0500 | Suspicious activity: 130 withdrawals and large sells detected. |
+| **Raw Score** | | | **0.7364** | |
 
 ### Interpretation
 

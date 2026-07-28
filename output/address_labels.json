@@ -373,15 +373,6 @@
     ]
   },
   {
-    "address": "0x000000000000000000000000000000000000dead",
-    "label": "Burn Address",
-    "category": "burn",
-    "confidence": 1.0,
-    "evidence": [
-      "Standard burn/destroy address"
-    ]
-  },
-  {
     "address": "0x000000000000000000000000000000000000dEaD",
     "label": "Burn Address",
     "category": "burn",
@@ -392,6 +383,15 @@
   },
   {
     "address": "0x0000000000000000000000000000000000000000",
+    "label": "Burn Address",
+    "category": "burn",
+    "confidence": 1.0,
+    "evidence": [
+      "Standard burn/destroy address"
+    ]
+  },
+  {
+    "address": "0x000000000000000000000000000000000000dead",
     "label": "Burn Address",
     "category": "burn",
     "confidence": 1.0,

@@ -5,8 +5,9 @@ Reads analysis output files and renders an interactive dashboard using Chart.js.
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 _HTML_TEMPLATE: str | None = None
 _JS_TEMPLATE: str | None = None
@@ -55,6 +56,51 @@ const tokenSymbol = "{symbol}";
   });
   {tvl_chart}
 })();
+
+function togglePortfolio(addr) {
+  var row = document.getElementById('portfolio-' + addr);
+  if (!row) return;
+  var holderRow = row.previousElementSibling;
+  var icon = holderRow ? holderRow.querySelector('.expand-icon') : null;
+  var open = row.style.display !== 'none';
+  if (open) {
+    row.style.display = 'none';
+    if (icon) icon.textContent = '+';
+    return;
+  }
+  row.style.display = '';
+  if (icon) icon.textContent = '-';
+  var inner = row.querySelector('.portfolio-inner');
+  if (!inner) return;
+  var key = (addr || '').toLowerCase();
+  var positions = (portfolioData && portfolioData[key]) || [];
+  if (!positions.length) {
+    inner.innerHTML = '<div style="color:#64748b;padding:8px 0">No LP positions with share &gt; 0 for this address in the analysis window.</div>';
+    return;
+  }
+  var html = '<table class="portfolio-table"><thead><tr>'
+    + '<th>Protocol</th><th>Pool</th><th>Share %</th><th>Liquidity</th><th>Token0</th><th>Token1</th><th>Ticks</th>'
+    + '</tr></thead><tbody>';
+  for (var i = 0; i < positions.length; i++) {
+    var p = positions[i];
+    var pool = (p.pool || '');
+    var poolShort = pool.length > 14 ? pool.slice(0, 8) + '...' + pool.slice(-4) : pool;
+    var ticks = (p.tick_lower != null && p.tick_upper != null)
+      ? (p.tick_lower + ' / ' + p.tick_upper) : '-';
+    var proto = ((p.protocol || '') + ' ' + (p.version || '')).trim() || '-';
+    html += '<tr>'
+      + '<td>' + proto + '</td>'
+      + '<td class="addr" title="' + pool + '">' + poolShort + '</td>'
+      + '<td>' + (p.share_pct != null ? p.share_pct : '-') + '</td>'
+      + '<td>' + (p.liquidity || '-') + '</td>'
+      + '<td>' + (p.token0_amount || '-') + '</td>'
+      + '<td>' + (p.token1_amount || '-') + '</td>'
+      + '<td>' + ticks + '</td>'
+      + '</tr>';
+  }
+  html += '</tbody></table>';
+  inner.innerHTML = html;
+}
 """
 
     _HTML_TEMPLATE = """<!DOCTYPE html>
@@ -117,6 +163,11 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 .badge-eoa{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,.15);color:#22c55e}
 .badge-contract{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(234,179,8,.15);color:#eab308}
 .badge-pool{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:#3b82f6}
+.badge-uniswap{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(255,0,122,.15);color:#ff007a;margin:1px}
+.badge-curve{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(0,0,0,.35);color:#a0aec0;margin:1px;border:1px solid #4a5568}
+.badge-balancer{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(30,144,255,.15);color:#1e90ff;margin:1px}
+.badge-dex-other{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(148,163,184,.15);color:#94a3b8;margin:1px}
+.dex-muted{color:var(--text-dim);font-size:11px}
 .portfolio-row>td{padding:0!important;background:var(--bg-card,#0f172a)}
 .portfolio-inner{padding:12px 16px 16px}
 .portfolio-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -186,7 +237,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card fw">
       <h2>All Non-Pool Holders</h2>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance ({symbol})</th><th>Tx Count</th><th>Label</th></tr></thead><tbody>{table_top}</tbody></table></div>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>Balance ({symbol})</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
     </div>
   </div>
 
@@ -223,6 +275,14 @@ def generate_dashboard(
     metrics = _load_json(out / "metrics.json", {})
     risk = _load_json(out / "risk_assessment.json", {})
     positions_data = _load_json(out / "positions.json", [])
+    swaps_data = _load_json(out / "swaps.json", [])
+    liq_data = _load_json(out / "liquidity_events.json", [])
+    transfers_data = _load_json(out / "transfers.json", [])
+    events_all = _load_json(out / "events_all.json", [])
+    if not isinstance(events_all, list) or not events_all:
+        events_all = list(swaps_data or []) + list(liq_data or []) + list(
+            transfers_data or []
+        )
 
     holdings_data = holdings.get("holdings", [])
     pool_ident = holdings.get("pool_identification", [])
@@ -240,27 +300,44 @@ def generate_dashboard(
             for p in verified_pools if p.get("verified", True)
         ]
 
-    # Build portfolio map: owner → [position, ...] (only positions with share > 0)
-    holdings_by_addr = {h.get("address","").lower(): h for h in holdings_data}
+    pool_meta = _pool_meta_lookup(verified_pools)
+    dex_by_addr = _build_address_dex_map(
+        pool_meta, positions_data, events_all
+    )
+    _write_json(out / "address_dex.json", dex_by_addr)
+
+    # Enrich holdings rows for table/CSV convenience
+    for h in holdings_data:
+        info = dex_by_addr.get((h.get("address") or "").lower(), {})
+        h["dex_protocols"] = info.get("protocols", [])
+        h["dex_roles"] = info.get("roles", {})
+
+    # Portfolio: all LP positions (incl. share=0 out-of-range), with real protocol
     portfolio_map: dict[str, list] = {}
     for pos in positions_data:
         owner = (pos.get("owner") or "").strip()
         if not owner:
             continue
-        share = float(pos.get("share_pct") or 0)
-        if share <= 0:
-            continue
+        pool_key = (pos.get("pool_address") or "").lower()
+        meta = pool_meta.get(pool_key, {})
+        protocol = meta.get("protocol") or _guess_protocol_from_method(
+            pos.get("resolution_method")
+        )
+        version = meta.get("version") or _guess_version_from_method(
+            pos.get("resolution_method")
+        )
         portfolio_map.setdefault(owner.lower(), []).append({
             "pool": pos.get("pool_address", ""),
             "owner": owner,
-            "protocol": pos.get("resolution_method", "").split("_")[0] if "_" in (pos.get("resolution_method") or "") else "",
-            "version": "v2" if "v2" in (pos.get("resolution_method") or "") else ("v3" if "v3" in (pos.get("resolution_method") or "") else ("v4" if "v4" in (pos.get("resolution_method") or "") else "v1")),
-            "share_pct": round(share, 4),
+            "protocol": protocol,
+            "version": version,
+            "share_pct": round(float(pos.get("share_pct") or 0), 4),
             "liquidity": pos.get("liquidity", "0"),
             "token0_amount": pos.get("token0_amount", ""),
             "token1_amount": pos.get("token1_amount", ""),
             "tick_lower": pos.get("tick_lower"),
             "tick_upper": pos.get("tick_upper"),
+            "resolution_method": pos.get("resolution_method", ""),
         })
     portfolio_json = json.dumps(portfolio_map, indent=2)
     _write_json(out / "portfolios.json", portfolio_map)
@@ -333,6 +410,8 @@ def generate_dashboard(
         "pool_h_json": json.dumps(pool_holders, indent=2),
         "pool_i_json": json.dumps(pool_ident, indent=2),
         "tvl_json": json.dumps(tvl_data, indent=2),
+        "portfolio_json": portfolio_json,
+        "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
         "pool_count": len(pool_holders),
         "holder_count": max(0, holdings_count - len(pool_holders)),
         "pool_share": main_pool_share,
@@ -421,24 +500,223 @@ def _build_tvl_chart_js(
 
 def _table_top_holders(holders: list, symbol: str) -> str:
     if not holders:
-        return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
+        return '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
     rows = []
     for i, h in enumerate(holders[:20], 1):
         addr = h.get('address','')
         addr_short = addr[:6] + "..." + addr[-4:]
         banner = h.get("address_type", "eoa") if h.get("address_type") else ("pool" if h.get("is_pool") else "eoa")
+        dex_html = _dex_badges_html(h.get("dex_protocols") or [], h.get("dex_roles") or {})
         rows.append(
             f'<tr class="holder-row" onclick="togglePortfolio(\'{addr}\')" data-owner="{addr}">'
             f"<td>{i}</td>"
             f'<td class="addr">{addr_short}</td>'
             f'<td><span class="badge-{banner}">{banner}</span></td>'
+            f"<td>{dex_html}</td>"
             f"<td>{_fmt_bal(h.get('balance_decimal',0),symbol)}</td>"
             f"<td>{h.get('tx_count',0)}</td>"
             f'<td><span class="expand-icon">+</span></td></tr>'
             f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
-            f'<td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>'
+            f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
         )
     return "\n".join(rows)
+
+
+def _dex_badges_html(protocols: list, roles: dict) -> str:
+    if not protocols:
+        return '<span class="dex-muted">—</span>'
+    parts = []
+    for p in protocols:
+        key = (p or "").lower()
+        css = "badge-dex-other"
+        if key == "uniswap":
+            css = "badge-uniswap"
+        elif key == "curve":
+            css = "badge-curve"
+        elif key == "balancer":
+            css = "badge-balancer"
+        role_bits = []
+        r = roles.get(key) or {}
+        if r.get("lp"):
+            role_bits.append("LP")
+        if r.get("swap"):
+            role_bits.append("Swap")
+        label = p.title() if p else "DEX"
+        title = "+".join(role_bits) if role_bits else "related"
+        parts.append(
+            f'<span class="{css}" title="{title}">{label}</span>'
+        )
+    return "".join(parts)
+
+
+def _pool_meta_lookup(verified_pools: list) -> dict[str, dict[str, str]]:
+    """Map pool_address / custody / pool_id → protocol+version."""
+    out: dict[str, dict[str, str]] = {}
+    for p in verified_pools or []:
+        if isinstance(p, dict):
+            protocol = (p.get("protocol") or "").lower()
+            version = (p.get("version") or "").lower()
+            keys = [
+                p.get("pool_address"),
+                p.get("custody_address"),
+                p.get("pool_id"),
+            ]
+        else:
+            protocol = (getattr(p, "protocol", "") or "").lower()
+            version = (getattr(p, "version", "") or "").lower()
+            keys = [
+                getattr(p, "pool_address", None),
+                getattr(p, "custody_address", None),
+                getattr(p, "pool_id", None),
+            ]
+        meta = {"protocol": _canon_protocol(protocol), "version": version}
+        for k in keys:
+            if k:
+                out[str(k).lower()] = meta
+    return out
+
+
+def _canon_protocol(name: str) -> str:
+    n = (name or "").lower().strip()
+    if n.startswith("uni"):
+        return "uniswap"
+    if n.startswith("curve"):
+        return "curve"
+    if n.startswith("bal"):
+        return "balancer"
+    return n
+
+
+def _guess_protocol_from_method(method: Optional[str]) -> str:
+    m = (method or "").lower()
+    if "v4" in m or "v3" in m or "v2" in m or "v1" in m:
+        return "uniswap"
+    return ""
+
+
+def _guess_version_from_method(method: Optional[str]) -> str:
+    m = (method or "").lower()
+    for v in ("v4", "v3", "v2", "v1"):
+        if v in m:
+            return v
+    return ""
+
+
+def _build_address_dex_map(
+    pool_meta: dict[str, dict[str, str]],
+    positions: list,
+    events: list,
+) -> dict[str, dict[str, Any]]:
+    """Infer which DEX venues an address touched in the indexed window.
+
+    Signals (strong → weaker):
+      1. LP position owners
+      2. Swap / liquidity event actor|recipient
+      3. TOKEN_TRANSFER directly to/from a known pool or custody address
+      4. TOKEN_TRANSFER counterparties in the same tx as a DEX pool event
+         (catches router-mediated swaps where the user is not the Swap actor)
+    """
+    lp: dict[str, set[str]] = defaultdict(set)
+    swap: dict[str, set[str]] = defaultdict(set)
+    venue_addrs = {
+        a for a, meta in (pool_meta or {}).items()
+        if a.startswith("0x") and len(a) == 42 and meta.get("protocol")
+    }
+
+    for pos in positions or []:
+        owner = (pos.get("owner") or "").lower()
+        if not owner:
+            continue
+        meta = pool_meta.get((pos.get("pool_address") or "").lower(), {})
+        proto = meta.get("protocol") or _guess_protocol_from_method(
+            pos.get("resolution_method")
+        )
+        if proto:
+            lp[owner].add(proto)
+
+    by_tx: dict[str, list] = defaultdict(list)
+    for evt in events or []:
+        txh = evt.get("transaction_hash") or ""
+        if txh:
+            by_tx[txh].append(evt)
+
+        et = (evt.get("event_type") or "").upper()
+        proto = _canon_protocol(evt.get("protocol") or "")
+        if not proto:
+            meta = pool_meta.get((evt.get("pool_address") or "").lower(), {})
+            proto = meta.get("protocol") or ""
+
+        if et in ("SWAP", "LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "MINT", "BURN", "COLLECT_FEES"):
+            if not proto:
+                continue
+            for key in ("actor", "recipient", "owner"):
+                addr = (evt.get(key) or "").lower()
+                if addr and addr.startswith("0x") and len(addr) == 42:
+                    if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "MINT", "BURN"):
+                        lp[addr].add(proto)
+                    else:
+                        swap[addr].add(proto)
+
+        elif et == "TOKEN_TRANSFER":
+            fr = (evt.get("actor") or "").lower()
+            to = (evt.get("recipient") or "").lower()
+            if fr in venue_addrs:
+                p = pool_meta[fr].get("protocol") or ""
+                if p and to.startswith("0x") and len(to) == 42 and to not in venue_addrs:
+                    swap[to].add(p)
+            if to in venue_addrs:
+                p = pool_meta[to].get("protocol") or ""
+                if p and fr.startswith("0x") and len(fr) == 42 and fr not in venue_addrs:
+                    swap[fr].add(p)
+
+    # Same-tx linkage: user Transfer in a tx that also hits a DEX pool event
+    for evs in by_tx.values():
+        dex_protos: set[str] = set()
+        for e in evs:
+            et = (e.get("event_type") or "").upper()
+            if et not in (
+                "SWAP",
+                "LIQUIDITY_ADD",
+                "LIQUIDITY_REMOVE",
+                "MINT",
+                "BURN",
+                "COLLECT_FEES",
+            ):
+                continue
+            proto = _canon_protocol(e.get("protocol") or "")
+            if not proto:
+                meta = pool_meta.get((e.get("pool_address") or "").lower(), {})
+                proto = meta.get("protocol") or ""
+            if proto:
+                dex_protos.add(proto)
+        if not dex_protos:
+            continue
+        for e in evs:
+            if (e.get("event_type") or "").upper() != "TOKEN_TRANSFER":
+                continue
+            for key in ("actor", "recipient"):
+                addr = (e.get(key) or "").lower()
+                if (
+                    addr
+                    and addr.startswith("0x")
+                    and len(addr) == 42
+                    and addr not in venue_addrs
+                ):
+                    for p in dex_protos:
+                        swap[addr].add(p)
+
+    out: dict[str, dict[str, Any]] = {}
+    addrs = set(lp) | set(swap)
+    for addr in addrs:
+        protocols = sorted(lp.get(addr, set()) | swap.get(addr, set()))
+        roles = {}
+        for p in protocols:
+            roles[p] = {
+                "lp": p in lp.get(addr, set()),
+                "swap": p in swap.get(addr, set()),
+            }
+        out[addr] = {"protocols": protocols, "roles": roles}
+    return out
 
 
 def _table_pool_holders(holders: list, symbol: str) -> str:

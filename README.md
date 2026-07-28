@@ -2,6 +2,8 @@
 
 [English](#english) | [中文](#中文)
 
+Live site: [https://jelly577.github.io/On-Chain-Token-Crash-Liquidity-Analysis/](https://jelly577.github.io/On-Chain-Token-Crash-Liquidity-Analysis/)
+
 ---
 
 <a name="english"></a>
@@ -10,25 +12,50 @@
 
 ## Overview
 
-End-to-end **Ethereum mainnet** tool for analyzing a token’s Uniswap liquidity: discover pools, index swaps / liquidity / transfers, estimate concentration and crash-related risk, then emit JSON, Markdown, and a local HTML dashboard.
+End-to-end **Ethereum mainnet** tool for token liquidity / crash analysis: discover pools across major DEXes, index swaps / liquidity / transfers, estimate concentration and risk, then emit JSON, Markdown, and a local HTML dashboard.
 
 **Input:** token address, symbol, or name + block window  
-**Output:** verified pools, event data, holdings table, risk score, `report.md`, `dashboard.html`
+**Output:** verified pools, events, holdings, risk score, `report.md`, `dashboard.html`
 
-**Scope today:** Ethereum (`chain_id=1`) + **Uniswap V2 / V3** (V4 discovery exists but is secondary).
+**Scope today:** Ethereum (`chain_id=1`) + **Uniswap V1–V4**, **Curve**, **Balancer V2**.
+
+---
+
+## Analysis Log
+
+| Token | Window | Pools | Holders | Risk | Date | Dir |
+|-------|--------|-------|---------|------|------|-----|
+| uPEG | 25003546–25004000 | 10 (V2/V3/V4) | ~231 EOA | 0.4364 MEDIUM | 2026-07-28 | `output/` |
+| SPX | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 LOW | 2026-07-18 | `output/` (superseded) / `output-spx-demo/` |
+| USDC | 19000000–19000050 | — | — | 0.0000 LOW | — | `output-test/` |
+
+### Recent Findings (uPEG)
+
+- Window `25003546–25004000`: **10** verified Uniswap pools (1 V2 / 3 V3 / 6 V4). Curve/Balancer enabled in config; this token’s liquidity in-window was Uniswap-only.
+- **36** LP positions reconstructed (V3/V4 tick math; V4 share = in-range `L / StateView.getLiquidity`).
+- Holdings via Dune address discovery + RPC `balanceOf`; dashboard tags **EOA / contract / pool**.
+- Dashboard **DEX column**: Uniswap / Curve / Balancer from LP, swaps, pool transfers, or same-tx linkage. Expand row → **LP portfolio only** (not the same as the DEX tag).
+- Hover DEX badge for `LP` vs `Swap`. `—` = no DEX link in this window (e.g. P2P only).
+
+```bash
+set -a && source .env && set +a
+python3 -m src.cli analyze uPEG \
+  --from-block 25003546 --to-block 25004000 \
+  --output-dir output
+python3 -m src.cli dashboard --output-dir output
+```
 
 ---
 
 ## Quick Start
 
 ```bash
-cd on-chain-token-crash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
 export ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR_API_KEY"
-# or Alchemy / other archive-capable RPC
+# optional: DUNE_API_KEY for wider holder discovery
 ```
 
 ### Full pipeline
@@ -38,13 +65,6 @@ python3 -m src.cli analyze USDC \
   --from-block 19000000 \
   --to-block 19000050 \
   --output-dir output
-```
-
-Address also works: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`.
-
-Open the result page:
-
-```bash
 open output/dashboard.html
 ```
 
@@ -52,15 +72,15 @@ open output/dashboard.html
 
 | Command | Purpose |
 |---------|---------|
-| `analyze` | Full 12-step pipeline (default entry) |
-| `discover-only` | Profile + discover + verify pools only |
-| `holdings` | Rebuild holdings / pool-ID tables from transfers |
-| `dashboard` | Regenerate `dashboard.html` from existing `output/` |
+| `analyze` | Full pipeline |
+| `discover-only` | Profile + discover + verify pools |
+| `holdings` | Rebuild holdings / pool-ID tables |
+| `dashboard` | Regenerate `dashboard.html` from existing output |
 
 ```bash
-python3 -m src.cli discover-only USDC --from-block 19000000 --to-block 19100000
-python3 -m src.cli holdings USDC --from-block 19000000 --to-block 19000050
 python3 -m src.cli dashboard --output-dir output
+python3 scripts/publish_site.py          # rebuild public site/
+python3 scripts/publish_site.py --serve  # preview
 ```
 
 ### Important `analyze` options
@@ -68,33 +88,28 @@ python3 -m src.cli dashboard --output-dir output
 | Option | Description | Default |
 |--------|-------------|---------|
 | `TOKEN` | Address, symbol, or name | required |
-| `--from-block` / `--to-block` | Analysis window (integers only) | `19000000` / `19100000` |
-| `--incident-block` | Optional crash block for temporal / market-impact scoring | `0` |
-| `--fast-mode` | Skip heavy exhaustive indexing paths | `false` |
-| `--pick N` | Disambiguate name matches | `0` |
-| `--rpc-url` | Override `ETH_RPC_URL` | — |
+| `--from-block` / `--to-block` | Analysis window | `19000000` / `19100000` |
+| `--incident-block` | Crash block for temporal / impact scoring | `0` |
+| `--fast-mode` | Skip heavy exhaustive indexing | `false` |
 | `--output-dir` | Artifacts directory | `output` |
 
-> Indexing is **resumable**: same `output_dir` + token + block window continues from `event_indexer_checkpoint.json` / `indexer_cache/`. Change token or window, or delete those files, to start clean.
+> Indexing is **resumable** via `event_indexer_checkpoint.json`. Change token/window or delete checkpoint to start clean.
 
 ---
 
 ## Pipeline (`analyze`)
 
 ```text
-token (address | symbol | name)
-    → resolve + profile
-    → discover pools (fast + exhaustive)
-    → verify pools
-    → index Swap / Mint|Burn / PM liquidity / Transfers  (checkpointed)
-    → LP positions (best-effort)
-    → address labels + deployer lookup
-    → metrics (on-chain TVL, concentration, withdrawals)
-    → timeline
-    → risk score
-    → report.md
-    → holdings + pool identification
-    → dashboard.html
+resolve + profile
+  → discover pools (Uni V1–V4, Curve, Balancer)
+  → verify
+  → index Swap / Mint|Burn / PM / V4 ModifyLiquidity / Transfers
+  → LP positions
+  → labels
+  → metrics + timeline + risk
+  → report.md
+  → holdings (+ optional Dune)
+  → dashboard.html  (DEX tags, EOA badges, click-to-expand LP)
 ```
 
 ---
@@ -103,43 +118,18 @@ token (address | symbol | name)
 
 | Area | Status |
 |------|--------|
-| Protocol registry (V2/V3) | Done |
-| Token profile + name/symbol resolve | Done |
-| Pool discovery + verification | Done |
+| Uniswap V1 / V2 / V3 / V4 | Done (productized for this pipeline) |
+| Curve + Balancer V2 | Done (discovery + indexing; may be slow on free RPC) |
+| Token profile + resolve | Done |
 | Event indexing with resume | Done |
-| Holdings + mark pool accounts | Done (RPC) |
-| Local dashboard + report | Done |
-| Pool-level liquidity / TVL / risk | Done (usable) |
-| **LP holder reconstruction / LP concentration** | **Partial** — often empty on short windows, especially V3 NFTs |
-| Uniswap V1 / V4 / other DEXes | Not productized |
-| Multi-chain | Not productized |
-| Public Tailscale / hosted dashboard | Not done |
-| Dune integration | Not done |
-
----
-
-## Project structure
-
-```text
-On-Chain-Token-Crash-Liquidity-Analysis/
-├── README.md
-└── on-chain-token-crash/
-    ├── requirements.txt
-    ├── config/protocols.ethereum.yaml
-    ├── abis/
-    ├── src/
-    │   ├── cli.py                 # analyze / discover-only / holdings / dashboard
-    │   ├── client.py
-    │   ├── models.py
-    │   ├── registry/              # protocol whitelist
-    │   ├── token/                 # profiler + name resolver
-    │   ├── discovery/             # V2 / V3 (/ V4 adapter)
-    │   ├── verification/
-    │   ├── indexer/               # resumable eth_getLogs indexing
-    │   ├── analysis/              # positions, labels, metrics, risk, holdings, dashboard
-    │   └── report/
-    └── output/                    # run artifacts (gitignored locally as needed)
-```
+| Holdings + pool account tags | Done (RPC; Dune optional) |
+| EOA vs contract labeling | Done (bytecode surface label) |
+| Dashboard + report + public site | Done |
+| DEX venue tags on holders | Done (window evidence; not beneficial-owner unwrap) |
+| LP portfolio drill-down | Done |
+| Deep holder / router unwrap | Not done |
+| Multi-chain | Not done |
+| Real-time monitoring | Not done |
 
 ---
 
@@ -148,55 +138,24 @@ On-Chain-Token-Crash-Liquidity-Analysis/
 | File | Contents |
 |------|----------|
 | `token_profile.json` | Symbol, decimals, flags |
-| `pool_candidates.json` / `verified_pools.json` | Discovered / verified pools |
+| `verified_pools.json` | Verified pools |
 | `swaps.json` / `liquidity_events.json` / `transfers.json` | Indexed events |
-| `events_all.json` | Combined event stream |
-| `positions.json` / `position_summary.json` | LP positions (may be empty) |
-| `metrics.json` / `tvl_timeline.json` | TVL, concentration, withdrawals |
-| `risk_assessment.json` | Explainable risk score |
-| `holdings.json` / `holdings_table.csv` | Token holders |
-| `pool_identification_table.csv` | Addresses tagged as pools |
-| `report.md` | Narrative report |
-| `dashboard.html` | Local visualization |
-
----
-
-## Example (short smoke window)
-
-```bash
-python3 -m src.cli analyze USDC \
-  --from-block 19000000 \
-  --to-block 19000050 \
-  --output-dir output
-```
-
-Expect: verified USDC pools, non-zero swaps in an active window, metrics with on-chain TVL, a non-zero risk score when concentration / withdrawals exist, and `dashboard.html`.
-
-For crash studies, pass `--incident-block` and use a window that covers the event (not only 50 blocks).
+| `events_all.json` | Combined stream |
+| `positions.json` / `portfolios.json` | LP positions / by-owner |
+| `address_dex.json` | Per-address DEX protocols + LP/Swap roles |
+| `holdings.json` | Holders + pool flags |
+| `metrics.json` / `risk_assessment.json` | TVL, concentration, risk |
+| `report.md` / `dashboard.html` | Report + UI |
 
 ---
 
 ## Public site
 
-The analysis dashboard can be published as a static site (built with Chart.js, zero server backend needed).
-
 ```bash
-# Build the public site from all output directories
 python3 scripts/publish_site.py
-
-# Build and preview locally
-python3 scripts/publish_site.py --serve
 ```
 
-The generated site lives in `site/` and is ready to deploy to [GitHub Pages](https://pages.github.com/), Vercel, Netlify, or any static host.
-
-### GitHub Pages (one-time setup)
-
-1. Go to your repo **Settings → Pages**
-2. Under **Source**, select **GitHub Actions**
-3. Push to `main` — the included `.github/workflows/deploy-pages.yml` will build and deploy automatically
-
-Your site will be available at `https://<username>.github.io/<repo-name>/`.
+GitHub Pages: **Settings → Pages → Source = GitHub Actions**. Workflow: `.github/workflows/deploy-pages.yml`.
 
 ---
 
@@ -204,94 +163,76 @@ Your site will be available at `https://<username>.github.io/<repo-name>/`.
 
 | Limitation | Details |
 |------------|---------|
-| **RPC `eth_getLogs` limits** | Free Alchemy (~10 blocks/request) is very slow; Infura/paid nodes work better. Chunk size adapts downward on rejection. |
-| **LP positions** | V2 needs LP Transfers or `balanceOf` candidates; V3 needs PositionManager `tokenId→pool` mapping. Short windows often yield **0 positions** → `lp_concentration = 0`. |
-| **PositionManager scan cost** | Global Uniswap V3 NFT manager indexing is expensive relative to pool-only logs. |
-| **Risk without `--incident-block`** | Temporal / market-impact features are softened or skipped; score leans on pool concentration and withdrawal counts. |
-| **No automated test suite** | Validate with manual CLI runs. |
+| Free-tier RPC | Curve/Balancer discovery can stall; Uni-only windows are more practical on free plans |
+| DEX tags | Evidence in **this block window** only; P2P holders stay `—` |
+| Expand row | Shows **LP positions**, not swap history |
+| V4 pool id | Portfolio “Pool” may be bytes32 poolId; custody is PoolManager |
+| No `--incident-block` | Risk leans on concentration / withdrawals |
+| No automated tests | Manual CLI validation |
 
-See also `on-chain-token-crash/SUPPORTED_PROTOCOLS.md` for protocol notes.
+See `SUPPORTED_PROTOCOLS.md` for contract addresses and notes.
 
 ---
 
 <a name="中文"></a>
 
 # 中文
-### Analysis Log
-
-| Token | Chain | Block Window | Pools | Holders | Risk Score | Level | Dir |
-|-------|-------|-------------|-------|---------|-----------|-------|-----|
-| SPX | Ethereum | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 | LOW | `output/` |
-| USDC | Ethereum | 19000000–19000050 | — | — | 0.0000 | LOW | `output-test/` |
-
 
 ## 概述
 
-面向 **以太坊主网** 的链上代币流动性 / 崩盘分析工具：输入代币（地址 / 符号 / 名称）和区块窗口，自动发现 Uniswap 池、索引成交与流动性事件、计算集中度与风险分，并输出 JSON、Markdown 报告和本地 HTML 看板。
+面向 **以太坊主网** 的代币流动性 / 崩盘分析工具：发现主流 DEX 池、索引成交与流动性、计算集中度与风险，输出 JSON、报告和本地 HTML 看板。
 
-**当前范围：** 以太坊 + **Uniswap V2 / V3**（V1 V4还未实现）。
+**当前范围：** 以太坊 + **Uniswap V1–V4**、**Curve**、**Balancer V2**。
+
+线上站点：[https://jelly577.github.io/On-Chain-Token-Crash-Liquidity-Analysis/](https://jelly577.github.io/On-Chain-Token-Crash-Liquidity-Analysis/)
+
+---
+
+## 分析记录
+
+| Token | 窗口 | 池子 | 持有者 | 风险 | 日期 | 目录 |
+|-------|------|------|--------|------|------|------|
+| uPEG | 25003546–25004000 | 10 (V2/V3/V4) | ~231 EOA | 0.4364 中 | 2026-07-28 | `output/` |
+| SPX | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 低 | 2026-07-18 | `output-spx-demo/` 等 |
+| USDC | 19000000–19000050 | — | — | 0.0000 低 | — | `output-test/` |
+
+### 近期发现（uPEG）
+
+- 窗口内验证 **10** 个 Uniswap 池（1 V2 / 3 V3 / 6 V4）。配置已开 Curve/Balancer，但该代币本窗口流动性主要在 Uniswap。
+- 重建 **36** 个 LP 仓位（V3/V4 tick；V4 份额 = 区间内 `L / StateView.getLiquidity`）。
+- 持仓：Dune 发现地址 + RPC `balanceOf`；看板区分 **EOA / 合约 / 池账户**。
+- **DEX 列**：按本窗口证据标 Uniswap / Curve / Balancer（LP、swap、与池转账、或同笔 tx 关联）。
+- **点开一行**只看 LP 仓位，不等于 DEX 标签；悬停标签可见 `LP` / `Swap`。`—` = 本窗口无 DEX 关联（如纯转账）。
+
+```bash
+set -a && source .env && set +a
+python3 -m src.cli analyze uPEG \
+  --from-block 25003546 --to-block 25004000 \
+  --output-dir output
+python3 -m src.cli dashboard --output-dir output
+```
 
 ---
 
 ## 快速开始
 
 ```bash
-cd on-chain-token-crash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
 export ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR_API_KEY"
+# 可选: DUNE_API_KEY
 ```
-
-### 完整分析
-
-```bash
-python3 -m src.cli analyze USDC \
-  --from-block 19000000 \
-  --to-block 19000050 \
-  --output-dir output
-
-open output/dashboard.html
-```
-
-### 子命令
 
 | 命令 | 作用 |
 |------|------|
-| `analyze` | 完整 12 步流水线 |
-| `discover-only` | 只做画像 + 发现 + 验证池 |
-| `holdings` | 单独重跑持仓 / 池账户识别 |
-| `dashboard` | 根据已有 `output/` 重新生成看板 |
+| `analyze` | 完整流水线 |
+| `discover-only` | 只发现/验证池 |
+| `holdings` | 重跑持仓 |
+| `dashboard` | 用已有数据重生成看板 |
 
-### 常用参数
-
-| 参数 | 说明 | 默认 |
-|------|------|------|
-| `TOKEN` | 地址 / 符号 / 名称 | 必填 |
-| `--from-block` / `--to-block` | 分析窗口（整数） | `19000000` / `19100000` |
-| `--incident-block` | 崩盘区块（可选，影响时间邻近与冲击特征） | `0` |
-| `--fast-mode` | 跳过部分重索引 | `false` |
-| `--pick N` | 名称多匹配时选第 N 个 | `0` |
-| `--output-dir` | 输出目录 | `output` |
-
-索引支持**断点续扫**：同一 `output_dir` + 同一代币 + 同一窗口会从 checkpoint / `indexer_cache/` 继续。换代币或窗口时请清理这些文件。
-
----
-
-## 流水线（`analyze`）
-
-```text
-代币解析与画像
-  → 池发现与验证
-  → 事件索引（可续扫）
-  → LP 仓位（尽力而为）
-  → 地址标签 / deployer
-  → 指标（链上 TVL、集中度、撤池）
-  → 时间线与风险分
-  → report.md
-  → 持仓分析
-  → dashboard.html
+```bash
+python3 -m src.cli dashboard --output-dir output
+python3 scripts/publish_site.py
 ```
 
 ---
@@ -300,67 +241,38 @@ open output/dashboard.html
 
 | 模块 | 状态 |
 |------|------|
-| 协议注册、代币画像、名称解析 | ✅ |
-| 池发现 / 验证、事件索引续扫 | ✅ |
-| 持仓表、池账户识别、本地看板与报告 | ✅ |
-| **池级**流动性 / TVL / 风险 | ✅ 可用 |
-| **LP 持仓重建 / LP 集中度** | ⚠️ 不完整（短窗口常为 0，V3 NFT 尤弱） |
-| V1/V4、其他 DEX、多链 | ❌ |
-| Tailscale 公网看板、Dune | ❌ |
+| Uniswap V1–V4 | ✅ |
+| Curve、Balancer V2 | ✅（免费 RPC 上可能很慢） |
+| 事件索引续扫、持仓、风险、报告 | ✅ |
+| EOA/合约标签、看板点开 LP | ✅ |
+| 持有者 DEX 来源标签 | ✅（仅本窗口证据） |
+| 深度穿透路由/受益人 | ❌ |
+| 多链、实时监控 | ❌ |
 
 ---
 
-## 主要产出
+## 看板怎么读（DEX vs 展开）
 
-| 文件 | 内容 |
+| 位置 | 含义 |
 |------|------|
-| `verified_pools.json` | 验证后的池 |
-| `swaps.json` / `liquidity_events.json` / `transfers.json` | 事件 |
-| `metrics.json` / `risk_assessment.json` | 指标与风险 |
-| `holdings.json` / CSV | 持币与池识别 |
-| `report.md` / `dashboard.html` | 报告与可视化 |
-| `positions.json` | LP 仓位（可能为空） |
+| 行上 DEX 标签 | 本窗口是否碰过该 DEX（多为 Swap） |
+| 点开展开 | **仅 LP 仓位**；Pool 列为 pair/pool 地址（V4 多为 poolId） |
+| `—` | 本窗口找不到 DEX 关联，不是“一定不是 Uniswap 用户” |
 
 ---
 
 ## 公开站点
 
-分析看板可以发布为静态站点（基于 Chart.js，无需后端服务）。
-
-```bash
-# 从所有 output 目录构建公开站点
-python3 scripts/publish_site.py
-
-# 构建并在本地预览
-python3 scripts/publish_site.py --serve
-```
-
-生成的站点在 `site/` 目录中，可直接部署到 [GitHub Pages](https://pages.github.com/)、Vercel、Netlify 或任何静态托管服务。
-
-### GitHub Pages（一次性配置）
-
-1. 进入仓库 **Settings → Pages**
-2. 在 **Source** 中选择 **GitHub Actions**
-3. 推送到 `main` 分支 —— 项目自带的 `.github/workflows/deploy-pages.yml` 会自动构建并部署
-
-站点将可通过 `https://<用户名>.github.io/<仓库名>/` 访问。
+`python3 scripts/publish_site.py` → `site/`。GitHub Pages 选 **GitHub Actions** 作为 Source。
 
 ---
-### 分析记录
-
-| Token | 链 | 区块范围 | 池子 | 持有者 | 风险值 | 等级 | 目录 |
-|-------|-----|---------|------|--------|-------|------|------|
-| SPX | Ethereum | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 | 低 | `output/` |
-| USDC | Ethereum | 19000000–19000050 | — | — | 0.0000 | 低 | `output-test/` |
-
 
 ## 已知限制
 
 | 限制 | 说明 |
 |------|------|
-| RPC `eth_getLogs` | 免费 Alchemy 很慢；建议 Infura / 付费节点 |
-| LP 仓位 | 短窗口或未映射的 PM 事件会导致 `positions` 为空、`lp_concentration=0` |
-| 无 `--incident-block` | 风险分主要靠池集中度与撤池次数等结构信号 |
-| 无自动化测试 | 需手动跑 CLI 验收 |
-
-协议细节见 `on-chain-token-crash/SUPPORTED_PROTOCOLS.md`。
+| 免费 RPC | Curve/Balancer 发现易卡住 |
+| DEX 标签 | 只看分析窗口内证据 |
+| 展开行 | 不是成交明细，只是 LP |
+| 无 incident-block | 风险偏结构信号 |
+| 协议细节 | 见 `SUPPORTED_PROTOCOLS.md` |
