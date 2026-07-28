@@ -272,9 +272,12 @@ def analyze(
             typer.echo("  dune fallback: {}".format(holdings_result["dune_error"]))
         eoa = holdings_result.get("real_holder_count", 0)
     ctr = holdings_result.get("contract_count", 0)
-    typer.echo("  {} unique addresses: {} EOA (real holders), {} contracts".format(
+    resolved = holdings_result.get("resolved_contract_count", 0)
+    unresolved = holdings_result.get("unresolved_contract_count", 0)
+    total_resolved = holdings_result.get("total_resolved_holders", eoa)
+    typer.echo("  {} unique: {} EOA + {} resolved contracts + {} unresolved = {} beneficial holders".format(
             holdings_result.get("total_unique_addresses", 0),
-            eoa, ctr,
+            eoa, resolved, unresolved, total_resolved,
         ))
 
     # Step 12: Dashboard

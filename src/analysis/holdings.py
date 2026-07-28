@@ -162,6 +162,35 @@ def analyze_holdings(
                 _contract_cache[a] = False
         return _contract_cache[a]
 
+    # ---- Beneficial owner tracing ----
+    # For contract addresses, attempt to find the real beneficial owner:
+    #   1. Try calling owner() (Ownable pattern, 0x8da5cb5b)
+    #   2. If resolved to an EOA, use it; otherwise mark as unresolved
+    _resolved_owner: dict[str, str] = {}
+
+    def _resolve_owner(addr: str) -> str:
+        a = addr.lower()
+        if a in _resolved_owner:
+            return _resolved_owner[a]
+        if not _is_contract(addr):
+            _resolved_owner[a] = addr  # EOA stays itself
+            return addr
+        # Try owner() call — use raw call to avoid needing a full ABI
+        try:
+            data = w3.eth.call({
+                "to": Web3.to_checksum_address(addr),
+                "data": "0x8da5cb5b",  # keccak256("owner()")[:4]
+            })
+            if data and len(data) >= 36:  # 4 bytes padding + 20 bytes address
+                owner_addr = Web3.to_checksum_address("0x" + data[-40:])
+                if owner_addr.lower() != _ZERO.lower() and owner_addr.lower() != a:
+                    _resolved_owner[a] = owner_addr
+                    return owner_addr
+        except Exception:
+            pass
+        _resolved_owner[a] = addr  # unresolved contract
+        return addr
+
     holdings_rows: list[dict[str, Any]] = []
     for addr in sorted(unique_addresses):
         bal_raw = balances.get(addr, "0")
@@ -183,6 +212,15 @@ def analyze_holdings(
         else:
             addr_type = "eoa"
 
+        # Beneficial owner resolution
+        resolved = _resolve_owner(addr) if is_contract_addr else addr
+        if resolved != addr:
+            resolution_method = "owner_function"
+        elif is_contract_addr:
+            resolution_method = "unresolved_contract"
+        else:
+            resolution_method = "eoa"
+
         holdings_rows.append({
             "address": addr,
             "balance_raw": bal_raw,
@@ -191,6 +229,8 @@ def analyze_holdings(
             "pool_label": pool_label,
             "is_contract": is_contract_addr,
             "address_type": addr_type,
+            "resolved_owner": resolved if resolved != addr else "",
+            "resolution_method": resolution_method,
             "tx_count": address_tx_count.get(addr, 0),
             "first_seen_block": address_first_seen.get(addr, 0),
             "last_seen_block": address_last_seen.get(addr, 0),
@@ -220,6 +260,11 @@ def analyze_holdings(
 
     eoa_count = sum(1 for r in holdings_rows if r["address_type"] == "eoa")
     contract_count = sum(1 for r in holdings_rows if r["address_type"] == "contract")
+    resolved_count = sum(1 for r in holdings_rows if r.get("resolved_owner"))
+    unresolved_contract_count = sum(
+        1 for r in holdings_rows
+        if r["address_type"] == "contract" and not r.get("resolved_owner")
+    )
     real_holder_balance = sum(
         r["balance_decimal"] for r in holdings_rows if r["address_type"] == "eoa"
     )
@@ -230,6 +275,9 @@ def analyze_holdings(
     result = {
         "total_unique_addresses": len(unique_addresses),
         "real_holder_count": eoa_count,
+        "resolved_contract_count": resolved_count,
+        "unresolved_contract_count": unresolved_contract_count,
+        "total_resolved_holders": eoa_count + resolved_count,
         "contract_count": contract_count,
         "real_holder_balance": round(real_holder_balance, 6),
         "contract_balance": round(contract_balance, 6),

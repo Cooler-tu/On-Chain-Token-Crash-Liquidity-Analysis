@@ -52,6 +52,19 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 .empty-note{padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:var(--red);font-size:13px;margin-bottom:16px}
 .footer{margin-top:32px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-dim)}
 .footer a{color:var(--accent-light);text-decoration:none}
+.holder-row{cursor:pointer;transition:background .15s}
+.holder-row:hover{background:var(--bg-card-hover,#1e293b)}
+.expand-icon{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;border-radius:4px;background:var(--bg-card,#0f172a);color:var(--accent);font-weight:700;font-size:14px;transition:transform .2s}
+.badge-eoa{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,.15);color:#22c55e}
+.badge-contract{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(234,179,8,.15);color:#eab308}
+.badge-pool{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:#3b82f6}
+.portfolio-row>td{padding:0!important;background:var(--bg-card,#0f172a)}
+.portfolio-inner{padding:12px 16px 16px}
+.portfolio-table{width:100%;border-collapse:collapse;font-size:12px}
+.portfolio-table th{padding:6px 8px;text-align:left;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:600}
+.portfolio-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+.portfolio-table tr:last-child td{border-bottom:none}
+.no-positions{padding:16px;text-align:center;color:var(--text-dim);font-size:13px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}.nav-bar{flex-direction:column;gap:10px;align-items:flex-start}.nav-links a{margin-left:0;margin-right:14px}.stat-value{font-size:24px}}
 </style>
 </head>
@@ -114,26 +127,26 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card fw">
       <h2>All Non-Pool Holders</h2>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (uPEG)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr><td>1</td><td class="addr">0x000000000004444c5dc75cB358380D2e3dE08A90</td><td>1.12K uPEG</td><td>595</td><td></td></tr>
-<tr><td>2</td><td class="addr">0x9642b23Ed1E01Df1092B92641051881a322F5D4E</td><td>94.6424 uPEG</td><td>13</td><td></td></tr>
-<tr><td>3</td><td class="addr">0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1</td><td>49.4902 uPEG</td><td>3</td><td></td></tr>
-<tr><td>4</td><td class="addr">0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16</td><td>18.0320 uPEG</td><td>3</td><td></td></tr>
-<tr><td>5</td><td class="addr">0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F</td><td>12.3212 uPEG</td><td>2</td><td></td></tr>
-<tr><td>6</td><td class="addr">0xa673e962941E0F87CE557989cbc7901560d349D6</td><td>7.4135 uPEG</td><td>2</td><td></td></tr>
-<tr><td>7</td><td class="addr">0x2102202E25c69F14e0E1a2915CFd5b74Db30594a</td><td>5.0228 uPEG</td><td>1</td><td></td></tr>
-<tr><td>8</td><td class="addr">0xf5eA7526473d5d95c9c956d29A098661F2A46728</td><td>4.9123 uPEG</td><td>3</td><td></td></tr>
-<tr><td>9</td><td class="addr">0x662d5DFE4039cC69412654C818aD0F7352C3F5F1</td><td>4.1336 uPEG</td><td>2</td><td></td></tr>
-<tr><td>10</td><td class="addr">0x570C16Baff38D218859de956A49D880819666F36</td><td>4.0361 uPEG</td><td>1</td><td></td></tr>
-<tr><td>11</td><td class="addr">0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc</td><td>3.1839 uPEG</td><td>1</td><td></td></tr>
-<tr><td>12</td><td class="addr">0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05</td><td>2.8761 uPEG</td><td>2</td><td></td></tr>
-<tr><td>13</td><td class="addr">0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7</td><td>2.1084 uPEG</td><td>2</td><td></td></tr>
-<tr><td>14</td><td class="addr">0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F</td><td>2.0133 uPEG</td><td>2</td><td></td></tr>
-<tr><td>15</td><td class="addr">0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E</td><td>1.8810 uPEG</td><td>1</td><td></td></tr>
-<tr><td>16</td><td class="addr">0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c</td><td>1.3945 uPEG</td><td>23</td><td></td></tr>
-<tr><td>17</td><td class="addr">0x989b473579b938fFC956C6d12A01Ad53C0953329</td><td>1.2832 uPEG</td><td>1</td><td></td></tr>
-<tr><td>18</td><td class="addr">0x5F1C5951c5B1cC112bA9E89B9467edca33063453</td><td>1.2392 uPEG</td><td>5</td><td></td></tr>
-<tr><td>19</td><td class="addr">0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a</td><td>1.1799 uPEG</td><td>1</td><td></td></tr>
-<tr><td>20</td><td class="addr">0x0Ac277B643dA45329D6779C7897688D87ac29A7A</td><td>1.1000 uPEG</td><td>1</td><td></td></tr></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (uPEG)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr class="holder-row" onclick="togglePortfolio('0x000000000004444c5dc75cB358380D2e3dE08A90')" data-owner="0x000000000004444c5dc75cB358380D2e3dE08A90"><td>1</td><td class="addr">0x0000...8A90</td><td><span class="badge-eoa">eoa</span></td><td>1.12K uPEG</td><td>595</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x000000000004444c5dc75cB358380D2e3dE08A90" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x9642b23Ed1E01Df1092B92641051881a322F5D4E')" data-owner="0x9642b23Ed1E01Df1092B92641051881a322F5D4E"><td>2</td><td class="addr">0x9642...5D4E</td><td><span class="badge-eoa">eoa</span></td><td>94.6424 uPEG</td><td>13</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x9642b23Ed1E01Df1092B92641051881a322F5D4E" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1')" data-owner="0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1"><td>3</td><td class="addr">0x4Ff1...09A1</td><td><span class="badge-eoa">eoa</span></td><td>49.4902 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16')" data-owner="0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16"><td>4</td><td class="addr">0x7b6a...2D16</td><td><span class="badge-eoa">eoa</span></td><td>18.0320 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F')" data-owner="0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F"><td>5</td><td class="addr">0xfE8e...509F</td><td><span class="badge-eoa">eoa</span></td><td>12.3212 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xa673e962941E0F87CE557989cbc7901560d349D6')" data-owner="0xa673e962941E0F87CE557989cbc7901560d349D6"><td>6</td><td class="addr">0xa673...49D6</td><td><span class="badge-eoa">eoa</span></td><td>7.4135 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xa673e962941E0F87CE557989cbc7901560d349D6" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x2102202E25c69F14e0E1a2915CFd5b74Db30594a')" data-owner="0x2102202E25c69F14e0E1a2915CFd5b74Db30594a"><td>7</td><td class="addr">0x2102...594a</td><td><span class="badge-eoa">eoa</span></td><td>5.0228 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x2102202E25c69F14e0E1a2915CFd5b74Db30594a" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xf5eA7526473d5d95c9c956d29A098661F2A46728')" data-owner="0xf5eA7526473d5d95c9c956d29A098661F2A46728"><td>8</td><td class="addr">0xf5eA...6728</td><td><span class="badge-eoa">eoa</span></td><td>4.9123 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xf5eA7526473d5d95c9c956d29A098661F2A46728" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x662d5DFE4039cC69412654C818aD0F7352C3F5F1')" data-owner="0x662d5DFE4039cC69412654C818aD0F7352C3F5F1"><td>9</td><td class="addr">0x662d...F5F1</td><td><span class="badge-eoa">eoa</span></td><td>4.1336 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x662d5DFE4039cC69412654C818aD0F7352C3F5F1" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x570C16Baff38D218859de956A49D880819666F36')" data-owner="0x570C16Baff38D218859de956A49D880819666F36"><td>10</td><td class="addr">0x570C...6F36</td><td><span class="badge-eoa">eoa</span></td><td>4.0361 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x570C16Baff38D218859de956A49D880819666F36" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc')" data-owner="0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc"><td>11</td><td class="addr">0xae5b...2eFc</td><td><span class="badge-eoa">eoa</span></td><td>3.1839 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05')" data-owner="0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05"><td>12</td><td class="addr">0x88a6...4D05</td><td><span class="badge-eoa">eoa</span></td><td>2.8761 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7')" data-owner="0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7"><td>13</td><td class="addr">0x1bfF...17B7</td><td><span class="badge-eoa">eoa</span></td><td>2.1084 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F')" data-owner="0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F"><td>14</td><td class="addr">0x8941...192F</td><td><span class="badge-eoa">eoa</span></td><td>2.0133 uPEG</td><td>2</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E')" data-owner="0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E"><td>15</td><td class="addr">0xfA9b...567E</td><td><span class="badge-eoa">eoa</span></td><td>1.8810 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c')" data-owner="0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c"><td>16</td><td class="addr">0xD730...210c</td><td><span class="badge-eoa">eoa</span></td><td>1.3945 uPEG</td><td>23</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x989b473579b938fFC956C6d12A01Ad53C0953329')" data-owner="0x989b473579b938fFC956C6d12A01Ad53C0953329"><td>17</td><td class="addr">0x989b...3329</td><td><span class="badge-eoa">eoa</span></td><td>1.2832 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x989b473579b938fFC956C6d12A01Ad53C0953329" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x5F1C5951c5B1cC112bA9E89B9467edca33063453')" data-owner="0x5F1C5951c5B1cC112bA9E89B9467edca33063453"><td>18</td><td class="addr">0x5F1C...3453</td><td><span class="badge-eoa">eoa</span></td><td>1.2392 uPEG</td><td>5</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x5F1C5951c5B1cC112bA9E89B9467edca33063453" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a')" data-owner="0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a"><td>19</td><td class="addr">0x7D92...Be5a</td><td><span class="badge-eoa">eoa</span></td><td>1.1799 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr>
+<tr class="holder-row" onclick="togglePortfolio('0x0Ac277B643dA45329D6779C7897688D87ac29A7A')" data-owner="0x0Ac277B643dA45329D6779C7897688D87ac29A7A"><td>20</td><td class="addr">0x0Ac2...9A7A</td><td><span class="badge-eoa">eoa</span></td><td>1.1000 uPEG</td><td>1</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x0Ac277B643dA45329D6779C7897688D87ac29A7A" style="display:none"><td colspan="6"><div class="portfolio-inner">Loading...</div></td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -4460,6 +4473,8 @@ const tvlD = [
     "quote_symbol": "N/A"
   }
 ];
+const portfolioData = {portfolio_json};
+const tokenSymbol = "{symbol}";
 
 (function(){
   function tc(id,cfg){ new Chart(document.getElementById(id),cfg); }
