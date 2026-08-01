@@ -93,6 +93,78 @@ def calculate_tvl_v2(
         return reserve1 * 2
 
 
+
+
+def _snapshot_curve_tvl(w3, pool, target_token) -> int:
+    """Approximate Curve pool TVL in target-token raw units.
+
+    Uses ``coins(i)`` + ``balances(i)`` and assumes the pool targets a
+    balanced USD value per coin (StableSwap / CryptoSwap design), so total
+    TVL ≈ target balance × number of coins.  Falls back to 2× target balance.
+    """
+    target = Web3.to_checksum_address(target_token).lower()
+    pa = Web3.to_checksum_address(pool.pool_address)
+    try:
+        contract = get_contract(w3, pa, "curve_pool")
+    except Exception:
+        return 0
+    coin_addrs: list[str] = []
+    for i in range(8):
+        try:
+            c = Web3.to_checksum_address(contract.functions.coins(i).call())
+        except Exception:
+            break
+        if c.lower() == _ZERO_ADDR.lower():
+            break
+        coin_addrs.append(c)
+    if not coin_addrs:
+        return 0
+    target_idx = next(
+        (i for i, c in enumerate(coin_addrs) if c.lower() == target), None
+    )
+    if target_idx is None:
+        return 0
+    try:
+        target_bal = int(
+            contract.functions.balances(target_idx).call()
+        )
+    except Exception:
+        target_bal = 0
+    if target_bal <= 0:
+        return 0
+    n = len(coin_addrs)
+    return target_bal * n
+
+
+def _snapshot_balancer_tvl(w3, pool, target_token) -> int:
+    """Approximate Balancer V2 pool TVL in target-token raw units.
+
+    Reads balances from the Vault via ``getPoolTokens(poolId)`` and uses
+    target balance × number of tokens as an approximation (weighted pools
+    are not perfectly balanced; this is an acceptable first-order estimate).
+    """
+    target = Web3.to_checksum_address(target_token).lower()
+    vault_addr = Web3.to_checksum_address(pool.factory_address)
+    try:
+        vault = get_contract(w3, vault_addr, "balancer_vault")
+        pool_id = pool.pool_address.lower() + "0" * 24
+        tokens, balances, _ = vault.functions.getPoolTokens(pool_id).call()
+    except Exception:
+        return 0
+    if not tokens:
+        return 0
+    tokens = [Web3.to_checksum_address(t) for t in tokens]
+    target_idx = next(
+        (i for i, t in enumerate(tokens) if t.lower() == target), None
+    )
+    if target_idx is None:
+        return 0
+    target_bal = int(balances[target_idx])
+    if target_bal <= 0:
+        return 0
+    return target_bal * len(tokens)
+
+
 def snapshot_onchain_pool_tvl(
     w3: Web3,
     verified_pools: list[VerifiedPool],
@@ -112,6 +184,10 @@ def snapshot_onchain_pool_tvl(
                 pair = get_contract(w3, pa, "uniswap_v2_pair")
                 reserve0, reserve1, _ = pair.functions.getReserves().call()
                 tvl = int(calculate_tvl_v2(pool, target, int(reserve0), int(reserve1)))
+            elif pool.protocol == "curve":
+                tvl = _snapshot_curve_tvl(w3, pool, target)
+            elif pool.protocol == "balancer":
+                tvl = _snapshot_balancer_tvl(w3, pool, target)
             else:
                 # V3 / others: target-token balance held by the pool contract
                 bal = int(token.functions.balanceOf(Web3.to_checksum_address(pa)).call())

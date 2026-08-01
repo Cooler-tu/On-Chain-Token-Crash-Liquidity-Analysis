@@ -75,6 +75,7 @@ open output/dashboard.html
 | `analyze` | Full pipeline |
 | `discover-only` | Profile + discover + verify pools |
 | `holdings` | Rebuild holdings / pool-ID tables |
+| `dune` | Query Dune directly: `pools` / `swaps` / `tvl` / `data-map` |
 | `dashboard` | Regenerate `dashboard.html` from existing output |
 
 ```bash
@@ -95,13 +96,30 @@ python3 scripts/publish_site.py --serve  # preview
 
 > Indexing is **resumable** via `event_indexer_checkpoint.json`. Change token/window or delete checkpoint to start clean.
 
+### Dune (optional primary data path)
+
+With `DUNE_API_KEY` set, pool discovery runs Dune-first (`dex.trades`, fast, cross-DEX)
+then merges RPC adapter results; swaps, holdings, and TVL queries go through
+`src/data/dune_client.py` with caching to `output/dune_cache/`.  Without a key,
+everything falls back to RPC.
+
+```bash
+export DUNE_API_KEY="..."
+python3 -m src.cli dune pools CRV --from-block 19000000 --to-block 19000050
+python3 -m src.cli dune swaps 0x... --from-block 19000000 --to-block 19000050
+python3 -m src.cli dune tvl 0x...
+python3 -m src.cli dune data-map
+```
+
+See [docs/DUNE_DATA_MAP.md](docs/DUNE_DATA_MAP.md) for the full table.
+
 ---
 
 ## Pipeline (`analyze`)
 
 ```text
 resolve + profile
-  → discover pools (Uni V1–V4, Curve, Balancer)
+  → discover pools (Dune-first; Uni V1–V4, Curve, Balancer)
   → verify
   → index Swap / Mint|Burn / PM / V4 ModifyLiquidity / Transfers
   → LP positions
@@ -122,7 +140,8 @@ resolve + profile
 | Curve + Balancer V2 | Done (discovery + indexing; may be slow on free RPC) |
 | Token profile + resolve | Done |
 | Event indexing with resume | Done |
-| Holdings + pool account tags | Done (RPC; Dune optional) |
+| Holdings + pool account tags | Done (Dune-first when key set; RPC fallback) |
+| Dune unified query layer | Done (`pools` / `swaps` / `tvl` / `data-map` + caching) |
 | EOA vs contract labeling | Done (bytecode surface label) |
 | Dashboard + report + public site | Done |
 | DEX venue tags on holders | Done (window evidence; not beneficial-owner unwrap) |

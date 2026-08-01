@@ -608,6 +608,165 @@ def reconstruct_v4_position_owners(
     return positions
 
 
+
+
+def _curve_lp_token(w3, pool):
+    """Resolve the Curve LP token address for a pool."""
+    try:
+        contract = get_contract(w3, pool.pool_address, "curve_pool")
+        return Web3.to_checksum_address(contract.functions.token().call())
+    except Exception:
+        return pool.pool_address
+
+
+def reconstruct_curve_holders(
+    w3: Web3,
+    pools: list[VerifiedPool],
+    events_by_pool: dict[str, list[dict]],
+    from_block: int,
+    to_block: int,
+) -> list[Position]:
+    """Snapshot Curve LP-token holders at ``to_block``.
+
+    Candidate addresses come from in-window AddLiquidity / RemoveLiquidity
+    providers and LP-token Transfer events.  Share = balanceOf / totalSupply.
+    """
+    positions: list[Position] = []
+    for pool in pools:
+        if pool.protocol != "curve" or not pool.verified:
+            continue
+        lp_addr = _curve_lp_token(w3, pool)
+        try:
+            lp_contract = get_contract(w3, lp_addr, "erc20")
+            total_supply = int(
+                lp_contract.functions.totalSupply().call(
+                    block_identifier=to_block
+                )
+            )
+        except Exception:
+            total_supply = 0
+        if total_supply == 0:
+            continue
+
+        candidates: set[str] = set()
+        for evt in events_by_pool.get(pool.pool_address.lower(), []):
+            for key in ("actor", "recipient"):
+                a = evt.get(key) or ""
+                if a and a.lower() != _ZERO.lower():
+                    try:
+                        candidates.add(Web3.to_checksum_address(a))
+                    except Exception:
+                        continue
+        try:
+            for evt in get_logs_chunked(
+                lp_contract.events.Transfer, from_block, to_block
+            ):
+                args = evt["args"]
+                for raw in (args["from"], args["to"]):
+                    addr = Web3.to_checksum_address(raw)
+                    if addr.lower() != _ZERO.lower():
+                        candidates.add(addr)
+        except Exception:
+            pass
+
+        for addr in sorted(candidates):
+            try:
+                bal = int(
+                    lp_contract.functions.balanceOf(addr).call(
+                        block_identifier=to_block
+                    )
+                )
+            except Exception:
+                continue
+            if bal <= 0:
+                continue
+            share = bal / total_supply * 100
+            positions.append(Position(
+                pool_address=pool.pool_address,
+                owner=addr,
+                lp_token_address=lp_addr,
+                liquidity=str(bal),
+                share_pct=round(share, 6),
+                resolution_method="curve_balanceof_at_to_block",
+                confidence=0.9,
+            ))
+    return positions
+
+
+def reconstruct_balancer_holders(
+    w3: Web3,
+    pools: list[VerifiedPool],
+    events_by_pool: dict[str, list[dict]],
+    from_block: int,
+    to_block: int,
+) -> list[Position]:
+    """Snapshot Balancer V2 BPT holders at ``to_block``.
+
+    BPT (Balancer Pool Token) is the pool contract itself.  Candidates come
+    from Vault PoolBalanceChanged liquidityProvider events and BPT Transfers.
+    """
+    positions: list[Position] = []
+    for pool in pools:
+        if pool.protocol != "balancer" or not pool.verified:
+            continue
+        bpt_addr = pool.pool_address
+        try:
+            bpt_contract = get_contract(w3, bpt_addr, "erc20")
+            total_supply = int(
+                bpt_contract.functions.totalSupply().call(
+                    block_identifier=to_block
+                )
+            )
+        except Exception:
+            total_supply = 0
+        if total_supply == 0:
+            continue
+
+        candidates: set[str] = set()
+        for evt in events_by_pool.get(bpt_addr.lower(), []):
+            for key in ("actor", "recipient"):
+                a = evt.get(key) or ""
+                if a and a.lower() != _ZERO.lower():
+                    try:
+                        candidates.add(Web3.to_checksum_address(a))
+                    except Exception:
+                        continue
+        try:
+            for evt in get_logs_chunked(
+                bpt_contract.events.Transfer, from_block, to_block
+            ):
+                args = evt["args"]
+                for raw in (args["from"], args["to"]):
+                    addr = Web3.to_checksum_address(raw)
+                    if addr.lower() != _ZERO.lower():
+                        candidates.add(addr)
+        except Exception:
+            pass
+
+        for addr in sorted(candidates):
+            try:
+                bal = int(
+                    bpt_contract.functions.balanceOf(addr).call(
+                        block_identifier=to_block
+                    )
+                )
+            except Exception:
+                continue
+            if bal <= 0:
+                continue
+            share = bal / total_supply * 100
+            positions.append(Position(
+                pool_address=bpt_addr,
+                owner=addr,
+                lp_token_address=bpt_addr,
+                liquidity=str(bal),
+                share_pct=round(share, 6),
+                resolution_method="balancer_bpt_balanceof_at_to_block",
+                confidence=0.9,
+            ))
+    return positions
+
+
 def analyze_positions(
     w3: Web3,
     verified_pools: list[VerifiedPool],
@@ -630,6 +789,12 @@ def analyze_positions(
 
     positions.extend(reconstruct_v1_holders(
         w3, verified_pools, from_block, to_block
+    ))
+    positions.extend(reconstruct_curve_holders(
+        w3, verified_pools, events_by_pool, from_block, to_block
+    ))
+    positions.extend(reconstruct_balancer_holders(
+        w3, verified_pools, events_by_pool, from_block, to_block
     ))
     positions.extend(reconstruct_v2_holders(
         w3, verified_pools, events_by_pool, from_block, to_block

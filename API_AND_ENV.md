@@ -108,9 +108,11 @@ set -a && source .env && set +a
 
 ---
 
-## `DUNE_API_KEY`（可选 / 规划中）
+## `DUNE_API_KEY`（可选；设置后主数据路径优先走 Dune）
 
-[Dune Analytics](https://dune.com) 用 SQL 查已解码的链上表，适合补强「全量 holders / LP 名单」，避免长时间扫 RPC。
+[Dune Analytics](https://dune.com) 用 SQL 查已解码的链上表。本项目的统一查询层
+（`src/data/dune_client.py`）在配置 key 后优先从 Dune 拉取池发现、Swap、持仓与
+TVL；无 key 或查询失败时自动回退 RPC。
 
 1. 注册 Dune → **Settings → API** → Create key  
 2. 导出：
@@ -119,23 +121,18 @@ set -a && source .env && set +a
 export DUNE_API_KEY="YOUR_DUNE_API_KEY"
 ```
 
-3. Python SDK（接入后使用）：
+3. 验证：
 
 ```bash
-pip install dune-client
+python3 -m src.cli dune data-map
+python3 -m src.cli dune pools USDC --from-block 19000000 --to-block 19000050
 ```
 
-```python
-from dune_client.client import DuneClient
-from dune_client.query import QueryBase
+CLI 命令：`pools`（跨 DEX 池发现）、`swaps`（单池 Swap）、`tvl`（池 USD TVL）、
+`data-map`（数据清单）。缓存写入 `output/dune_cache/`。
 
-dune = DuneClient()  # 自动读 DUNE_API_KEY
-# results = dune.run_query(QueryBase(query_id=YOUR_QUERY_ID))
-```
-
-文档：[Dune Python SDK](https://docs.dune.com/api-reference/sdks/python)
-
-> 当前主流程 **只依赖 `ETH_RPC_URL`**。Dune 未接线前，不设 `DUNE_API_KEY` 不影响 `analyze`。
+> 不设 `DUNE_API_KEY` 时，`analyze` 全流程仍可运行（纯 RPC 路径）。
+> 文档：[docs/DUNE_DATA_MAP.md](docs/DUNE_DATA_MAP.md)
 
 ---
 

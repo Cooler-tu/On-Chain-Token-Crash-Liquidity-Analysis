@@ -450,6 +450,151 @@ def dashboard(
     typer.echo("Dashboard generated: {}".format(dashboard_path))
 
 
+@app.command()
+def dune(
+    action: str = typer.Argument(
+        ..., help="Action: pools | swaps | tvl | data-map"
+    ),
+    token: str = typer.Option(
+        "", help="Token address/symbol/name (for pools/tvl)"
+    ),
+    pool: str = typer.Option(
+        "", help="Pool contract address (for swaps/tvl)"
+    ),
+    from_block: int = typer.Option(19000000, help="Start block"),
+    to_block: int = typer.Option(19100000, help="End block"),
+    output_dir: str = typer.Option("output", help="Output directory"),
+    pick: int = typer.Option(0, help="Token resolve pick"),
+):
+    """Query Dune directly: pool discovery, swaps, TVL, or data map.
+
+    Examples:
+      python3 -m src.cli dune pools CRV --from-block 19000000 --to-block 19000050
+      python3 -m src.cli dune swaps 0x... --from-block 19000000 --to-block 19000050
+      python3 -m src.cli dune tvl 0x...
+      python3 -m src.cli dune data-map
+    """
+    from .data.dune_client import (
+        DuneQueryError,
+        dune_api_key_configured,
+        get_dune_client,
+    )
+
+    action_norm = action.strip().lower()
+    if action_norm == "data-map":
+        _echo_dune_data_map()
+        return
+
+    if not dune_api_key_configured():
+        typer.echo(
+            "DUNE_API_KEY is not set. Create a key at "
+            "https://dune.com/settings/api and export it, then retry.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    cache_dir = Path(output_dir) / "dune_cache"
+    try:
+        client = get_dune_client(cache_dir=cache_dir)
+    except DuneQueryError as exc:
+        typer.echo("Dune client init failed: {}".format(exc), err=True)
+        raise typer.Exit(1)
+
+    if action_norm in ("pools",):
+        token_address = _resolve_or_exit(token, 1, pick)
+        typer.echo(
+            "Querying Dune dex.trades for pools containing {}".format(
+                token_address
+            )
+        )
+        try:
+            rows = client.fetch_pools_for_token(
+                token_address, from_block, to_block
+            )
+        except DuneQueryError as exc:
+            typer.echo("Dune query failed: {}".format(exc), err=True)
+            raise typer.Exit(1)
+        _write_json(Path(output_dir) / "dune_pools.json", rows)
+        typer.echo("Found {} pool(s)".format(len(rows)))
+        for r in rows:
+            typer.echo(
+                "  {:<10} {:<10} {}  trades={}".format(
+                    r["project"], r["version"],
+                    r["pool_address"], r["trade_count"],
+                )
+            )
+        typer.echo("Saved to {}/dune_pools.json".format(output_dir))
+        return
+
+    if action_norm == "swaps":
+        if not pool:
+            typer.echo("--pool is required for swaps", err=True)
+            raise typer.Exit(1)
+        typer.echo(
+            "Querying Dune dex.trades for pool {}".format(pool)
+        )
+        try:
+            rows = client.fetch_swaps_for_pool(
+                pool, from_block, to_block
+            )
+        except DuneQueryError as exc:
+            typer.echo("Dune query failed: {}".format(exc), err=True)
+            raise typer.Exit(1)
+        _write_json(Path(output_dir) / "dune_swaps.json", rows)
+        typer.echo("Found {} swap(s)".format(len(rows)))
+        for r in rows[:10]:
+            typer.echo(
+                "  #{} {} {}->{}".format(
+                    r.get("block_number", 0),
+                    r.get("project", ""),
+                    r.get("token_sold_address", "")[:10],
+                    r.get("token_bought_address", "")[:10],
+                )
+            )
+        typer.echo("Saved to {}/dune_swaps.json".format(output_dir))
+        return
+
+    if action_norm == "tvl":
+        if not pool:
+            typer.echo("--pool is required for tvl", err=True)
+            raise typer.Exit(1)
+        try:
+            tvl = client.fetch_pool_tvl(pool)
+        except DuneQueryError as exc:
+            typer.echo("Dune query failed: {}".format(exc), err=True)
+            raise typer.Exit(1)
+        if tvl is None:
+            typer.echo("No TVL row found for {}".format(pool))
+        else:
+            typer.echo("Pool: {}".format(tvl["pool_address"]))
+            typer.echo("Day:  {}".format(tvl["day"]))
+            typer.echo("TVL:  ${:,.2f}".format(tvl["tvl_usd"]))
+            typer.echo("Tokens: {}".format(tvl["token_count"]))
+        return
+
+    typer.echo(
+        "Unknown action '{}'. Use: pools | swaps | tvl | data-map".format(
+            action
+        ),
+        err=True,
+    )
+    raise typer.Exit(1)
+
+
+def _echo_dune_data_map() -> None:
+    """Print the Dune data map (what comes from Dune vs RPC)."""
+    typer.echo("=== Dune data map ===")
+    typer.echo("Pool discovery      : Dune dex.trades -> dune_pools.json")
+    typer.echo("Swaps              : Dune dex.trades -> dune_swaps.json")
+    typer.echo("Holdings addresses : Dune erc20_ethereum.evt_Transfer")
+    typer.echo("Holdings balances  : Dune tokens_ethereum.balances")
+    typer.echo("Pool TVL           : Dune dex.pool_tvl -> dune_tvl.json")
+    typer.echo("Balancer liquidity : Dune balancer_v2_ethereum.Vault_evt_PoolBalanceChanged")
+    typer.echo("Curve liquidity    : RPC (per-pool contracts; Dune tables are per-pool)")
+    typer.echo("Verification       : RPC (bytecode/factory/state checks)")
+    typer.echo("Positions          : RPC (balanceOf/totalSupply snapshots)")
+
+
 def _write_json(path: Path, data):
     with open(path, "w") as f:
         json.dump(data, f, indent=2, default=str)
@@ -457,4 +602,3 @@ def _write_json(path: Path, data):
 
 if __name__ == "__main__":
     app()
-

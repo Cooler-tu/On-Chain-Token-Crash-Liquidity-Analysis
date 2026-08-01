@@ -15,11 +15,6 @@
 | 4 | Uniswap | V1 | ETH-ERC20 Exchange | ✅ 完整支持 | `getExchange` 发现 + LP 份额快照 + 事件索引 |
 | 5 | Curve | V1/V2 | StableSwap/CryptoSwap | ✅ 完整支持 | Registry-based发现; x³y+y³x=k / crypto invariant |
 | 6 | Balancer | V2 | Weighted Pool | ✅ 完整支持 | Vault架构; 多代币加权池; Vault Swap事件发现 |
-|---|----------|---------|-------------|--------|-------|
-| 1 | Uniswap | V2 | Direct Pair | ✅ 完整支持 | Factory: `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` |
-| 2 | Uniswap | V3 | Concentrated Pool | ✅ 完整支持 | Factory: `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
-| 3 | Uniswap | V4 | Singleton | ✅ 完整支持 | PoolManager + StateView + PositionManager + 5k块穷举扫描 |
-| 4 | Uniswap | V1 | ETH-ERC20 Exchange | 🔧 薄支持 | `getExchange` 发现 + LP 份额快照 |
 
 ## Uniswap V2
 

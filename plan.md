@@ -21,7 +21,14 @@
 
 ## 🎯 Current
 
-- _(nothing in progress)_
+- **Dune unified query layer + Curve/Balancer integration** — 本周任务（NEXT_WEEK.md）
+  - ✅ `src/data/dune_client.py`（SQL/轮询/缓存 + pools/swaps/tvl）
+  - ✅ CLI `dune pools|swaps|tvl|data-map`
+  - ✅ Dune-first pool discovery（engine 合并）
+  - ✅ Curve/Balancer 持仓重建（positions.py）
+  - ✅ Curve/Balancer TVL 估算（metrics.py）
+  - ✅ docs/DUNE_DATA_MAP.md + research-notes/curve-balancer-vs-uniswap.md
+  - ⏳ 端到端验证：需要 `DUNE_API_KEY`（用户侧）或真实 RPC 跑 CRV/BAL
 
 ---
 
