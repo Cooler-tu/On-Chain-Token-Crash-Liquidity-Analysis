@@ -1,12 +1,12 @@
 {
   "pool_concentration": {
-    "total_tvl": 10095219942596648540,
+    "total_tvl": 10216795919062901188,
     "main_pool": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
-    "main_pool_tvl": 10022674054196495854,
-    "main_pool_share": 0.992814,
+    "main_pool_tvl": 10144250030662748502,
+    "main_pool_share": 0.992899,
     "num_active_pools": 4,
     "per_pool_tvl": {
-      "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775": 10022674054196495854,
+      "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775": 10144250030662748502,
       "0x21ff5cf76f562c6fb3871b59133a9E214eBc0078": 65174413808115824,
       "0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890": 7371474592036860,
       "0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230": 2
@@ -17,13 +17,13 @@
     "top_lp_share": 100.0,
     "top_n_share": 147.312835,
     "top_5_share": 147.312835,
-    "total_lp_positions": 36,
-    "num_lps": 20
+    "total_lp_positions": 47,
+    "num_lps": 22
   },
   "withdrawal_severity": {
     "num_withdrawals": 130,
     "total_removed_token0": 83755296008594764396,
-    "pre_event_tvl": 10095219942596648540,
+    "pre_event_tvl": 10216795919062901188,
     "withdrawal_severity": 1.0,
     "withdrawal_events": [
       {

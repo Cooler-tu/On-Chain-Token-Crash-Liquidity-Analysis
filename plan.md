@@ -21,7 +21,7 @@
 
 ## 🎯 Current
 
-- **Dune unified query layer + Curve/Balancer integration** — 本周任务（NEXT_WEEK.md）
+- **Dune unified query layer + Curve/Balancer integration** — 本周任务（[`NEXT_WEEK.md`](NEXT_WEEK.md)）
   - ✅ `src/data/dune_client.py`（SQL/轮询/缓存 + pools/swaps/tvl）
   - ✅ CLI `dune pools|swaps|tvl|data-map`
   - ✅ Dune-first pool discovery（engine 合并）
@@ -29,6 +29,7 @@
   - ✅ Curve/Balancer TVL 估算（metrics.py）
   - ✅ docs/DUNE_DATA_MAP.md + research-notes/curve-balancer-vs-uniswap.md
   - ⏳ 端到端验证：需要 `DUNE_API_KEY`（用户侧）或真实 RPC 跑 CRV/BAL
+  - 📋 Next week ref: pull analysis data primarily via Dune; onboard typical non-Uniswap MM pools for contrast
 
 ---
 
@@ -39,7 +40,7 @@
 3. **Historical crash pattern research** — common LP-withdrawal signatures
 4. **Deep holder unwrap** — routers / aggregators / beneficial owners beyond surface EOA label
 5. **Multi-chain** — Arbitrum, Base, Polygon
-6. **TVL timeline in USD** — needs price oracle
+6. **TVL timeline in USD** — needs price oracle (related to next-week TVL ranking, but full USD oracle is later)
 7. **Real-time monitoring** — alert on sudden liquidity changes
 
 ---

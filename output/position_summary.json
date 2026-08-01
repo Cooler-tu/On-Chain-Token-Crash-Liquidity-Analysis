@@ -1,6 +1,6 @@
 {
-  "total_positions": 36,
-  "total_unique_holders": 20,
+  "total_positions": 47,
+  "total_unique_holders": 22,
   "snapshot_block": 25004000,
   "share_basis": "v3_tick_token_value_over_pool_balances;v4_in_range_L_over_pool_active_liquidity;v1_v2_lp_balance_share",
   "top_5_holders": [

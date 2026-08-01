@@ -1,11 +1,14 @@
 {
   "total_unique_addresses": 420,
   "real_holder_count": 231,
+  "resolved_contract_count": 0,
+  "unresolved_contract_count": 184,
+  "total_resolved_holders": 231,
   "contract_count": 184,
-  "real_holder_balance": 138.814241,
-  "contract_balance": 1206.404058,
-  "query_timestamp": 1785210724,
-  "query_time_human": "2026-07-28 03:52:04 UTC",
+  "real_holder_balance": 141.64589,
+  "contract_balance": 1238.078299,
+  "query_timestamp": 1785222660,
+  "query_time_human": "2026-07-28 07:11:00 UTC",
   "holdings_count": 420,
   "pool_count": 10,
   "source": "dune",
@@ -14,29 +17,33 @@
   "holdings": [
     {
       "address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
-      "balance_raw": "1123973623118824942520",
-      "balance_decimal": 1123.973623,
+      "balance_raw": "1155587075856902922548",
+      "balance_decimal": 1155.587076,
       "is_pool": true,
       "pool_label": "UNISWAP V4",
       "is_contract": true,
       "address_type": "pool",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 595,
       "first_seen_block": 25003546,
       "last_seen_block": 25003999,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9642b23Ed1E01Df1092B92641051881a322F5D4E",
-      "balance_raw": "96912431655319732976",
-      "balance_decimal": 96.912432,
+      "balance_raw": "100221436017233391235",
+      "balance_decimal": 100.221436,
       "is_pool": false,
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 13,
       "first_seen_block": 25003791,
       "last_seen_block": 25003953,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1",
@@ -46,10 +53,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003700,
       "last_seen_block": 25003886,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7b6a9f41c68b5Fb037699376F283B02Cd0012D16",
@@ -59,10 +68,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003609,
       "last_seen_block": 25003764,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa673e962941E0F87CE557989cbc7901560d349D6",
@@ -72,10 +83,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003850,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x662d5DFE4039cC69412654C818aD0F7352C3F5F1",
@@ -85,10 +98,27 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003985,
       "last_seen_block": 25003985,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
+    },
+    {
+      "address": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
+      "balance_raw": "5072125015331374251",
+      "balance_decimal": 5.072125,
+      "is_pool": true,
+      "pool_label": "UNISWAP V3",
+      "is_contract": true,
+      "address_type": "pool",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
+      "tx_count": 231,
+      "first_seen_block": 25003548,
+      "last_seen_block": 25004000,
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2102202E25c69F14e0E1a2915CFd5b74Db30594a",
@@ -98,23 +128,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003788,
       "last_seen_block": 25003788,
-      "query_timestamp": 1785210724
-    },
-    {
-      "address": "0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775",
-      "balance_raw": "5011337027098247927",
-      "balance_decimal": 5.011337,
-      "is_pool": true,
-      "pool_label": "UNISWAP V3",
-      "is_contract": true,
-      "address_type": "pool",
-      "tx_count": 231,
-      "first_seen_block": 25003548,
-      "last_seen_block": 25004000,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xf5eA7526473d5d95c9c956d29A098661F2A46728",
@@ -124,23 +143,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003938,
       "last_seen_block": 25003938,
-      "query_timestamp": 1785210724
-    },
-    {
-      "address": "0x88538812e41b89689f5e23871ef5d5CE2be0F987",
-      "balance_raw": "3627098929707456185",
-      "balance_decimal": 3.627099,
-      "is_pool": false,
-      "pool_label": "",
-      "is_contract": false,
-      "address_type": "eoa",
-      "tx_count": 22,
-      "first_seen_block": 25003626,
-      "last_seen_block": 25003844,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xae5b9D2bCAEdAbfeb2bEc1c498Bb550ccaaa2eFc",
@@ -150,10 +158,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003994,
       "last_seen_block": 25003994,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x88a652ed8FD3CA27Ff2CADA4BD1BA027A3A84D05",
@@ -163,10 +173,27 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003868,
       "last_seen_block": 25003868,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
+    },
+    {
+      "address": "0x88538812e41b89689f5e23871ef5d5CE2be0F987",
+      "balance_raw": "2622098929707456185",
+      "balance_decimal": 2.622099,
+      "is_pool": false,
+      "pool_label": "",
+      "is_contract": false,
+      "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
+      "tx_count": 22,
+      "first_seen_block": 25003626,
+      "last_seen_block": 25003844,
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1bfFC3E2eCB31192e98CAd276Bc8B180bb8617B7",
@@ -176,10 +203,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003596,
       "last_seen_block": 25003708,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8941dFb218A9DDeaB59e66441EDf8F11DD29192F",
@@ -189,10 +218,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003706,
       "last_seen_block": 25003706,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E",
@@ -202,10 +233,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003974,
       "last_seen_block": 25003974,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD730B101790e90051Ee2dB099Ac8Ee2c160d210c",
@@ -215,10 +248,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 23,
       "first_seen_block": 25003808,
       "last_seen_block": 25003842,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x989b473579b938fFC956C6d12A01Ad53C0953329",
@@ -228,10 +263,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003749,
       "last_seen_block": 25003749,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7D92e04813d13AAF2E2853c341a19a3Db92DBe5a",
@@ -241,10 +278,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003799,
       "last_seen_block": 25003799,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3E803Afe748E911BB6FC0317D304555B65541eC0",
@@ -254,10 +293,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 5,
       "first_seen_block": 25003846,
       "last_seen_block": 25003949,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0Ac277B643dA45329D6779C7897688D87ac29A7A",
@@ -267,10 +308,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003693,
       "last_seen_block": 25003693,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x617e24fcdF3e283Cf374E950918ecB960253FFB2",
@@ -280,10 +323,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003874,
       "last_seen_block": 25003874,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x95974B05b72921B6622731e1EDBb43eF398E0fCF",
@@ -293,10 +338,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003807,
       "last_seen_block": 25003826,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5AaFc1f252d544f744d17a4E734afd6efC47edE4",
@@ -306,10 +353,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 5,
       "first_seen_block": 25003797,
       "last_seen_block": 25003964,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd862CDcfEB856C32B3C4F7563f4811D8Ddfd42e2",
@@ -319,10 +368,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003788,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xcD6b980029E6E6e0733ac8eC3E02be9410D09799",
@@ -332,10 +383,27 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 7,
       "first_seen_block": 25003611,
       "last_seen_block": 25003913,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
+    },
+    {
+      "address": "0x5F1C5951c5B1cC112bA9E89B9467edca33063453",
+      "balance_raw": "527645008319257403",
+      "balance_decimal": 0.527645,
+      "is_pool": false,
+      "pool_label": "",
+      "is_contract": false,
+      "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
+      "tx_count": 5,
+      "first_seen_block": 25003842,
+      "last_seen_block": 25003934,
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb77C8a50586eC4e77e67122768B09A15e33FaD29",
@@ -345,10 +413,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003802,
       "last_seen_block": 25003802,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xAaD2a00550C1C829f360094d1c643e05C2cB99ff",
@@ -358,10 +428,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003612,
       "last_seen_block": 25003612,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xaB58c5A29Fe58Ca841DC98fBbC4b9A5903942950",
@@ -371,10 +443,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003867,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x62D63eFDFdc7804666725f4Cc8Cb45C1A41A0809",
@@ -384,10 +458,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003940,
       "last_seen_block": 25003940,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x07964f135f276412b3182a3B2407b8dd45000000",
@@ -397,10 +473,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003721,
       "last_seen_block": 25003846,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x569F26Ed3FF322edA22A9650cFCd05E9E8152DF8",
@@ -410,10 +488,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003957,
       "last_seen_block": 25003957,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB06184E76AA62c078a3a58C00E0C44a5DCffA5ab",
@@ -423,10 +503,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003879,
       "last_seen_block": 25003879,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xde7259893Af7cdbC9fD806c6ba61D22D581d5667",
@@ -436,10 +518,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003807,
       "last_seen_block": 25003992,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7019d1b89abdca70bD753B0c8C7066E0Ff41aC5c",
@@ -449,10 +533,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003946,
       "last_seen_block": 25003946,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4a8762e8137e389ACEC01EB375d126D142272bFf",
@@ -462,10 +548,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003966,
       "last_seen_block": 25003966,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF55c02b021f91752521C0cB74303565f25BAcCb1",
@@ -475,10 +563,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003857,
       "last_seen_block": 25003857,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x48b51287FB5281EA0913100809C3b7f1649C7996",
@@ -488,10 +578,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003850,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC06ebbefD94032B85424D51906e2A335EFAe264B",
@@ -501,10 +593,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 6,
       "first_seen_block": 25003556,
       "last_seen_block": 25003918,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x21ff5cf76f562c6fb3871b59133a9E214eBc0078",
@@ -514,10 +608,12 @@
       "pool_label": "UNISWAP V2",
       "is_contract": true,
       "address_type": "pool",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 0,
       "first_seen_block": 25003546,
       "last_seen_block": 25004000,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA4d9D7068d84bbDF2E3Caf1bBF2e1135BCD41984",
@@ -527,10 +623,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003556,
       "last_seen_block": 25003556,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x81463B0f960f247f704377661ec81C1fd65b5128",
@@ -540,10 +638,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003678,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xcdeac38DC448D16997F8D3F4486f78d3f6b0dDC9",
@@ -553,10 +653,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003717,
       "last_seen_block": 25003717,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd8E80048130743183acb0F6b17170AEa6bFdBab4",
@@ -566,10 +668,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003968,
       "last_seen_block": 25003968,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890",
@@ -579,10 +683,12 @@
       "pool_label": "UNISWAP V3",
       "is_contract": true,
       "address_type": "pool",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 0,
       "first_seen_block": 25003546,
       "last_seen_block": 25004000,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3A5eEDc432B6FB0e5eEdF206b63F7D9334989309",
@@ -592,10 +698,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003876,
       "last_seen_block": 25003876,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1731431E8cb97B0826275F8Ca35a2f2cE9F0CF93",
@@ -605,10 +713,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003556,
       "last_seen_block": 25003556,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x03588d14a7Aff8a566Afd539A4B44CdECCa00fDB",
@@ -618,10 +728,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003843,
       "last_seen_block": 25003985,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xEDC6531B10297788CBb0fcFAEE904a3803D3E2e4",
@@ -631,10 +743,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003836,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xaD01C20d5886137e056775af56915de824c8fCe5",
@@ -644,10 +758,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003841,
       "last_seen_block": 25003841,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7AD4bdC94d4040b1B76CCab5458B4C6c5bc6F960",
@@ -657,10 +773,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003859,
       "last_seen_block": 25003874,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xf5c4F3Dc02c3FB9279495a8fEF7B0741da956157",
@@ -670,10 +788,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003638,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7336Bc7430cabaA56339E8521b06ee9C3382e68C",
@@ -683,10 +803,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003788,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xFeA2e2CE0D260144C75f3f96D16ebAfEE5Ba9FD3",
@@ -696,10 +818,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003980,
       "last_seen_block": 25003980,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb1b2d032AA2F52347fbcfd08E5C3Cc55216E8404",
@@ -709,10 +833,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003826,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9830d373fBFE5daBF039071eCCdaFE4192ABd7A1",
@@ -722,10 +848,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003799,
       "last_seen_block": 25003806,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xAeEad20e455f69B3EeF4A7af17Fc0dda8C15BB51",
@@ -735,10 +863,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003836,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb5436C6Bc4260FD8909Ba36d0D3EB9176a99eAD8",
@@ -748,10 +878,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003898,
       "last_seen_block": 25003898,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4BfA9680e9A3C23691135d3DC6C3D9Ec5d2B2B30",
@@ -761,10 +893,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003821,
       "last_seen_block": 25003832,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8392876883Cf0e9e7ee24d9b1F606ED88644f23B",
@@ -774,10 +908,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003881,
       "last_seen_block": 25003949,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x002D09751222078406A2c6FfeD463d43E05D364a",
@@ -787,10 +923,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003572,
       "last_seen_block": 25003591,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x00b8f0c06c962d5e5796cBC301670F1ed95964Dc",
@@ -800,10 +938,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003851,
       "last_seen_block": 25003851,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0111Dcc6fc2dF10B1145FDCFEd2bCF1b1C00de91",
@@ -813,10 +953,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003855,
       "last_seen_block": 25003855,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x023aB8e20a4682d315Daef4c91DB96bD77934D66",
@@ -826,10 +968,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003688,
       "last_seen_block": 25003706,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x046e4C7B6dfAf5ee2C45714DFaC77ecaC3203a6c",
@@ -839,10 +983,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003854,
       "last_seen_block": 25003854,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x04a281fE4c80DFD04b38Eaec7b9388DA061808AF",
@@ -852,10 +998,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003923,
       "last_seen_block": 25003923,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0504B6c68792c5E2E6aA75779DD09CE426a39ef9",
@@ -865,10 +1013,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003909,
       "last_seen_block": 25003909,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x05A50b3CD8349F786C7553c927B553545DBf9d33",
@@ -878,23 +1028,27 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003893,
       "last_seen_block": 25003893,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x06CFf7088619C7178F5e14f0B119458d08d2f5ef",
-      "balance_raw": "4",
+      "balance_raw": "5",
       "balance_decimal": 0.0,
       "is_pool": false,
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003788,
       "last_seen_block": 25003965,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x06a2140026cAa073D2EF3B62A659E94FA70fDDf1",
@@ -904,10 +1058,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003790,
       "last_seen_block": 25003790,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0799d03BEdC583145649C47cF9B8Acd1D76FB7bA",
@@ -917,10 +1073,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003849,
       "last_seen_block": 25003849,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x07dc98F9714Dc3BcB21dd1eE377253DdCdd10854",
@@ -930,10 +1088,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003868,
       "last_seen_block": 25003868,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0833be979cB1A1Dc0EaaF98167c56f1b41776632",
@@ -943,10 +1103,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003717,
       "last_seen_block": 25003742,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x084c8b72D2643e48162103a5Ac0e324CA5194F8b",
@@ -956,10 +1118,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 6,
       "first_seen_block": 25003880,
       "last_seen_block": 25003970,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x085cD4Ed123a7323E7413ddea3229de1fcc6c7ca",
@@ -969,10 +1133,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003866,
       "last_seen_block": 25003866,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x090a48553f734a1EB4b58eAcAe182a991b208087",
@@ -982,10 +1148,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003721,
       "last_seen_block": 25003846,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0924ee61E78239992562F647e8e17f031810DA70",
@@ -995,10 +1163,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003914,
       "last_seen_block": 25003914,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0A0cb20622DB73ea6E848e57b9a677A0B83664c9",
@@ -1008,10 +1178,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003548,
       "last_seen_block": 25003567,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0A9EF6eeE2aB15A88A888cd48068AB9ED528E77e",
@@ -1021,10 +1193,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003806,
       "last_seen_block": 25003806,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0Ba05074c51178b64f3B2185C1346b3Afd9Cdca6",
@@ -1034,10 +1208,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003970,
       "last_seen_block": 25003989,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0D73723e987cDAA20695B3db50539F9490d60C2b",
@@ -1047,10 +1223,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003920,
       "last_seen_block": 25003920,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0E68543C8FbD0f6c96f0c9481125c265B0457A3C",
@@ -1060,10 +1238,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003809,
       "last_seen_block": 25003854,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0a9b1604453B41e84F1b28f5af31F28547796d0B",
@@ -1073,10 +1253,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003982,
       "last_seen_block": 25003982,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0d56D0f7d148b75af0527A5Cea73Ab926b59A190",
@@ -1086,10 +1268,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003855,
       "last_seen_block": 25003855,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x0e4E8B9D84cf957a61b58Ab9AfD46fc51515872f",
@@ -1099,10 +1283,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003921,
       "last_seen_block": 25003921,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x100ceB2AdCFdbd339A2926ea670298A91Ee3d501",
@@ -1112,10 +1298,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003772,
       "last_seen_block": 25003782,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x106A403b2f6FBA4Cccb6Fb4FB2dC583dc3EFc6a3",
@@ -1125,10 +1313,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003934,
       "last_seen_block": 25003961,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x10c5BC67bd88AEea42F9fBfD860a2b735333D675",
@@ -1138,10 +1328,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003811,
       "last_seen_block": 25003811,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x111111125421cA6dc452d289314280a0f8842A65",
@@ -1151,10 +1343,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003700,
       "last_seen_block": 25003700,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x115D731C7d556448EB4Dc8a1Aaa36A3D510443e0",
@@ -1164,10 +1358,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 5,
       "first_seen_block": 25003930,
       "last_seen_block": 25004000,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE",
@@ -1177,10 +1373,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 63,
       "first_seen_block": 25003556,
       "last_seen_block": 25003992,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x14014ae01E3D5a8Baea83FF9930a9AF7C2c6d209",
@@ -1190,10 +1388,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003954,
       "last_seen_block": 25003954,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1438D249d507A5C9374edB6d7e2F5185c9D003ff",
@@ -1203,10 +1403,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x14D6A8C651b5fC192B72d6813918792663Af00CE",
@@ -1216,10 +1418,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003851,
       "last_seen_block": 25003851,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x14DC36f7EFbc8Ed73BdD4A9C9A2c0Ad22f0b1b2A",
@@ -1229,10 +1433,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003619,
       "last_seen_block": 25003619,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x15E2CBb7Df22d15A40C7Bf6F5A3544FCd09C5F16",
@@ -1242,10 +1448,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003843,
       "last_seen_block": 25003992,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x15f032be7Ae77C8046764b628117F5DD7bEDED16",
@@ -1255,10 +1463,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003586,
       "last_seen_block": 25003586,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1633D8c3F1Bf766C20DF49ea7A1f1D88fE68D646",
@@ -1268,10 +1478,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003910,
       "last_seen_block": 25003910,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x163F3103De041d25464E2C8A4f8f3187EC1856E0",
@@ -1281,10 +1493,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 154,
       "first_seen_block": 25003626,
       "last_seen_block": 25003973,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x185634b095270d9b8699237A325684728a1f4372",
@@ -1294,10 +1508,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003612,
       "last_seen_block": 25003612,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x18ab0452757f1dB22e0D30042Ae1A90eA771F028",
@@ -1307,10 +1523,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003866,
       "last_seen_block": 25003866,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x190fb3B4118e5633820184fE9217049A88f07FCF",
@@ -1320,10 +1538,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003706,
       "last_seen_block": 25003710,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x19eC47a33A3a92891043b4393d0aD472524721D3",
@@ -1333,10 +1553,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003811,
       "last_seen_block": 25003845,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x19f6d4f62715Cfe62DA586CEE9BC87B1638a9515",
@@ -1346,10 +1568,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003920,
       "last_seen_block": 25003920,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1A135786FB8438533dec54A6E9C0aFA596E406aB",
@@ -1359,10 +1583,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003980,
       "last_seen_block": 25003980,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1A9C11bb8C884995ADD7E1E76a3C9e47A29f76c0",
@@ -1372,10 +1598,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003678,
       "last_seen_block": 25003678,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1C8A895EE42829429c05f624edbc1273e01893ed",
@@ -1385,10 +1613,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003804,
       "last_seen_block": 25003825,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1D3403d5B4cF207912473176B0d40441864DE6Be",
@@ -1398,10 +1628,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003876,
       "last_seen_block": 25003964,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1E2CA98F79751FF5dc7032D655377029a37D4B1D",
@@ -1411,10 +1643,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003908,
       "last_seen_block": 25003908,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1EBC7039e41d10E1c774b05C99369C2677a240Bd",
@@ -1424,10 +1658,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003874,
       "last_seen_block": 25003935,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1F8D22Ec5D6722A6ae19e2C3F7129aB9E24a9825",
@@ -1437,10 +1673,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1b339A248ed98a23D56472Be4079B5b055A8BDaB",
@@ -1450,10 +1688,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003905,
       "last_seen_block": 25003905,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1c9caaf8d72d5735ee03062fD97b473a896fA491",
@@ -1463,10 +1703,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x1d5029220300B65921DAbA8Dd5C5bCb8833db17A",
@@ -1476,10 +1718,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003678,
       "last_seen_block": 25003678,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2074729D51A4E04bB5A0D4ce103fC017341e97D6",
@@ -1489,10 +1733,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003911,
       "last_seen_block": 25003936,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x20c633D759E9FbB896D4bA4b3112508Df002188C",
@@ -1502,10 +1748,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003817,
       "last_seen_block": 25003820,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2409E95953e229a431d6C277D5408F48c3149be4",
@@ -1515,10 +1763,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003947,
       "last_seen_block": 25003947,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x246e33656D6Ea870f6e21f50addA940c9cdb6f0C",
@@ -1528,10 +1778,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2483a191dFC0d30cAe92626734e180dEB4F5b0A3",
@@ -1541,10 +1793,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003719,
       "last_seen_block": 25003722,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x24f755a0a35b06352a7160bf9538E2273Cc6c35e",
@@ -1554,10 +1808,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003934,
       "last_seen_block": 25003937,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x25DC525C134498AC7a4b56718373cF4478d37B19",
@@ -1567,10 +1823,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x27A2B15Ff573c91A5C47b295d85Fd64d57b41c17",
@@ -1580,10 +1838,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003591,
       "last_seen_block": 25003591,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x283B9d1C97359b1F0052Fa80745CF9d4923eE8f1",
@@ -1593,10 +1853,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003980,
       "last_seen_block": 25003980,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x28ADddf28006F26B500F916Cb3652aFeB98DD34B",
@@ -1606,10 +1868,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003999,
       "last_seen_block": 25003999,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x28E7E1f99d5Ac44764fBB7b9ed92bD174B28bBfD",
@@ -1619,10 +1883,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 6,
       "first_seen_block": 25003572,
       "last_seen_block": 25003654,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x28b1Dc1a5E3699A428BC51d234DFab7C9CB2a183",
@@ -1632,10 +1898,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 10,
       "first_seen_block": 25003548,
       "last_seen_block": 25003567,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x29d4CEbFDe3444fC5e6ADD53f2a6a03472739C08",
@@ -1645,10 +1913,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003558,
       "last_seen_block": 25003788,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2Cc3689d9C6253Bf5ddEc64a77eDbff9Ff32cC3D",
@@ -1658,10 +1928,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003807,
       "last_seen_block": 25003807,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2a7C9A1c58EE325aaf521A8e51eE41CE0D906b49",
@@ -1671,10 +1943,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2b5f1A935810C0207177320b4d5A6C2E5A0b6a9b",
@@ -1684,10 +1958,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003901,
       "last_seen_block": 25003901,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2c4bb0Db39AbD00a319522c37a8ef009D8c09DF3",
@@ -1697,10 +1973,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003766,
       "last_seen_block": 25003766,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2d87F3707E7EC69Abaab775Fc0921db719F69040",
@@ -1710,10 +1988,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 6,
       "first_seen_block": 25003819,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x2fcEDfdBC6f21B746781c5EB1738be039Def9870",
@@ -1723,10 +2003,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003923,
       "last_seen_block": 25003923,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x30CBf02ef99AC4A4C3ee9e12531953Ae966E9C4d",
@@ -1736,10 +2018,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003921,
       "last_seen_block": 25003921,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x328739e4901Cd242072353Ec377D72Fb87EcA876",
@@ -1749,10 +2033,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003748,
       "last_seen_block": 25003748,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x333690e228dF33A0c800b80Aae90e26e7D46018E",
@@ -1762,10 +2048,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003638,
       "last_seen_block": 25003638,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x33b2A32Ad5c5AF72Dd027b9dcEc73de84B4f5393",
@@ -1775,10 +2063,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003838,
       "last_seen_block": 25003864,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x340be9aCb473110A2eD0f2F5Ae5a8b56173F6f29",
@@ -1788,10 +2078,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003706,
       "last_seen_block": 25003886,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3431507ebb1C8918976A1ED43092F3CF519Fb1f4",
@@ -1801,10 +2093,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003688,
       "last_seen_block": 25003688,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3611B82c7B13e72b26eb0E9BE0613bEE7A45aC7c",
@@ -1814,10 +2108,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 17,
       "first_seen_block": 25003572,
       "last_seen_block": 25003987,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x37008364eaE6688966Ffd81d4e6F0E8189Bd236A",
@@ -1827,10 +2123,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 52,
       "first_seen_block": 25003788,
       "last_seen_block": 25003837,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x37A23Be2e3Ab87A25788d120a4a1476A3D570CfF",
@@ -1840,10 +2138,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003572,
       "last_seen_block": 25003588,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x38F5E5b4DA37531a6e85161e337e0238bB27aa90",
@@ -1853,10 +2153,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003850,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x38baC213BfC171CAd01D72ec5B8BFa99c4Fe5792",
@@ -1866,10 +2168,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003733,
       "last_seen_block": 25003733,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x39e6B9423eAA317bFaFCE9044164a153f8387957",
@@ -1879,10 +2183,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003905,
       "last_seen_block": 25003905,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3DAa2f96e4d06732768CC9C75A99c6A80AcD58fF",
@@ -1892,10 +2198,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 5,
       "first_seen_block": 25003791,
       "last_seen_block": 25003881,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3DF309F4984a0a2f8D02BEE8FFd05831146F1F2e",
@@ -1905,10 +2213,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3Eb799ec18b5514ae9f662a4D30Cfe700b64DE1E",
@@ -1918,10 +2228,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003605,
       "last_seen_block": 25003605,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3F5D410eE253Fc8110E87fee01CF02D729D4E848",
@@ -1931,10 +2243,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003908,
       "last_seen_block": 25003908,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3F6bF69Ef37E6C28D767ceEEe233c3679FE2BB67",
@@ -1944,10 +2258,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003994,
       "last_seen_block": 25003994,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3aC821bf235ea85fE679226e13585f12aE160eb5",
@@ -1957,10 +2273,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003869,
       "last_seen_block": 25003869,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3c4A58301D2Eb129CF1905e0E7A97a74bbdB309a",
@@ -1970,10 +2288,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003979,
       "last_seen_block": 25003979,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3d7889Cd9BD853210704Ca6561E9F15cA1de9d30",
@@ -1983,10 +2303,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003977,
       "last_seen_block": 25003977,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x3f6d75A4121bebe08d33915B6237dFc47CBFb06e",
@@ -1996,10 +2318,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003994,
       "last_seen_block": 25003994,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x41A5548196A371050B7388EdE2683f32576F9997",
@@ -2009,10 +2333,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 12,
       "first_seen_block": 25003787,
       "last_seen_block": 25003832,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4313C378Cc91eA583C91387B9216e2c03096b27f",
@@ -2022,10 +2348,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003914,
       "last_seen_block": 25003914,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x43266D5BC6f38E2744CA3Fc47DdF1cb3dB167CB3",
@@ -2035,10 +2363,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 7,
       "first_seen_block": 25003615,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x43f4fb4e755bc1b4c35945d6A00bD1B71E3279B9",
@@ -2048,10 +2378,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 11,
       "first_seen_block": 25003549,
       "last_seen_block": 25003962,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x440B71954Ea9f2c265733B60760B31fb801cc400",
@@ -2061,10 +2393,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003820,
       "last_seen_block": 25003820,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4442dF2B37719B80cd4B9e9c140De0eA96bB7FC3",
@@ -2074,10 +2408,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003549,
       "last_seen_block": 25003549,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4492A8C130Fb93a948372C3F4D89d247f371A4fD",
@@ -2087,10 +2423,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003831,
       "last_seen_block": 25003831,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x45d0fCB00fbB220a76a80A2154CDa0394765EDA3",
@@ -2100,10 +2438,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003847,
       "last_seen_block": 25003898,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x46eb53Ff661445bB03EAef38BE61a21f8EE88B76",
@@ -2113,10 +2453,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003965,
       "last_seen_block": 25003977,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x478104E20E25933Cdea21a1e39c30279257E7B5d",
@@ -2126,10 +2468,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003854,
       "last_seen_block": 25003854,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4842359eda8AEDf5BacbCc052D05fb6655887f1E",
@@ -2139,10 +2483,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003826,
       "last_seen_block": 25003826,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x49216eB7F2F0304fC4C1c3c64b4F436F691F3588",
@@ -2152,10 +2498,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003968,
       "last_seen_block": 25003968,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4C82D1fBFe28C977cBB58D8C7FF8FCF9F70a2cCA",
@@ -2165,10 +2513,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 45,
       "first_seen_block": 25003615,
       "last_seen_block": 25003977,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4D39aA0f21B6E37b3b6eFa3BFe99cDE9A5D373fb",
@@ -2178,10 +2528,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003715,
       "last_seen_block": 25003715,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4F4e92411c06559F6EB4e5d99C1D696f93a14B53",
@@ -2191,10 +2543,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003904,
       "last_seen_block": 25003953,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4a8DdA45A22D3a2C662441CAC250ecEb9456Cfe8",
@@ -2204,10 +2558,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003618,
       "last_seen_block": 25003618,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4b5617694F6224dc6363Ac5eb1e991b1c89e72f1",
@@ -2217,10 +2573,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003973,
       "last_seen_block": 25003973,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4b75DFCb526369b107b74c8d046f92ef58D6d725",
@@ -2230,10 +2588,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003711,
       "last_seen_block": 25003711,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4bbf76CF6Dd12d98aca6ce669c254E9b62421BCE",
@@ -2243,10 +2603,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003808,
       "last_seen_block": 25003846,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4c3ccC98C01103bE72bcfd29e1D2454c98d1A6e3",
@@ -2256,10 +2618,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003839,
       "last_seen_block": 25003839,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x4d6c394a97343a88Dcd7E1210E30c7206Ba111C4",
@@ -2269,10 +2633,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x501B79d8F0eE8FA463836d20Ebb8d598f364FD6e",
@@ -2282,10 +2648,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003558,
       "last_seen_block": 25003587,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5274725492F84678C19aCA3Ae24115201C9FeEB5",
@@ -2295,10 +2663,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003807,
       "last_seen_block": 25003807,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x53b73031fAcf8C8dc3d93765525308e6Ff558305",
@@ -2308,10 +2678,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003810,
       "last_seen_block": 25003810,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x543b1E642Ea9d999312b4D7eE12BA08183C4279c",
@@ -2321,10 +2693,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003914,
       "last_seen_block": 25003914,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x55D03BB57F44D74FE6AFDc0fe33D925916486F06",
@@ -2334,10 +2708,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003867,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x561cBB1Bb57900f31b9983Ef1E0352373d1DA05F",
@@ -2347,10 +2723,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003788,
       "last_seen_block": 25003788,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x568559E7c0D36539aB406dD5133A8f5F391D751d",
@@ -2360,10 +2738,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003925,
       "last_seen_block": 25003925,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x570C16Baff38D218859de956A49D880819666F36",
@@ -2373,10 +2753,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003843,
       "last_seen_block": 25003843,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x599039Ff3A74aBb2AB0b2B0350adcBFeefAf7457",
@@ -2386,10 +2768,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003877,
       "last_seen_block": 25003877,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x59fFBDf6BEae9E6bE68EC10f31eD48B98eF67C25",
@@ -2399,10 +2783,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003842,
       "last_seen_block": 25003857,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5B25adE8DbA55fe6D3D7F7719018504899B729e2",
@@ -2412,10 +2798,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003671,
       "last_seen_block": 25003671,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5C531Ee8dcaae2367B9D0c92236fE116fd6182eb",
@@ -2425,10 +2813,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003837,
       "last_seen_block": 25003837,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5C546E855Fb002Fd0C54d7E8d6F5Bc13D377CFe4",
@@ -2438,10 +2828,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003854,
       "last_seen_block": 25003854,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5D0a56f72a683bE7A9AeC415E364bF747845B0ec",
@@ -2451,10 +2843,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003772,
       "last_seen_block": 25003772,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5E1f62Dac767b0491e3CE72469C217365D5B48cC",
@@ -2464,10 +2858,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003876,
       "last_seen_block": 25003985,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5E21bc13b82F4b716E779D38A12510Ecb21fb3e6",
@@ -2477,23 +2873,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003549,
       "last_seen_block": 25003920,
-      "query_timestamp": 1785210724
-    },
-    {
-      "address": "0x5F1C5951c5B1cC112bA9E89B9467edca33063453",
-      "balance_raw": "0",
-      "balance_decimal": 0.0,
-      "is_pool": false,
-      "pool_label": "",
-      "is_contract": false,
-      "address_type": "eoa",
-      "tx_count": 5,
-      "first_seen_block": 25003842,
-      "last_seen_block": 25003934,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5be339c071f7fc43E0F0EB2e20643c24AADE678C",
@@ -2503,10 +2888,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5c3A1C3995FD5A5A7E0Ec5d28A17c8310aB52f2c",
@@ -2516,10 +2903,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003946,
       "last_seen_block": 25003946,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5cBcfF0e525926a73138e12Ac2E3C37D264e691c",
@@ -2529,10 +2918,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003717,
       "last_seen_block": 25003717,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x5dc3475c23218B9e9ee80301b15fBA4aAd7BA19c",
@@ -2542,10 +2933,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003825,
       "last_seen_block": 25003825,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6015a9456ed3a77A35AdFd1AF8e46c8B4f5E4956",
@@ -2555,10 +2948,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003639,
       "last_seen_block": 25003992,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6047eB37d54cc9D98b84b837A85Bea37Aa62243f",
@@ -2568,10 +2963,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003714,
       "last_seen_block": 25003714,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x60943cb06b76A24431659165c81a03c16F1C325C",
@@ -2581,10 +2978,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003877,
       "last_seen_block": 25003946,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x60D02A411E8F8A187d431b3334E00f6880365d8f",
@@ -2594,10 +2993,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003736,
       "last_seen_block": 25003736,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x621FAA4Ec5C7A47766753583A154aeB64f474F3F",
@@ -2607,10 +3008,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003770,
       "last_seen_block": 25003770,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x62b40eBbCeF4f401674e37d680475989a1605642",
@@ -2620,10 +3023,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003957,
       "last_seen_block": 25003957,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x63913FCff5aC9289E711ce3DA53F2A0786AD317f",
@@ -2633,10 +3038,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003586,
       "last_seen_block": 25003586,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x64835b44c5A6947037172532fd2F60F8de4f2939",
@@ -2646,10 +3053,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003739,
       "last_seen_block": 25003739,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x65001a60300D50573245cc097695c2416013F389",
@@ -2659,10 +3068,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003949,
       "last_seen_block": 25003949,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x65a11a646DA491FA87a9a37A0E2B9f51381a0670",
@@ -2672,10 +3083,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003618,
       "last_seen_block": 25003618,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af",
@@ -2685,10 +3098,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 40,
       "first_seen_block": 25003611,
       "last_seen_block": 25003937,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6747BcaF9bD5a5F0758Cbe08903490E45DdfACB5",
@@ -2698,10 +3113,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 36,
       "first_seen_block": 25003706,
       "last_seen_block": 25003946,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x67928372E025316f5B21F8fEa5029027EB7D7415",
@@ -2711,10 +3128,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003565,
       "last_seen_block": 25003565,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x67A4Ba0BbEC0c8df04678d8ca0C25A568ebCF89e",
@@ -2724,10 +3143,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003985,
       "last_seen_block": 25003985,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x67D66FBe8710cb32a7cE055D271877b3A57B7881",
@@ -2737,10 +3158,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003920,
       "last_seen_block": 25003995,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6838Dd46A9dc1b4734218A092fc01946aE2ec95F",
@@ -2750,10 +3173,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x68E3b4f93b5c29c8d1fe9e08a017a5987B3d63f4",
@@ -2763,10 +3188,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003837,
       "last_seen_block": 25003837,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x69aeC6a7934cF8e1c6678e20D13D6BEa9AbBb1ED",
@@ -2776,10 +3203,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003864,
       "last_seen_block": 25003864,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6A93eF5f666eebE84bA130F8404AD56ee197006c",
@@ -2789,10 +3218,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 38,
       "first_seen_block": 25003588,
       "last_seen_block": 25003994,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6D091a5Aac71e7ccA94a76A0c2508299EBc38dE3",
@@ -2802,10 +3233,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003964,
       "last_seen_block": 25003964,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6D37E24E8D0CEB26bf9a43fE854f89f7d28366DF",
@@ -2815,10 +3248,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6E2743c18690d05dD2ea1EcB7fE86322fCD6e491",
@@ -2828,10 +3263,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003850,
       "last_seen_block": 25003850,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6a9F0d628dF1D9F48707AFF4e45624917DDd8Db6",
@@ -2841,10 +3278,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003881,
       "last_seen_block": 25003881,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6aC5e348A84C54434c5cF216EAdA9390e4d6363b",
@@ -2854,10 +3293,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 5,
       "first_seen_block": 25003647,
       "last_seen_block": 25003964,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6ab5f31b779AD0F5a924aD1Ec5092EB1113c390D",
@@ -2867,10 +3308,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003649,
       "last_seen_block": 25003649,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6b2Fa71966B5707fd686bD6c84E5aB4dCd76B95a",
@@ -2880,10 +3323,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6b50849023d360F4fDcDb2817eBADB4DCDea96bc",
@@ -2893,10 +3338,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003919,
       "last_seen_block": 25003919,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x6b7533873f28C3fD01e35EcD90B2e2Ba8bD2c9d4",
@@ -2906,10 +3353,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7015CF2D3CDC93452D86622eB805e9b13040dA64",
@@ -2919,10 +3368,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003829,
       "last_seen_block": 25003829,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x70637CdF917Ad131e580C26A28E49a88bd82eE5b",
@@ -2932,10 +3383,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003977,
       "last_seen_block": 25003993,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7088De6AeFF3AD7C0684Db7A00caD3c3a45B81c4",
@@ -2945,10 +3398,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003839,
       "last_seen_block": 25003839,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x711845b607F9Cf587E784dca8f0FF2cB3eE9cE18",
@@ -2958,10 +3413,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003653,
       "last_seen_block": 25003933,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x724EBdCf136D69Eb20CBAdB13e9A6DDc424883Ae",
@@ -2971,10 +3428,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7498eE7AaB51ca1062396D9AE0302aD39f5ae270",
@@ -2984,10 +3443,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 6,
       "first_seen_block": 25003706,
       "last_seen_block": 25003985,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x74cCFA958c007580e81CfDfF86853f255103E828",
@@ -2997,10 +3458,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003942,
       "last_seen_block": 25003951,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x74de5d4FCbf63E00296fd95d33236B9794016631",
@@ -3010,10 +3473,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 31,
       "first_seen_block": 25003717,
       "last_seen_block": 25003997,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x750E70496C9EBe5a13551F0147E02206861869a4",
@@ -3023,10 +3488,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003961,
       "last_seen_block": 25003996,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x75Cf59A923a2649B84Fa569BB97ea9694B6f26E4",
@@ -3036,10 +3503,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 5,
       "first_seen_block": 25003721,
       "last_seen_block": 25003846,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x76450FE69FbF5EfE18E014Fd19D15202d1B238d0",
@@ -3049,10 +3518,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003996,
       "last_seen_block": 25003996,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x76508769cF9a85cC37522d1417DccC596D2E1F65",
@@ -3062,10 +3533,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003884,
       "last_seen_block": 25003884,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7777a846952FFbE39B699520a16B24E5098acca6",
@@ -3075,10 +3548,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003992,
       "last_seen_block": 25003995,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x79102ddceE2F618031e22B231E0d3Ad4B5340bED",
@@ -3088,10 +3563,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003956,
       "last_seen_block": 25003956,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x79A89e12B172C6F550D3A2D9F60f2B5e67303E80",
@@ -3101,10 +3578,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003909,
       "last_seen_block": 25003919,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x79f1d8b99d44e60358f7Afa67b796C8713E881DF",
@@ -3114,10 +3593,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003929,
       "last_seen_block": 25003929,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7F3953F1bA7DE461f8CEc6Ba3741000F0FFb300f",
@@ -3127,10 +3608,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003797,
       "last_seen_block": 25003831,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7F62866A8f0FAf15b201A35105bc6dFec801130f",
@@ -3140,10 +3623,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7e89DAF03D3E81d81bA6a242FD05646FaEF524B8",
@@ -3153,10 +3638,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003925,
       "last_seen_block": 25003925,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7ea3cA59d4BE4ab678F80e456eF24a32c4d9C300",
@@ -3166,10 +3653,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003886,
       "last_seen_block": 25003886,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x7f54F05635d15Cde17A49502fEdB9D1803A3Be8A",
@@ -3179,10 +3668,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 91,
       "first_seen_block": 25003557,
       "last_seen_block": 25003964,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x81C1901D03afa582fAbDF5348a3810F35a081383",
@@ -3192,10 +3683,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003701,
       "last_seen_block": 25003701,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x837BCC5A30aCA758CeccA146F436478ef16bF512",
@@ -3205,10 +3698,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003864,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x84Cc5f0Bc0AA4bf47F3f60628c51Cb1AB2745572",
@@ -3218,10 +3713,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003839,
       "last_seen_block": 25003839,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230",
@@ -3231,10 +3728,12 @@
       "pool_label": "UNISWAP V3",
       "is_contract": true,
       "address_type": "pool",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 0,
       "first_seen_block": 25003546,
       "last_seen_block": 25004000,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x85599763b6A3a7c6A625428D17eafD0212684A98",
@@ -3244,10 +3743,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003632,
       "last_seen_block": 25003632,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x85E51794Fe328864f5E18Ec2d454cb9E666D8A4F",
@@ -3257,10 +3758,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003854,
       "last_seen_block": 25003892,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x88649f4743A758171077B98EE2003F1989B1615A",
@@ -3270,10 +3773,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003905,
       "last_seen_block": 25003905,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8883A0439b15ca6f30d45a36067ce815E3819334",
@@ -3283,10 +3788,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003776,
       "last_seen_block": 25003776,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x89B585dF208c727829232d892A50806C3A20a4E6",
@@ -3296,10 +3803,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003927,
       "last_seen_block": 25003947,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8A368542B72e01500E42EDC4485214A8D6781F20",
@@ -3309,10 +3818,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003747,
       "last_seen_block": 25003747,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8F10B468b06c6FD214B65F87778827F7D113f996",
@@ -3322,10 +3833,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 14,
       "first_seen_block": 25003662,
       "last_seen_block": 25003886,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8F74dCACd5711A7fD02C8FeC95A219e29c65744b",
@@ -3335,10 +3848,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003882,
       "last_seen_block": 25003882,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8F846C7773e74A6B6B513c2E24C092BF8088189a",
@@ -3348,10 +3863,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003611,
       "last_seen_block": 25003611,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8b04Fb1622C8a33A06bE1E9C6F0C33d4FD3d5226",
@@ -3361,10 +3878,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003913,
       "last_seen_block": 25003913,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8dfCFF2e00fb7319c58e022A49c72e859B77AaE4",
@@ -3374,10 +3893,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003678,
       "last_seen_block": 25003678,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8e871ECF331A27c762BBcff795279dEF31C8a25A",
@@ -3387,10 +3908,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003827,
       "last_seen_block": 25003827,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x8eF6d128c4De128B8ce45b442CCD6192E31f4B8c",
@@ -3400,10 +3923,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003955,
       "last_seen_block": 25003955,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x90266DD799674A3Ff322B48bD7046E786Eb4296d",
@@ -3413,10 +3938,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003884,
       "last_seen_block": 25003884,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x919fE04995726551CF8e9bbF45ACD94fB3f2c636",
@@ -3426,10 +3953,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003756,
       "last_seen_block": 25003756,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x920a25Ab35b733285EFC067A5EB72639c1a3cD42",
@@ -3439,10 +3968,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003761,
       "last_seen_block": 25003772,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9297DC79C071Be4233011fd8b8939BEc77F6e938",
@@ -3452,10 +3983,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003635,
       "last_seen_block": 25003635,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x929d0C8578d201F92244936fA121C36B461ec85B",
@@ -3465,10 +3998,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x92eAE2D4F34F17eB32BF390AF5019a37d375418E",
@@ -3478,10 +4013,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x947E79209f607405b6E0DA0F90F53B8A6822cc51",
@@ -3491,10 +4028,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003857,
       "last_seen_block": 25003868,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x94c7F8bb60A25E32b33e8986aF7B5626E670960E",
@@ -3504,10 +4043,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003953,
       "last_seen_block": 25003953,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x94fBae1Def446534908D21F50823A6e7fdeA8Ef5",
@@ -3517,10 +4058,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003951,
       "last_seen_block": 25003951,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x958914bc3Fc61629dcc5c11Ce9d2E1DC254F3E57",
@@ -3530,10 +4073,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003844,
       "last_seen_block": 25003849,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x95dd05950bc8CD5dEF7be0aDC600D0fadd15Bd86",
@@ -3543,10 +4088,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 10,
       "first_seen_block": 25003611,
       "last_seen_block": 25003618,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x96fE56B7E09364800f5cCe317520885920A29bfD",
@@ -3556,10 +4103,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003676,
       "last_seen_block": 25003676,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9733dd7281f85Bf60E08eCd1Dc952a46CCA9Da15",
@@ -3569,10 +4118,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003848,
       "last_seen_block": 25003848,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x973Cd772b40F105c17463C42366264a91CD4c2fb",
@@ -3582,10 +4133,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x995D38316aBC9C0958caca1472B3E4BB27551868",
@@ -3595,10 +4148,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003729,
       "last_seen_block": 25003729,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9A28bd17aDCd5aaEAE2862E776F3900D60abbd95",
@@ -3608,10 +4163,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003937,
       "last_seen_block": 25003937,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9A981cE637f2638Ee2B7e4083Eb287a697bA776F",
@@ -3621,10 +4178,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 7,
       "first_seen_block": 25003936,
       "last_seen_block": 25003998,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9C473387664AB740e68d1fDF0C47bd6Fca3663AA",
@@ -3634,10 +4193,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 10,
       "first_seen_block": 25003605,
       "last_seen_block": 25003918,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9C8606e4473A531806b525B855be1cF259BfC366",
@@ -3647,10 +4208,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003876,
       "last_seen_block": 25003876,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9Dd4Ddd21Dd3446572cF9ec008719bB64F918f61",
@@ -3660,10 +4223,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003803,
       "last_seen_block": 25003803,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9E736b5FB89Cc98d9D0386454f0Dc057EEaD4E08",
@@ -3673,10 +4238,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9b40d8E1947cb1159c38DC25976f28Fd8C2EdA39",
@@ -3686,10 +4253,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003864,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9bB847A1Fc026AE157dAbe658CCA764584c8f0B1",
@@ -3699,10 +4268,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003979,
       "last_seen_block": 25003979,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9bFf6312567a703Ea52214e122F25708B5ad2bfE",
@@ -3712,10 +4283,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003826,
       "last_seen_block": 25003826,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9c2D9E9c37aaE9c9905483b60d367cc320e56B35",
@@ -3725,10 +4298,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003913,
       "last_seen_block": 25003913,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9e87C7499a802Cfd128Bda604902f826A680f0Df",
@@ -3738,10 +4313,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 5,
       "first_seen_block": 25003829,
       "last_seen_block": 25003943,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9f8aA3864F4bB3B816169d00e93E3aB0CAc2ae37",
@@ -3751,10 +4328,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003649,
       "last_seen_block": 25003649,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0x9fE546E5F4Fa0708f05bA2296ad84A9dFeB94B5d",
@@ -3764,10 +4343,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003805,
       "last_seen_block": 25003805,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA3c7219ac90f4200E788094fEa3fd2e03b7748aC",
@@ -3777,10 +4358,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003836,
       "last_seen_block": 25003836,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA5F91E598668040055dC861a7316e677a5B730B0",
@@ -3790,10 +4373,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 24,
       "first_seen_block": 25003638,
       "last_seen_block": 25003958,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA5d3434Bd55fFf5C06B5359C33B5f5D2c13a256B",
@@ -3803,10 +4388,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 5,
       "first_seen_block": 25003842,
       "last_seen_block": 25003961,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA6E941eaB67569ca4522f70d343714fF51d571c4",
@@ -3816,10 +4403,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 6,
       "first_seen_block": 25003831,
       "last_seen_block": 25003876,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA6EfdcDef0dA0fc6BE701684Aaa951530Df9B867",
@@ -3829,10 +4418,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 5,
       "first_seen_block": 25003839,
       "last_seen_block": 25003878,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA71B8e2e570AA59D49BEd68b9aA16944c541e0dD",
@@ -3842,10 +4433,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003924,
       "last_seen_block": 25003924,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA72f8319248aF6b9c4f78CBBB94450FEAfdE5A88",
@@ -3855,10 +4448,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xA919c12312A21de4DC5BA0C158eA290919E3a364",
@@ -3868,10 +4463,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003857,
       "last_seen_block": 25003857,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xAA754d4c4b29827Dd13cfAA7a9EF217b6EAf6D28",
@@ -3881,10 +4478,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003912,
       "last_seen_block": 25003912,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xAE4611cae4846e015383d6DC149f293633F1973d",
@@ -3894,10 +4493,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003592,
       "last_seen_block": 25003592,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xAc1Cf197766bBF43C6DBe884629b4bC29e245475",
@@ -3907,10 +4508,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003735,
       "last_seen_block": 25003969,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB0Ad50a94D030A2D887F9eB59c144A3D5D4ca895",
@@ -3920,10 +4523,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003999,
       "last_seen_block": 25003999,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB0BE77039F9bdB45074BDeaa9B3cD726E68e3b91",
@@ -3933,10 +4538,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003829,
       "last_seen_block": 25003829,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB1d903f8049e692716ea47047d850dDc1d2cEaBE",
@@ -3946,10 +4553,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003822,
       "last_seen_block": 25003822,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB21035D7952EF75EF88fA242735AbB1d699F11f0",
@@ -3959,10 +4568,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003901,
       "last_seen_block": 25003901,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB2fcE99E88f9c2a5A9C522D0BB1AcF1Cddf7e1b9",
@@ -3972,10 +4583,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 13,
       "first_seen_block": 25003799,
       "last_seen_block": 25003953,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB3aA9923489Bc2BFEc323Bf05346AcD4afbc92A0",
@@ -3985,10 +4598,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003843,
       "last_seen_block": 25003846,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB6C520A4c06359763ea98FC02fD78D0d5A5d1322",
@@ -3998,10 +4613,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003956,
       "last_seen_block": 25003956,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB9118051Fee7545584e1F97642754AA9bF6e5F91",
@@ -4011,10 +4628,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003905,
       "last_seen_block": 25003928,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xB945aa03441B10FBe0256cAe2608E1c788bBcDcF",
@@ -4024,10 +4643,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003851,
       "last_seen_block": 25003851,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xBA7a03a37C0799A4182D1C4ca3bf3321F8ba3329",
@@ -4037,10 +4658,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003635,
       "last_seen_block": 25003893,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xBc9993fe8606fB5DEA1Ba8674d09cE255c7bdeab",
@@ -4050,10 +4673,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003638,
       "last_seen_block": 25003638,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xBf15724a9FFbdcCCeaB8c98715B30a83c71e888C",
@@ -4063,10 +4688,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003817,
       "last_seen_block": 25003817,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC10eE9031F2a0B84766A86B55a8D90F357910fb4",
@@ -4076,10 +4703,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 27,
       "first_seen_block": 25003664,
       "last_seen_block": 25003992,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC1d88FD537261321ea8E3B7d95D2ccb3aF7bd0b8",
@@ -4089,10 +4718,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC3153f9Fa3C3c1029c017890b353e0d40955237F",
@@ -4102,10 +4733,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003816,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
@@ -4115,10 +4748,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 10,
       "first_seen_block": 25003843,
       "last_seen_block": 25003974,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC5a04dEa5200Ee8c0E73Da31EFa80CB99d5E2F44",
@@ -4128,10 +4763,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003672,
       "last_seen_block": 25003696,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC6BDB91b38811C4a3Eb84fd558d80df10EFe2441",
@@ -4141,10 +4778,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003835,
       "last_seen_block": 25003835,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xC9E928FF08d144f4D20a2d6E7dde8466dcd0dd0a",
@@ -4154,10 +4793,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003816,
       "last_seen_block": 25003816,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xCa4a6EFbFEF325A196196bD346Ff85eFbbAb4300",
@@ -4167,10 +4808,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003942,
       "last_seen_block": 25003951,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD06c50CDe7279A98EF970FBDba73E84930aD8468",
@@ -4180,10 +4823,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003787,
       "last_seen_block": 25003985,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD1d065049fE5A6EF65776289267044623760A005",
@@ -4193,10 +4838,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003662,
       "last_seen_block": 25003662,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD527F9A938ebA5d3AB5A1bAC5bb487B7f5EEe203",
@@ -4206,10 +4853,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003719,
       "last_seen_block": 25003719,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD59f29Feb538D0334bcF09EE9d00C21692eC40dc",
@@ -4219,10 +4868,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003841,
       "last_seen_block": 25003841,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD73e395bf5db9f15F25c87F19f8aA255b2278aaC",
@@ -4232,10 +4883,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003835,
       "last_seen_block": 25003878,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD78D199f8C402e7B5Cc2abE278dF0412400a3BAe",
@@ -4245,10 +4898,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003638,
       "last_seen_block": 25003804,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xD955B7c4Dada4831B4fD0c52818433C3d975cD64",
@@ -4258,10 +4913,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003557,
       "last_seen_block": 25003557,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xDCcec8Df505d16d9E9e63265A3C9A4f1c3728ae6",
@@ -4271,10 +4928,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xDEaD79cdbdEC07A70845a05Ee90Bcec2Ca42bBee",
@@ -4284,10 +4943,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003659,
       "last_seen_block": 25003659,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xDbC0b3D4D3CFfD03Fb62f1b224d61a9DD237fC61",
@@ -4297,10 +4958,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003658,
       "last_seen_block": 25003730,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xDe5662852d6765263399d307067bd349Ce2dCef0",
@@ -4310,10 +4973,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003857,
       "last_seen_block": 25003859,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xDf985B0eCCC44CC885AdDA4399Ce271BB94A56Ff",
@@ -4323,10 +4988,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003964,
       "last_seen_block": 25003964,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xE0D2d1fb37fAf23e3bCa86dfB686189534aE1d56",
@@ -4336,10 +5003,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xE500Fc76e04CC072f06a0E912A5D53a5Fb77c69F",
@@ -4349,10 +5018,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003901,
       "last_seen_block": 25003901,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xE80ED62F6636f2f0b0e40fbe3B20Ef1c8A724494",
@@ -4362,10 +5033,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003892,
       "last_seen_block": 25003892,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xE83434855e4A087Df6629DefC9Ea37FD6Cab219f",
@@ -4375,10 +5048,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003962,
       "last_seen_block": 25003962,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xEC2173C9EFBF3Dd68161D857284eaf6E8fA130c6",
@@ -4388,10 +5063,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003854,
       "last_seen_block": 25003876,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xEE6986039E3d89EBE19CD627C777D01E7FF17ee4",
@@ -4401,10 +5078,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003898,
       "last_seen_block": 25003898,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xEeA1509F8e7e5D414a496D7b1900251dc39dBd6b",
@@ -4414,10 +5093,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003792,
       "last_seen_block": 25003851,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xEf28224084c19F8800eb2d5905679927087015a3",
@@ -4427,10 +5108,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003744,
       "last_seen_block": 25003744,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF0088BA4A8100FBF61b83B45c42280c9B47f6f0C",
@@ -4440,10 +5123,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003966,
       "last_seen_block": 25003966,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF1588549FB03013E79AfF005C6aA4E5bdFdCDAef",
@@ -4453,10 +5138,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003788,
       "last_seen_block": 25003788,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF1e82BCeCD8A5770C0BB3731A76ac0199F912cA6",
@@ -4466,10 +5153,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003921,
       "last_seen_block": 25003921,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF1fa70f061fDD3021819Aa77deDBb7554652CEbA",
@@ -4479,10 +5168,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 10,
       "first_seen_block": 25003617,
       "last_seen_block": 25003813,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF24be3404B723e35d9EbC60977B646d2581F57F0",
@@ -4492,10 +5183,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 16,
       "first_seen_block": 25003850,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF2853B56a381B4409E0f75e6B625E294cC4Cbf0c",
@@ -4505,10 +5198,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003867,
       "last_seen_block": 25003992,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF778186c25cB347Ae6ccc2E2f5A544E26942ce78",
@@ -4518,10 +5213,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF81B0a7f88499D88008bf052201F1F726DA14b4e",
@@ -4531,10 +5228,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003612,
       "last_seen_block": 25003612,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xF829E7Cc2D408410DE57a0E18a73cC933e732bAB",
@@ -4544,10 +5243,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 7,
       "first_seen_block": 25003936,
       "last_seen_block": 25003998,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xFAD4c8F1e71E4c56B87733BD916FF7CfF46c6C29",
@@ -4557,10 +5258,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003664,
       "last_seen_block": 25003918,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xFD07345e7433bA954DDfEa2e2A0Bf8c860178aa2",
@@ -4570,10 +5273,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003904,
       "last_seen_block": 25003907,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xFE0711A7022F56291C8EF4AD00Bdfc03d3021332",
@@ -4583,10 +5288,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003610,
       "last_seen_block": 25003672,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xFEC4732A8AE2aca4677b27B5753058AeF68529E8",
@@ -4596,10 +5303,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003780,
       "last_seen_block": 25003854,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xFEb6D8C190a7Ca5177D54FcA1cdDb47DC553A9a1",
@@ -4609,10 +5318,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003822,
       "last_seen_block": 25003822,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa0F1C3aD83E07d97B5e7030e177718bE175275ea",
@@ -4622,10 +5333,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003787,
       "last_seen_block": 25003889,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa1507Cc0FC3d9A24cACCac03b35fc60E39Afd9f4",
@@ -4635,10 +5348,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003844,
       "last_seen_block": 25003844,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa36474C79CFf8eBF1330A427485B169cA8dC1146",
@@ -4648,10 +5363,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003827,
       "last_seen_block": 25003827,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa462d9AcaCcb141Ce7F17213b95198fE248c27A1",
@@ -4661,10 +5378,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003653,
       "last_seen_block": 25003962,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa4d03910A6aBBb89744578E57DA67ec50dB2d475",
@@ -4674,10 +5393,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003804,
       "last_seen_block": 25003804,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xa5927bFABda48cA9ebD9AD31dFC2826cDdD09BF2",
@@ -4687,10 +5408,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003822,
       "last_seen_block": 25003857,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xaF0BcC6be280401d861Ff599d98edd08909f894c",
@@ -4700,10 +5423,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003902,
       "last_seen_block": 25003910,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb05E5807ec6A6ea0E20d010a84c321750D21685B",
@@ -4713,10 +5438,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003885,
       "last_seen_block": 25003885,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb0722C144D2483d70E77CD90B545FD4e278F054d",
@@ -4726,10 +5453,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003802,
       "last_seen_block": 25003802,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb09aA0e6dc38eb4f1d51ae6630363D2AaAB45672",
@@ -4739,10 +5468,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003874,
       "last_seen_block": 25003943,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb0a043897D1A5A6Af2584068a1922FC1478dE697",
@@ -4752,10 +5483,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003864,
       "last_seen_block": 25003864,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb1A0BCF1a5E1117c65add5FDfAa4135A5126DdA0",
@@ -4765,10 +5498,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003803,
       "last_seen_block": 25003803,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb1b775699A2d26Ea9a0050c8c7fB4a0c98033b40",
@@ -4778,10 +5513,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003928,
       "last_seen_block": 25003928,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb2D1D74B93eC0F961C7896D296755757E22Cc6B2",
@@ -4791,10 +5528,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003549,
       "last_seen_block": 25003671,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb300000b72DEAEb607a12d5f54773D1C19c7028d",
@@ -4804,10 +5543,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 62,
       "first_seen_block": 25003588,
       "last_seen_block": 25003994,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb5743312702B71f8994744aB3a535ebFBC0bbb36",
@@ -4817,10 +5558,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003892,
       "last_seen_block": 25003892,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb5c70EdBE1C737d0375839d996f23E8B580cAd7c",
@@ -4830,10 +5573,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003829,
       "last_seen_block": 25003829,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb6064B4a8436A191B51dd0120ab2472CFa4F4D7f",
@@ -4843,10 +5588,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 3,
       "first_seen_block": 25003910,
       "last_seen_block": 25003910,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xb92fe925DC43a0ECdE6c8b1a2709c170Ec4fFf4f",
@@ -4856,10 +5603,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 12,
       "first_seen_block": 25003557,
       "last_seen_block": 25003857,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xbB1532f8209cB561A2fa064616C29448Ed18EA4C",
@@ -4869,10 +5618,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 8,
       "first_seen_block": 25003638,
       "last_seen_block": 25003804,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xbDB11bc59Adbae7E6Ed7e33f82E9e267a0087BC1",
@@ -4882,10 +5633,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003842,
       "last_seen_block": 25003863,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xbDefA2FBEb9301C98CD29ad3903c67060f044477",
@@ -4895,10 +5648,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003863,
       "last_seen_block": 25003863,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xba4c928807450c57E4F5Aa18cd507987840847bf",
@@ -4908,10 +5663,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 20,
       "first_seen_block": 25003639,
       "last_seen_block": 25003884,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xbb6e093cF06e91078D1CF82172DA889e2f54bc50",
@@ -4921,10 +5678,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003893,
       "last_seen_block": 25003899,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xbd6fA96F09BDA66fd36f665C21f5E80076a760b5",
@@ -4934,10 +5693,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003827,
       "last_seen_block": 25003827,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc019785C99656aBD9B3971DA5633C2dFd78929AF",
@@ -4947,10 +5708,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc07EFeE249fBEB198d53238169969C228C476776",
@@ -4960,10 +5723,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003834,
       "last_seen_block": 25003834,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc34960EaF4e30dCca221c1CcEE5A9377171cA976",
@@ -4973,10 +5738,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003886,
       "last_seen_block": 25003942,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc4D99ccE1003890582A34cEb5b3aE4fce4D7843d",
@@ -4986,10 +5753,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003574,
       "last_seen_block": 25003579,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc60Eb3Fc4F0A685154D05160ac9D9Da2552E7D5E",
@@ -4999,10 +5768,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003546,
       "last_seen_block": 25003546,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc6Dc676394D30af314EDE65cc5d069670750504a",
@@ -5012,10 +5783,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003863,
       "last_seen_block": 25003863,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc82165636885FefB30531599ce275eF6B8920255",
@@ -5025,10 +5798,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003822,
       "last_seen_block": 25003822,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc85DdDe4eDa333285F8FeB7d3233Ac598655EBF2",
@@ -5038,10 +5813,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003838,
       "last_seen_block": 25003838,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc8d7135357Ba4cDc6e8bBd19CD21E42c87eFdE16",
@@ -5051,10 +5828,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 9,
       "first_seen_block": 25003838,
       "last_seen_block": 25003962,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc96BF4c4593ae0FA646579580a80F066b5222f1e",
@@ -5064,10 +5843,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003631,
       "last_seen_block": 25003631,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xc9C6bDB710e17B93218beA59D6745Dba4CEbA849",
@@ -5077,10 +5858,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003911,
       "last_seen_block": 25003936,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xcA9d3EDF3b0ff6367124a84bEDDA359f23CAB1B6",
@@ -5090,10 +5873,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003649,
       "last_seen_block": 25003664,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xcb8E5991e6a19e836bE22a4F299DA33659ee12f4",
@@ -5103,10 +5888,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003970,
       "last_seen_block": 25003970,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xccEb29DB93673B5Ea1F7E0C1be9cADBBF51dd8dd",
@@ -5116,10 +5903,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003988,
       "last_seen_block": 25003988,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xcf392F62151fe078A5C26c6fd7E6bC5F15D9735A",
@@ -5129,10 +5918,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 9,
       "first_seen_block": 25003606,
       "last_seen_block": 25003839,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xcf917D706681cdB279Bacb69cB3CAB2be4f7E91e",
@@ -5142,10 +5933,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003867,
       "last_seen_block": 25003867,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd11DfD5a72Ef6162F5c6028a2e31672F39f4337D",
@@ -5155,10 +5948,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003818,
       "last_seen_block": 25003818,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd226997439ecfBEfF8E110C8C78c8a7Eefd19f89",
@@ -5168,10 +5963,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003790,
       "last_seen_block": 25003790,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd36B12C2CCC5D1ebC2408cc8a2ca2F567ab8b11c",
@@ -5181,10 +5978,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 4,
       "first_seen_block": 25003592,
       "last_seen_block": 25003841,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd4dF888B2DFC4fdBD83AFa3dddBdA9E13d927ae8",
@@ -5194,10 +5993,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003995,
       "last_seen_block": 25003995,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd691d14A72a64DFE32C5b2D8c0a13B79bC49BF57",
@@ -5207,10 +6008,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003958,
       "last_seen_block": 25003958,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xd7B057341f09ED5Cf96a25d27D7c35Dc634DD94F",
@@ -5220,10 +6023,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003780,
       "last_seen_block": 25003780,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xdEDdB1cbDc04848F37F4317936D6df23B19a3E5a",
@@ -5233,10 +6038,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003959,
       "last_seen_block": 25003959,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xdda458F198e972bE149ec67D8E1b9Bf759213f26",
@@ -5246,10 +6053,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 4,
       "first_seen_block": 25003586,
       "last_seen_block": 25003743,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xdfD412FD9f26D744A3d4f125Ad81CF910006FFCa",
@@ -5259,10 +6068,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xe0A20111e9d9AaD60BEcdeeF94dB187fC3d1e822",
@@ -5272,10 +6083,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003987,
       "last_seen_block": 25003987,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xe3A0B6347cc4788bc38dE66d78A7bC2Ad8958774",
@@ -5285,10 +6098,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003583,
       "last_seen_block": 25003583,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xe531F6260bEB09d9b122DfDc3d67085b77feDf8c",
@@ -5298,10 +6113,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003685,
       "last_seen_block": 25003791,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xe70d54CD0755b3717D9bC8E061C05dd60C6fccef",
@@ -5311,10 +6128,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003825,
       "last_seen_block": 25003825,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xe9f9840b805a1C2807C1c0E07EB3d19AbF05B4C5",
@@ -5324,10 +6143,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 18,
       "first_seen_block": 25003667,
       "last_seen_block": 25003843,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xeA1126e70185400A2cF0DE2A6b35428Fb8AfFD29",
@@ -5337,10 +6158,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003823,
       "last_seen_block": 25003823,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xeB05a9335845E8C3A5c595E6a503774Eb41a59c9",
@@ -5350,10 +6173,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 2,
       "first_seen_block": 25003974,
       "last_seen_block": 25003974,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xeB2B8401cde67F4f3fA5F632AB52C278D1baA195",
@@ -5363,10 +6188,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003854,
       "last_seen_block": 25003901,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xeBC6303081B306d9B3F33F4bC5bAa76DF05cD6f7",
@@ -5376,10 +6203,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 3,
       "first_seen_block": 25003596,
       "last_seen_block": 25003614,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xebEAE725Ff4520B962bb2A99828591C965Ff2B75",
@@ -5389,10 +6218,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003852,
       "last_seen_block": 25003852,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xec8D0B9f5840C78cDA7848253C0202a7b10eEb46",
@@ -5402,10 +6233,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003674,
       "last_seen_block": 25003839,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xf11ec823Ce5B10c612f211E9d425083aA0AD9Acf",
@@ -5415,10 +6248,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003803,
       "last_seen_block": 25003803,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xf55A58D130a7ad620FdD801142a628AfEbe75848",
@@ -5428,10 +6263,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003849,
       "last_seen_block": 25003849,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xf9c2D00560d7b5F73A7E08E14C7495CA10CA267D",
@@ -5441,10 +6278,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 1,
       "first_seen_block": 25003833,
       "last_seen_block": 25003833,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xfB345A8aEA3e58C7caBC816b49D95b094B5C8344",
@@ -5454,10 +6293,12 @@
       "pool_label": "",
       "is_contract": true,
       "address_type": "contract",
+      "resolved_owner": "",
+      "resolution_method": "unresolved_contract",
       "tx_count": 1,
       "first_seen_block": 25003863,
       "last_seen_block": 25003863,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     },
     {
       "address": "0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F",
@@ -5467,10 +6308,12 @@
       "pool_label": "",
       "is_contract": false,
       "address_type": "eoa",
+      "resolved_owner": "",
+      "resolution_method": "eoa",
       "tx_count": 2,
       "first_seen_block": 25003793,
       "last_seen_block": 25003896,
-      "query_timestamp": 1785210724
+      "query_timestamp": 1785222660
     }
   ],
   "pool_identification": [
@@ -5492,8 +6335,8 @@
       "token0": "0x44b28991B167582F18BA0259e0173176ca125505",
       "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "fee": 10000,
-      "balance_raw": "5011337027098247927",
-      "balance_decimal": 5.011337,
+      "balance_raw": "5072125015331374251",
+      "balance_decimal": 5.072125,
       "in_holders_list": true
     },
     {

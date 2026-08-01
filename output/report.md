@@ -6,7 +6,7 @@
 - **Chain:** Ethereum (Chain ID: 1)
 - **Analysis Window:** Block 25003546 to 25004000
 - **Incident Block:** Not specified
-- **Report Generated:** 2026-07-28 03:51:57 UTC
+- **Report Generated:** 2026-07-28 07:10:53 UTC
 
 ### Risk Score
 
@@ -98,18 +98,18 @@
 | [0xF24be340...1F57F0](https://etherscan.io/address/0xF24be3404B723e35d9EbC60977B646d2581F57F0) | Frequent Token Sender | frequent_interactor | 50% |
 | [0x8F10B468...13f996](https://etherscan.io/address/0x8F10B468b06c6FD214B65F87778827F7D113f996) | Frequent Token Sender | frequent_interactor | 50% |
 | [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
-| [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
 | [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
+| [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
 
 
 ## TVL & Price History
 
 | Metric | Value |
 |--------|-------|
-| Total TVL (in token units) | 10.0952 |
+| Total TVL (in token units) | 10.2168 |
 | Active Pools | 0 |
 | Main Pool | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) |
-| Main Pool Share | 99.28% |
+| Main Pool Share | 99.29% |
 
 
 ## Liquidity Events
@@ -134,8 +134,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total LP Positions | 36 |
-| Unique LPs | 20 |
+| Total LP Positions | 47 |
+| Unique LPs | 22 |
 | Top LP Share | 100.00% |
 | Top 5 LP Share | 147.31% |
 
@@ -149,10 +149,10 @@
 | [0xfE8e9273...4a509F](https://etherscan.io/address/0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F) | 5.7839% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272932 |
 | [0xcf392F62...D9735A](https://etherscan.io/address/0xcf392F62151fe078A5C26c6fd7E6bC5F15D9735A) | 2.6383% | [0xc28dd8d8...b54433](https://etherscan.io/address/0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433) | V3 NFT #239870 |
 | [0xfA9baCD0...05567E](https://etherscan.io/address/0xfA9baCD043eCf8c1cC07cfbaf760135AEE05567E) | 2.2114% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1271096 |
+| [0x0d56D0f7...59A190](https://etherscan.io/address/0x0d56D0f7d148b75af0527A5Cea73Ab926b59A190) | 1.6765% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272943 |
 | [0x0504B6c6...a39ef9](https://etherscan.io/address/0x0504B6c68792c5E2E6aA75779DD09CE426a39ef9) | 1.6681% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272946 |
-| [0x115D731C...0443e0](https://etherscan.io/address/0x115D731C7d556448EB4Dc8a1Aaa36A3D510443e0) | 1.1213% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272952 |
-| [0x9297DC79...F6e938](https://etherscan.io/address/0x9297DC79C071Be4233011fd8b8939BEc77F6e938) | 0.0550% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272915 |
-| [0x10c5BC67...33D675](https://etherscan.io/address/0x10c5BC67bd88AEea42F9fBfD860a2b735333D675) | 0.0069% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272927 |
+| [0x0d56D0f7...59A190](https://etherscan.io/address/0x0d56D0f7d148b75af0527A5Cea73Ab926b59A190) | 1.4902% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272942 |
+| [0x0d56D0f7...59A190](https://etherscan.io/address/0x0d56D0f7d148b75af0527A5Cea73Ab926b59A190) | 1.3039% | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | V3 NFT #1272941 |
 
 
 ## Withdrawal Analysis
@@ -161,7 +161,7 @@
 |--------|-------|
 | Pre-Crash Withdrawals | 130 |
 | Total Removed (token0) | 83.7553 |
-| Pre-Event TVL | 10.0952 |
+| Pre-Event TVL | 10.2168 |
 | Withdrawal Severity | 100.00% of pre-event TVL |
 
 
@@ -228,7 +228,7 @@ The following migration candidates were found:
 
 | Feature | Value | Weight | Contribution | Description |
 |---------|-------|--------|-------------|-------------|
-| Pool Concentration | 0.9928 | 0.15 | 0.1489 | Main pool holds 99.28% of total DEX liquidity. |
+| Pool Concentration | 0.9929 | 0.15 | 0.1489 | Main pool holds 99.29% of total DEX liquidity. |
 | Lp Concentration | 1.0000 | 0.15 | 0.1500 | Largest LP holds 100.00% of pool shares. |
 | Withdrawal Severity | 1.0000 | 0.20 | 0.2000 | Liquidity removed is 100.00% of reference TVL. |
 | Temporal Proximity | 0.4500 | 0.15 | 0.0675 | No incident block — 130 liquidity removals in window. |

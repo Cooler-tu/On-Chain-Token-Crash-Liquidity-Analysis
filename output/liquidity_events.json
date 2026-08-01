@@ -14,7 +14,8 @@
     "token1_amount": "1980000000000000000",
     "liquidity_delta": "16849438751890653853",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003619,
@@ -31,7 +32,8 @@
     "token1_amount": "1980000000000000000",
     "liquidity_delta": "16681792375414216232",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003635,
@@ -48,7 +50,8 @@
     "token1_amount": "23208099582374668",
     "liquidity_delta": "144257445942236549",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003681,
@@ -65,7 +68,8 @@
     "token1_amount": "9000000000000000000",
     "liquidity_delta": "43705832662759501316",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003682,
@@ -82,7 +86,8 @@
     "token1_amount": "1980000000000000000",
     "liquidity_delta": "18683736222279968181",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003710,
@@ -99,7 +104,8 @@
     "token1_amount": "1393040273555470",
     "liquidity_delta": "53563282656495014",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003811,
@@ -116,7 +122,8 @@
     "token1_amount": "3908740268822885",
     "liquidity_delta": "41014287037032302",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003821,
@@ -133,7 +140,8 @@
     "token1_amount": "6750000000000000000",
     "liquidity_delta": "29072871569334146796",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003846,
@@ -150,7 +158,8 @@
     "token1_amount": "659999999999999999",
     "liquidity_delta": "2157770145985878092",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003848,
@@ -167,7 +176,8 @@
     "token1_amount": "6900000000000000000",
     "liquidity_delta": "28553696361391228374",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003854,
@@ -184,7 +194,8 @@
     "token1_amount": "766666666666666624",
     "liquidity_delta": "4002065397570885731",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003854,
@@ -201,7 +212,8 @@
     "token1_amount": "1533333333333333248",
     "liquidity_delta": "10175122378323799778",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -218,7 +230,8 @@
     "token1_amount": "222222222222222222",
     "liquidity_delta": "12036876049547682931",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -235,7 +248,8 @@
     "token1_amount": "444444444444444444",
     "liquidity_delta": "24560049592544360696",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -252,7 +266,8 @@
     "token1_amount": "666666666666666666",
     "liquidity_delta": "37584255676386965347",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -269,7 +284,8 @@
     "token1_amount": "888888888888888888",
     "liquidity_delta": "51124626218700522685",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -286,7 +302,8 @@
     "token1_amount": "1111111111111111111",
     "liquidity_delta": "65196700028470107154",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -303,7 +320,8 @@
     "token1_amount": "1333333333333333333",
     "liquidity_delta": "79816433070088881874",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -320,7 +338,8 @@
     "token1_amount": "1555555555555555555",
     "liquidity_delta": "95000208976047037752",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -337,7 +356,8 @@
     "token1_amount": "1777777777777777777",
     "liquidity_delta": "110764849814118607067",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003879,
@@ -354,7 +374,8 @@
     "token1_amount": "2000000000000000004",
     "liquidity_delta": "127127627115038296250",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003913,
@@ -371,7 +392,8 @@
     "token1_amount": "1990000000000000000",
     "liquidity_delta": "16501867261038245795",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003947,
@@ -388,7 +410,8 @@
     "token1_amount": "9000000000000000000",
     "liquidity_delta": "39546870500359946085",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003989,
@@ -405,7 +428,8 @@
     "token1_amount": "840252211024513561",
     "liquidity_delta": "1922322344637893663",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25004000,
@@ -422,7 +446,8 @@
     "token1_amount": "32132736068215090",
     "liquidity_delta": "73855018487209418",
     "source_event": "Mint",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003584,
@@ -439,7 +464,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-21174508133376976491",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003616,
@@ -456,7 +482,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-16849438751890653853",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003680,
@@ -473,7 +500,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-16681792375414216232",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003680,
@@ -490,7 +518,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "-45036805876798104517",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003706,
@@ -507,7 +536,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-0",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003804,
@@ -524,7 +554,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "-43705832662759501316",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003839,
@@ -541,7 +572,8 @@
     "token1_amount": "6749999999999999999",
     "liquidity_delta": "-29072871569334146796",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003843,
@@ -558,7 +590,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-0",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003844,
@@ -575,7 +608,8 @@
     "token1_amount": "736666666666666751",
     "liquidity_delta": "-4377723348872302572",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003844,
@@ -592,7 +626,8 @@
     "token1_amount": "1473333333333333503",
     "liquidity_delta": "-11019478584433717888",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -609,7 +644,8 @@
     "token1_amount": "181818181818181817",
     "liquidity_delta": "-5720748035058623775",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -626,7 +662,8 @@
     "token1_amount": "363636363636363635",
     "liquidity_delta": "-15799151538125936561",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -643,7 +680,8 @@
     "token1_amount": "545454545454545453",
     "liquidity_delta": "-18406582792625119329",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -660,7 +698,8 @@
     "token1_amount": "727272727272727271",
     "liquidity_delta": "-33889319958109927029",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -677,7 +716,8 @@
     "token1_amount": "909090909090909089",
     "liquidity_delta": "-32901902574188567041",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -694,7 +734,8 @@
     "token1_amount": "1090909090909090908",
     "liquidity_delta": "-54519668561868493101",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -711,7 +752,8 @@
     "token1_amount": "1272727272727272726",
     "liquidity_delta": "-49402410668291440705",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -728,7 +770,8 @@
     "token1_amount": "1454545454545454544",
     "liquidity_delta": "-77963447908141314306",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -745,7 +788,8 @@
     "token1_amount": "1636363636363636362",
     "liquidity_delta": "-68122676805937852027",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -762,7 +806,8 @@
     "token1_amount": "1818181818181818185",
     "liquidity_delta": "-104520178853455736110",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003886,
@@ -779,7 +824,8 @@
     "token1_amount": "182289883846930333",
     "liquidity_delta": "-2006728727139240752",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003893,
@@ -796,7 +842,8 @@
     "token1_amount": "820289983827613053",
     "liquidity_delta": "-2668550951448645956",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003909,
@@ -813,7 +860,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-18683736222279968181",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003930,
@@ -830,7 +878,8 @@
     "token1_amount": "1310858825669673555",
     "liquidity_delta": "-3109788612004263293",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003974,
@@ -847,7 +896,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-0",
     "source_event": "Burn",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003584,
@@ -864,7 +914,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003616,
@@ -881,7 +932,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003680,
@@ -898,7 +950,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003680,
@@ -915,7 +968,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003706,
@@ -932,7 +986,8 @@
     "token1_amount": "11218843746722287",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003804,
@@ -949,7 +1004,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003839,
@@ -966,7 +1022,8 @@
     "token1_amount": "6749999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003843,
@@ -983,7 +1040,8 @@
     "token1_amount": "702176921911179512",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003844,
@@ -1000,7 +1058,8 @@
     "token1_amount": "782263489256200962",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003844,
@@ -1017,7 +1076,8 @@
     "token1_amount": "1473333333333333503",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1034,7 +1094,8 @@
     "token1_amount": "199898776974776008",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1051,7 +1112,8 @@
     "token1_amount": "370553080419724493",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1068,7 +1130,8 @@
     "token1_amount": "545454545454545453",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1085,7 +1148,8 @@
     "token1_amount": "727272727272727271",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1102,7 +1166,8 @@
     "token1_amount": "909090909090909089",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1119,7 +1184,8 @@
     "token1_amount": "1090909090909090908",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1136,7 +1202,8 @@
     "token1_amount": "1272727272727272726",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1153,7 +1220,8 @@
     "token1_amount": "1454545454545454544",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1170,7 +1238,8 @@
     "token1_amount": "1636363636363636362",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003855,
@@ -1187,7 +1256,8 @@
     "token1_amount": "1818181818181818185",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003886,
@@ -1204,7 +1274,8 @@
     "token1_amount": "186677186095214569",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003893,
@@ -1221,7 +1292,8 @@
     "token1_amount": "846749013613928051",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003909,
@@ -1238,7 +1310,8 @@
     "token1_amount": "1983276561931069222",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003930,
@@ -1255,7 +1328,8 @@
     "token1_amount": "1323356538199238841",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003974,
@@ -1272,7 +1346,8 @@
     "token1_amount": "11449803077361555",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": null
   },
   {
     "block_number": 25003552,
@@ -1289,7 +1364,8 @@
     "token1_amount": "45616504078989109",
     "liquidity_delta": "18715511662186",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270226
   },
   {
     "block_number": 25003554,
@@ -1306,7 +1382,8 @@
     "token1_amount": "211038504543163",
     "liquidity_delta": "6306083801",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1229638
   },
   {
     "block_number": 25003558,
@@ -1323,7 +1400,8 @@
     "token1_amount": "141551597501075",
     "liquidity_delta": "7821343785388437",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1230439
   },
   {
     "block_number": 25003559,
@@ -1340,7 +1418,8 @@
     "token1_amount": "177393509817898725",
     "liquidity_delta": "113659485572255",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1269312
   },
   {
     "block_number": 25003561,
@@ -1357,7 +1436,8 @@
     "token1_amount": "108947645371684145758366",
     "liquidity_delta": "14002778444216755",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272903
   },
   {
     "block_number": 25003561,
@@ -1374,7 +1454,8 @@
     "token1_amount": "3316499999999999998289841",
     "liquidity_delta": "550571260633288054",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272904
   },
   {
     "block_number": 25003561,
@@ -1391,7 +1472,8 @@
     "token1_amount": "0",
     "liquidity_delta": "807002195515757775",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272905
   },
   {
     "block_number": 25003567,
@@ -1408,7 +1490,8 @@
     "token1_amount": "25254067604735478738273",
     "liquidity_delta": "4795812222533948",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272906
   },
   {
     "block_number": 25003567,
@@ -1425,7 +1508,8 @@
     "token1_amount": "8910922568058892495545604",
     "liquidity_delta": "2192405217182187879",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272907
   },
   {
     "block_number": 25003567,
@@ -1442,7 +1526,8 @@
     "token1_amount": "0",
     "liquidity_delta": "1526420022145070858",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272908
   },
   {
     "block_number": 25003577,
@@ -1459,7 +1544,8 @@
     "token1_amount": "3088113597784510464",
     "liquidity_delta": "19700956922718021314742",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272909
   },
   {
     "block_number": 25003585,
@@ -1476,7 +1562,8 @@
     "token1_amount": "51890490960850938",
     "liquidity_delta": "33261847239846",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1269312
   },
   {
     "block_number": 25003587,
@@ -1493,7 +1580,8 @@
     "token1_amount": "1980000000000000000",
     "liquidity_delta": "16849438751890653853",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272910
   },
   {
     "block_number": 25003597,
@@ -1510,7 +1598,8 @@
     "token1_amount": "1594614",
     "liquidity_delta": "4966799295962",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264718
   },
   {
     "block_number": 25003598,
@@ -1527,7 +1616,8 @@
     "token1_amount": "302641993744636416572",
     "liquidity_delta": "405227626053763389284480",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272911
   },
   {
     "block_number": 25003599,
@@ -1544,7 +1634,8 @@
     "token1_amount": "4112163498385633280",
     "liquidity_delta": "18413310106370235119730",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272912
   },
   {
     "block_number": 25003612,
@@ -1561,7 +1652,8 @@
     "token1_amount": "18505453777900621",
     "liquidity_delta": "5122515914587",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270062
   },
   {
     "block_number": 25003613,
@@ -1578,7 +1670,8 @@
     "token1_amount": "14982883935",
     "liquidity_delta": "3541265516878",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272913
   },
   {
     "block_number": 25003618,
@@ -1595,7 +1688,8 @@
     "token1_amount": "1812595272475638790744",
     "liquidity_delta": "1596938453991432471399251",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272911
   },
   {
     "block_number": 25003619,
@@ -1612,7 +1706,8 @@
     "token1_amount": "1980000000000000000",
     "liquidity_delta": "16681792375414216232",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272914
   },
   {
     "block_number": 25003630,
@@ -1629,7 +1724,8 @@
     "token1_amount": "1168680282059648290216",
     "liquidity_delta": "1029634420426134656705492",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272911
   },
   {
     "block_number": 25003633,
@@ -1646,7 +1742,8 @@
     "token1_amount": "1168680282059648290217",
     "liquidity_delta": "1029634420426134656706373",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272911
   },
   {
     "block_number": 25003635,
@@ -1663,7 +1760,8 @@
     "token1_amount": "23208099582374668",
     "liquidity_delta": "144257445942236549",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272915
   },
   {
     "block_number": 25003645,
@@ -1680,7 +1778,8 @@
     "token1_amount": "387361355007859218",
     "liquidity_delta": "212559111101352697526",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272916
   },
   {
     "block_number": 25003662,
@@ -1697,7 +1796,8 @@
     "token1_amount": "0",
     "liquidity_delta": "1619470572400744605213677",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272917
   },
   {
     "block_number": 25003671,
@@ -1714,7 +1814,8 @@
     "token1_amount": "0",
     "liquidity_delta": "23900343496935839752521646",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272917
   },
   {
     "block_number": 25003681,
@@ -1731,7 +1832,8 @@
     "token1_amount": "9000000000000000000",
     "liquidity_delta": "43705832662759501316",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272918
   },
   {
     "block_number": 25003682,
@@ -1748,7 +1850,8 @@
     "token1_amount": "1980000000000000000",
     "liquidity_delta": "18683736222279968181",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272919
   },
   {
     "block_number": 25003694,
@@ -1765,7 +1868,8 @@
     "token1_amount": "14426018403950872151603157497",
     "liquidity_delta": "8289632125030196038390238",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272920
   },
   {
     "block_number": 25003696,
@@ -1782,7 +1886,8 @@
     "token1_amount": "107195403027113",
     "liquidity_delta": "309587048677",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265435
   },
   {
     "block_number": 25003697,
@@ -1799,7 +1904,8 @@
     "token1_amount": "0",
     "liquidity_delta": "124360201490270",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272921
   },
   {
     "block_number": 25003706,
@@ -1816,7 +1922,8 @@
     "token1_amount": "2979423979516469248",
     "liquidity_delta": "34674145098919923445264",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272922
   },
   {
     "block_number": 25003710,
@@ -1833,7 +1940,8 @@
     "token1_amount": "1393040273555470",
     "liquidity_delta": "53563282656495014",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272030
   },
   {
     "block_number": 25003713,
@@ -1850,7 +1958,8 @@
     "token1_amount": "2235026013570777",
     "liquidity_delta": "141605848514571816434",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272923
   },
   {
     "block_number": 25003728,
@@ -1867,7 +1976,8 @@
     "token1_amount": "15761394756320497",
     "liquidity_delta": "11165055916396",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272924
   },
   {
     "block_number": 25003740,
@@ -1884,7 +1994,8 @@
     "token1_amount": "36211295",
     "liquidity_delta": "491048856936430",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272925
   },
   {
     "block_number": 25003784,
@@ -1901,7 +2012,8 @@
     "token1_amount": "0",
     "liquidity_delta": "7363775057090613896",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272926
   },
   {
     "block_number": 25003811,
@@ -1918,7 +2030,8 @@
     "token1_amount": "3908740268822885",
     "liquidity_delta": "41014287037032302",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272927
   },
   {
     "block_number": 25003816,
@@ -1935,7 +2048,8 @@
     "token1_amount": "1214593008922772825",
     "liquidity_delta": "546880079667341",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272928
   },
   {
     "block_number": 25003821,
@@ -1952,7 +2066,8 @@
     "token1_amount": "6750000000000000000",
     "liquidity_delta": "29072871569334146796",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272929
   },
   {
     "block_number": 25003826,
@@ -1969,7 +2084,8 @@
     "token1_amount": "10965089673441044",
     "liquidity_delta": "3398534145299009207",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272930
   },
   {
     "block_number": 25003839,
@@ -1986,7 +2102,8 @@
     "token1_amount": "21383558218167339",
     "liquidity_delta": "101630013638809",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272931
   },
   {
     "block_number": 25003846,
@@ -2003,7 +2120,8 @@
     "token1_amount": "659999999999999999",
     "liquidity_delta": "2157770145985878092",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272150
   },
   {
     "block_number": 25003848,
@@ -2020,7 +2138,8 @@
     "token1_amount": "6900000000000000000",
     "liquidity_delta": "28553696361391228374",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272932
   },
   {
     "block_number": 25003854,
@@ -2037,7 +2156,8 @@
     "token1_amount": "766666666666666624",
     "liquidity_delta": "4002065397570885731",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272933
   },
   {
     "block_number": 25003854,
@@ -2054,7 +2174,8 @@
     "token1_amount": "1533333333333333248",
     "liquidity_delta": "10175122378323799778",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272934
   },
   {
     "block_number": 25003872,
@@ -2071,7 +2192,8 @@
     "token1_amount": "437747578606072",
     "liquidity_delta": "287774219597717198",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1229982
   },
   {
     "block_number": 25003879,
@@ -2088,7 +2210,8 @@
     "token1_amount": "222222222222222222",
     "liquidity_delta": "12036876049547682931",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272935
   },
   {
     "block_number": 25003879,
@@ -2105,7 +2228,8 @@
     "token1_amount": "444444444444444444",
     "liquidity_delta": "24560049592544360696",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272936
   },
   {
     "block_number": 25003879,
@@ -2122,7 +2246,8 @@
     "token1_amount": "666666666666666666",
     "liquidity_delta": "37584255676386965347",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272937
   },
   {
     "block_number": 25003879,
@@ -2139,7 +2264,8 @@
     "token1_amount": "888888888888888888",
     "liquidity_delta": "51124626218700522685",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272938
   },
   {
     "block_number": 25003879,
@@ -2156,7 +2282,8 @@
     "token1_amount": "1111111111111111111",
     "liquidity_delta": "65196700028470107154",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272939
   },
   {
     "block_number": 25003879,
@@ -2173,7 +2300,8 @@
     "token1_amount": "1333333333333333333",
     "liquidity_delta": "79816433070088881874",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272940
   },
   {
     "block_number": 25003879,
@@ -2190,7 +2318,8 @@
     "token1_amount": "1555555555555555555",
     "liquidity_delta": "95000208976047037752",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272941
   },
   {
     "block_number": 25003879,
@@ -2207,7 +2336,8 @@
     "token1_amount": "1777777777777777777",
     "liquidity_delta": "110764849814118607067",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272942
   },
   {
     "block_number": 25003879,
@@ -2224,7 +2354,8 @@
     "token1_amount": "2000000000000000004",
     "liquidity_delta": "127127627115038296250",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272943
   },
   {
     "block_number": 25003882,
@@ -2241,7 +2372,8 @@
     "token1_amount": "6176000000",
     "liquidity_delta": "123077208075059558",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272944
   },
   {
     "block_number": 25003890,
@@ -2258,7 +2390,8 @@
     "token1_amount": "51491659409565828",
     "liquidity_delta": "14253465381594",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270224
   },
   {
     "block_number": 25003898,
@@ -2275,7 +2408,8 @@
     "token1_amount": "2223430071064",
     "liquidity_delta": "57401811399881474",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 809660
   },
   {
     "block_number": 25003899,
@@ -2292,7 +2426,8 @@
     "token1_amount": "893974",
     "liquidity_delta": "562929149139",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257066
   },
   {
     "block_number": 25003906,
@@ -2309,7 +2444,8 @@
     "token1_amount": "3402899",
     "liquidity_delta": "845229757677",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1256074
   },
   {
     "block_number": 25003908,
@@ -2326,7 +2462,8 @@
     "token1_amount": "1449464186665900805",
     "liquidity_delta": "763447165751782",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272766
   },
   {
     "block_number": 25003909,
@@ -2343,7 +2480,8 @@
     "token1_amount": "18543826862258428",
     "liquidity_delta": "14033991613463832669",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272945
   },
   {
     "block_number": 25003913,
@@ -2360,7 +2498,8 @@
     "token1_amount": "1990000000000000000",
     "liquidity_delta": "16501867261038245795",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272946
   },
   {
     "block_number": 25003913,
@@ -2377,7 +2516,8 @@
     "token1_amount": "1195411813219963",
     "liquidity_delta": "653844031150",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257185
   },
   {
     "block_number": 25003918,
@@ -2394,7 +2534,8 @@
     "token1_amount": "99637685314626975280206812",
     "liquidity_delta": "194007412155624271554030",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1029195
   },
   {
     "block_number": 25003920,
@@ -2411,7 +2552,8 @@
     "token1_amount": "3975971841024130048",
     "liquidity_delta": "16043411069719909519604490",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272947
   },
   {
     "block_number": 25003930,
@@ -2428,7 +2570,8 @@
     "token1_amount": "0",
     "liquidity_delta": "7741304525738686631",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272948
   },
   {
     "block_number": 25003947,
@@ -2445,7 +2588,8 @@
     "token1_amount": "9000000000000000000",
     "liquidity_delta": "39546870500359946085",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272949
   },
   {
     "block_number": 25003955,
@@ -2462,7 +2606,8 @@
     "token1_amount": "7170053",
     "liquidity_delta": "2806768976156",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1256745
   },
   {
     "block_number": 25003961,
@@ -2479,7 +2624,8 @@
     "token1_amount": "823702771253079459",
     "liquidity_delta": "1106422023010299",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272950
   },
   {
     "block_number": 25003985,
@@ -2496,7 +2642,8 @@
     "token1_amount": "518276716889476",
     "liquidity_delta": "4439179109544",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272951
   },
   {
     "block_number": 25003989,
@@ -2513,7 +2660,8 @@
     "token1_amount": "840252211024513561",
     "liquidity_delta": "1922322344637893663",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272952
   },
   {
     "block_number": 25004000,
@@ -2530,7 +2678,8 @@
     "token1_amount": "32132736068215090",
     "liquidity_delta": "73855018487209418",
     "source_event": "IncreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272952
   },
   {
     "block_number": 25003552,
@@ -2547,7 +2696,8 @@
     "token1_amount": "108389454309450756841145",
     "liquidity_delta": "-13931035491467933",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272767
   },
   {
     "block_number": 25003552,
@@ -2564,7 +2714,8 @@
     "token1_amount": "25251592779427419747641",
     "liquidity_delta": "-4795342246859265",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272773
   },
   {
     "block_number": 25003552,
@@ -2581,7 +2732,8 @@
     "token1_amount": "3316499999999999997319636",
     "liquidity_delta": "-553884452175827409",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272764
   },
   {
     "block_number": 25003552,
@@ -2598,7 +2750,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-1541436310308835829",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272770
   },
   {
     "block_number": 25003552,
@@ -2615,7 +2768,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-804584937489987560",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272771
   },
   {
     "block_number": 25003552,
@@ -2632,7 +2786,8 @@
     "token1_amount": "8910922568058892494907003",
     "liquidity_delta": "-2186603324349611088",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272772
   },
   {
     "block_number": 25003580,
@@ -2649,7 +2804,8 @@
     "token1_amount": "3088113597784510463",
     "liquidity_delta": "-19700956922718021314742",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272909
   },
   {
     "block_number": 25003581,
@@ -2666,7 +2822,8 @@
     "token1_amount": "7457832239",
     "liquidity_delta": "-1762688962687",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272488
   },
   {
     "block_number": 25003583,
@@ -2683,7 +2840,8 @@
     "token1_amount": "1876664384853427967",
     "liquidity_delta": "-96447691218821660627605",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272896
   },
   {
     "block_number": 25003584,
@@ -2700,7 +2858,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-21174508133376976491",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272882
   },
   {
     "block_number": 25003603,
@@ -2717,7 +2876,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-273638830308417",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1255362
   },
   {
     "block_number": 25003603,
@@ -2734,7 +2894,8 @@
     "token1_amount": "3257231668",
     "liquidity_delta": "-245348754727382",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1195257
   },
   {
     "block_number": 25003616,
@@ -2751,7 +2912,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-16849438751890653853",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272910
   },
   {
     "block_number": 25003618,
@@ -2768,7 +2930,8 @@
     "token1_amount": "14273294805971",
     "liquidity_delta": "-47171534575",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1267679
   },
   {
     "block_number": 25003623,
@@ -2785,7 +2948,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-182201158646489634491",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270931
   },
   {
     "block_number": 25003641,
@@ -2802,7 +2966,8 @@
     "token1_amount": "52742253482",
     "liquidity_delta": "-620313385112176",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272900
   },
   {
     "block_number": 25003652,
@@ -2819,7 +2984,8 @@
     "token1_amount": "9523193627814453",
     "liquidity_delta": "-12255607966518",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272262
   },
   {
     "block_number": 25003653,
@@ -2836,7 +3002,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-1166458216218594",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270895
   },
   {
     "block_number": 25003680,
@@ -2853,7 +3020,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-16681792375414216232",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272914
   },
   {
     "block_number": 25003680,
@@ -2870,7 +3038,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "-45036805876798104517",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272784
   },
   {
     "block_number": 25003690,
@@ -2887,7 +3056,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-8736510501378966834197376",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272750
   },
   {
     "block_number": 25003692,
@@ -2904,7 +3074,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-217366412968115761360",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257682
   },
   {
     "block_number": 25003696,
@@ -2921,7 +3092,8 @@
     "token1_amount": "23072684930906892",
     "liquidity_delta": "-12823641744252470900",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260694
   },
   {
     "block_number": 25003697,
@@ -2938,7 +3110,8 @@
     "token1_amount": "4112163498385633279",
     "liquidity_delta": "-18413310106370235119730",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272912
   },
   {
     "block_number": 25003703,
@@ -2955,7 +3128,8 @@
     "token1_amount": "82327332619116730172",
     "liquidity_delta": "-199062599946642985708642",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271760
   },
   {
     "block_number": 25003706,
@@ -2972,7 +3146,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-61712538063018532877",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272464
   },
   {
     "block_number": 25003708,
@@ -2989,7 +3164,8 @@
     "token1_amount": "1411597441643537972",
     "liquidity_delta": "-52797337254283",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1251577
   },
   {
     "block_number": 25003749,
@@ -3006,7 +3182,8 @@
     "token1_amount": "39317609413963246",
     "liquidity_delta": "-109902720454443",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271818
   },
   {
     "block_number": 25003774,
@@ -3023,7 +3200,8 @@
     "token1_amount": "3327318341725730303",
     "liquidity_delta": "-26662606243009873860888",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272878
   },
   {
     "block_number": 25003804,
@@ -3040,7 +3218,8 @@
     "token1_amount": "43269192696539271260",
     "liquidity_delta": "-780202383056631345206023",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270929
   },
   {
     "block_number": 25003804,
@@ -3057,7 +3236,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "-43705832662759501316",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272918
   },
   {
     "block_number": 25003807,
@@ -3074,7 +3254,8 @@
     "token1_amount": "10006069150",
     "liquidity_delta": "-31158136656098775",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272880
   },
   {
     "block_number": 25003815,
@@ -3091,7 +3272,8 @@
     "token1_amount": "1905264168375203979",
     "liquidity_delta": "-547213529834122",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271140
   },
   {
     "block_number": 25003834,
@@ -3108,7 +3290,8 @@
     "token1_amount": "44155225604755281",
     "liquidity_delta": "-233104547360559",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271242
   },
   {
     "block_number": 25003838,
@@ -3125,7 +3308,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-7363775057090613896",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272926
   },
   {
     "block_number": 25003839,
@@ -3142,7 +3326,8 @@
     "token1_amount": "6749999999999999999",
     "liquidity_delta": "-29072871569334146796",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272929
   },
   {
     "block_number": 25003844,
@@ -3159,7 +3344,8 @@
     "token1_amount": "0",
     "liquidity_delta": "-4014824819159357169382",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1128477
   },
   {
     "block_number": 25003844,
@@ -3176,7 +3362,8 @@
     "token1_amount": "736666666666666751",
     "liquidity_delta": "-4377723348872302572",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272113
   },
   {
     "block_number": 25003844,
@@ -3193,7 +3380,8 @@
     "token1_amount": "1473333333333333503",
     "liquidity_delta": "-11019478584433717888",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272114
   },
   {
     "block_number": 25003851,
@@ -3210,7 +3398,8 @@
     "token1_amount": "2138117331559",
     "liquidity_delta": "-60035323588838352",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 809660
   },
   {
     "block_number": 25003855,
@@ -3227,7 +3416,8 @@
     "token1_amount": "181818181818181817",
     "liquidity_delta": "-5720748035058623775",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272059
   },
   {
     "block_number": 25003855,
@@ -3244,7 +3434,8 @@
     "token1_amount": "363636363636363635",
     "liquidity_delta": "-15799151538125936561",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272060
   },
   {
     "block_number": 25003855,
@@ -3261,7 +3452,8 @@
     "token1_amount": "545454545454545453",
     "liquidity_delta": "-18406582792625119329",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272061
   },
   {
     "block_number": 25003855,
@@ -3278,7 +3470,8 @@
     "token1_amount": "727272727272727271",
     "liquidity_delta": "-33889319958109927029",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272062
   },
   {
     "block_number": 25003855,
@@ -3295,7 +3488,8 @@
     "token1_amount": "909090909090909089",
     "liquidity_delta": "-32901902574188567041",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272063
   },
   {
     "block_number": 25003855,
@@ -3312,7 +3506,8 @@
     "token1_amount": "1090909090909090908",
     "liquidity_delta": "-54519668561868493101",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272064
   },
   {
     "block_number": 25003855,
@@ -3329,7 +3524,8 @@
     "token1_amount": "1272727272727272726",
     "liquidity_delta": "-49402410668291440705",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272065
   },
   {
     "block_number": 25003855,
@@ -3346,7 +3542,8 @@
     "token1_amount": "1454545454545454544",
     "liquidity_delta": "-77963447908141314306",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272066
   },
   {
     "block_number": 25003855,
@@ -3363,7 +3560,8 @@
     "token1_amount": "1636363636363636362",
     "liquidity_delta": "-68122676805937852027",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272067
   },
   {
     "block_number": 25003855,
@@ -3380,7 +3578,8 @@
     "token1_amount": "1818181818181818185",
     "liquidity_delta": "-104520178853455736110",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272068
   },
   {
     "block_number": 25003879,
@@ -3397,7 +3596,8 @@
     "token1_amount": "424223158",
     "liquidity_delta": "-55572858198",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270550
   },
   {
     "block_number": 25003886,
@@ -3414,7 +3614,8 @@
     "token1_amount": "182289883846930333",
     "liquidity_delta": "-2006728727139240752",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272030
   },
   {
     "block_number": 25003893,
@@ -3431,7 +3632,8 @@
     "token1_amount": "820289983827613053",
     "liquidity_delta": "-2668550951448645956",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272328
   },
   {
     "block_number": 25003895,
@@ -3448,7 +3650,8 @@
     "token1_amount": "3446079666061784886",
     "liquidity_delta": "-31254040440958954",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272879
   },
   {
     "block_number": 25003909,
@@ -3465,7 +3668,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "-18683736222279968181",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272919
   },
   {
     "block_number": 25003930,
@@ -3482,7 +3686,8 @@
     "token1_amount": "1310858825669673555",
     "liquidity_delta": "-3109788612004263293",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271917
   },
   {
     "block_number": 25003954,
@@ -3499,7 +3704,8 @@
     "token1_amount": "21701718405703935",
     "liquidity_delta": "-101630013638809",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272931
   },
   {
     "block_number": 25003961,
@@ -3516,7 +3722,8 @@
     "token1_amount": "1617908535450361194",
     "liquidity_delta": "-223996026246290",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1268366
   },
   {
     "block_number": 25003985,
@@ -3533,7 +3740,8 @@
     "token1_amount": "897145158184309",
     "liquidity_delta": "-5434576914394",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272345
   },
   {
     "block_number": 25003997,
@@ -3550,7 +3758,8 @@
     "token1_amount": "3722506938313073687882",
     "liquidity_delta": "-155497978306792450",
     "source_event": "DecreaseLiquidity",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272471
   },
   {
     "block_number": 25003552,
@@ -3567,7 +3776,8 @@
     "token1_amount": "108391534021466641651760",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272767
   },
   {
     "block_number": 25003552,
@@ -3584,7 +3794,8 @@
     "token1_amount": "25251592779427419747641",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272773
   },
   {
     "block_number": 25003552,
@@ -3601,7 +3812,8 @@
     "token1_amount": "3316499999999999997319636",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272764
   },
   {
     "block_number": 25003552,
@@ -3618,7 +3830,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272770
   },
   {
     "block_number": 25003552,
@@ -3635,7 +3848,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272771
   },
   {
     "block_number": 25003552,
@@ -3652,7 +3866,8 @@
     "token1_amount": "8910922568058892494907003",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272772
   },
   {
     "block_number": 25003552,
@@ -3669,7 +3884,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272789
   },
   {
     "block_number": 25003552,
@@ -3686,7 +3902,8 @@
     "token1_amount": "503128",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271058
   },
   {
     "block_number": 25003552,
@@ -3703,7 +3920,8 @@
     "token1_amount": "1181201946795486",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270226
   },
   {
     "block_number": 25003552,
@@ -3720,7 +3938,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1222218
   },
   {
     "block_number": 25003554,
@@ -3737,7 +3956,8 @@
     "token1_amount": "497165854362973",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1229638
   },
   {
     "block_number": 25003554,
@@ -3754,7 +3974,8 @@
     "token1_amount": "742230323739898",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1253835
   },
   {
     "block_number": 25003558,
@@ -3771,7 +3992,8 @@
     "token1_amount": "10188866",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1195257
   },
   {
     "block_number": 25003558,
@@ -3788,7 +4010,8 @@
     "token1_amount": "492353325075247",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1230439
   },
   {
     "block_number": 25003558,
@@ -3805,7 +4028,8 @@
     "token1_amount": "858278262590828",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1253828
   },
   {
     "block_number": 25003560,
@@ -3822,7 +4046,8 @@
     "token1_amount": "1523134464891635",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1234813
   },
   {
     "block_number": 25003564,
@@ -3839,7 +4064,8 @@
     "token1_amount": "2607246096353311",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1232875
   },
   {
     "block_number": 25003580,
@@ -3856,7 +4082,8 @@
     "token1_amount": "632571758931404",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270057
   },
   {
     "block_number": 25003580,
@@ -3873,7 +4100,8 @@
     "token1_amount": "559219610303539",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263411
   },
   {
     "block_number": 25003580,
@@ -3890,7 +4118,8 @@
     "token1_amount": "3088113597784510463",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272909
   },
   {
     "block_number": 25003581,
@@ -3907,7 +4136,8 @@
     "token1_amount": "7457832239",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272488
   },
   {
     "block_number": 25003581,
@@ -3924,7 +4154,8 @@
     "token1_amount": "6247834290210946",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1229797
   },
   {
     "block_number": 25003583,
@@ -3941,7 +4172,8 @@
     "token1_amount": "1876664384853427967",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272896
   },
   {
     "block_number": 25003584,
@@ -3958,7 +4190,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272882
   },
   {
     "block_number": 25003597,
@@ -3975,7 +4208,8 @@
     "token1_amount": "6833302",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264718
   },
   {
     "block_number": 25003603,
@@ -3992,7 +4226,8 @@
     "token1_amount": "167635043",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1255362
   },
   {
     "block_number": 25003603,
@@ -4009,7 +4244,8 @@
     "token1_amount": "3257231668",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1195257
   },
   {
     "block_number": 25003612,
@@ -4026,7 +4262,8 @@
     "token1_amount": "619932956127941",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270062
   },
   {
     "block_number": 25003612,
@@ -4043,7 +4280,8 @@
     "token1_amount": "488073930340137",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1250973
   },
   {
     "block_number": 25003613,
@@ -4060,7 +4298,8 @@
     "token1_amount": "9208396194493628",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 743975
   },
   {
     "block_number": 25003615,
@@ -4077,7 +4316,8 @@
     "token1_amount": "2749809059",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 802448
   },
   {
     "block_number": 25003616,
@@ -4094,7 +4334,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272910
   },
   {
     "block_number": 25003618,
@@ -4111,7 +4352,8 @@
     "token1_amount": "2108059925054",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1267679
   },
   {
     "block_number": 25003618,
@@ -4128,7 +4370,8 @@
     "token1_amount": "14273294805971",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1267679
   },
   {
     "block_number": 25003618,
@@ -4145,7 +4388,8 @@
     "token1_amount": "367115640777751",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1215355
   },
   {
     "block_number": 25003623,
@@ -4162,7 +4406,8 @@
     "token1_amount": "2101074182838472",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270931
   },
   {
     "block_number": 25003629,
@@ -4179,7 +4424,8 @@
     "token1_amount": "550555915500016",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1206018
   },
   {
     "block_number": 25003641,
@@ -4196,7 +4442,8 @@
     "token1_amount": "52742254093",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272900
   },
   {
     "block_number": 25003652,
@@ -4213,7 +4460,8 @@
     "token1_amount": "9545683350877388",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272262
   },
   {
     "block_number": 25003653,
@@ -4230,7 +4478,8 @@
     "token1_amount": "1338452018129872",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270895
   },
   {
     "block_number": 25003680,
@@ -4247,7 +4496,8 @@
     "token1_amount": "1979999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272914
   },
   {
     "block_number": 25003680,
@@ -4264,7 +4514,8 @@
     "token1_amount": "2130561614044227",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1022086
   },
   {
     "block_number": 25003680,
@@ -4281,7 +4532,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272784
   },
   {
     "block_number": 25003681,
@@ -4298,7 +4550,8 @@
     "token1_amount": "2118934532724762",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1031410
   },
   {
     "block_number": 25003682,
@@ -4315,7 +4568,8 @@
     "token1_amount": "2118126548735361",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264162
   },
   {
     "block_number": 25003683,
@@ -4332,7 +4586,8 @@
     "token1_amount": "2117083333333334",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1206941
   },
   {
     "block_number": 25003684,
@@ -4349,7 +4604,8 @@
     "token1_amount": "2099293819224393",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1185181
   },
   {
     "block_number": 25003685,
@@ -4366,7 +4622,8 @@
     "token1_amount": "2094394845300760",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263999
   },
   {
     "block_number": 25003686,
@@ -4383,7 +4640,8 @@
     "token1_amount": "2084303463031198",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262416
   },
   {
     "block_number": 25003687,
@@ -4400,7 +4658,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1253180
   },
   {
     "block_number": 25003688,
@@ -4417,7 +4676,8 @@
     "token1_amount": "114157147721966",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271904
   },
   {
     "block_number": 25003688,
@@ -4434,7 +4694,8 @@
     "token1_amount": "2077800605341763",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262988
   },
   {
     "block_number": 25003689,
@@ -4451,7 +4712,8 @@
     "token1_amount": "2070628170927487",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1253493
   },
   {
     "block_number": 25003690,
@@ -4468,7 +4730,8 @@
     "token1_amount": "63189587200440051200877237",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272750
   },
   {
     "block_number": 25003690,
@@ -4485,7 +4748,8 @@
     "token1_amount": "2056589115622769",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264355
   },
   {
     "block_number": 25003691,
@@ -4502,7 +4766,8 @@
     "token1_amount": "2051866061629811",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263230
   },
   {
     "block_number": 25003691,
@@ -4519,7 +4784,8 @@
     "token1_amount": "5845992927002860",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1256574
   },
   {
     "block_number": 25003692,
@@ -4536,7 +4802,8 @@
     "token1_amount": "11046824557334448201",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257682
   },
   {
     "block_number": 25003692,
@@ -4553,7 +4820,8 @@
     "token1_amount": "2247484914844783989334337",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262423
   },
   {
     "block_number": 25003693,
@@ -4570,7 +4838,8 @@
     "token1_amount": "3469421155725098233427415",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262803
   },
   {
     "block_number": 25003694,
@@ -4587,7 +4856,8 @@
     "token1_amount": "2030044529926340",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262370
   },
   {
     "block_number": 25003695,
@@ -4604,7 +4874,8 @@
     "token1_amount": "2027080781778190",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265209
   },
   {
     "block_number": 25003696,
@@ -4621,7 +4892,8 @@
     "token1_amount": "2021958233395319",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265296
   },
   {
     "block_number": 25003696,
@@ -4638,7 +4910,8 @@
     "token1_amount": "23072684930906892",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260694
   },
   {
     "block_number": 25003697,
@@ -4655,7 +4928,8 @@
     "token1_amount": "2850416666666666",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1037269
   },
   {
     "block_number": 25003697,
@@ -4672,7 +4946,8 @@
     "token1_amount": "4112163498385633279",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272912
   },
   {
     "block_number": 25003698,
@@ -4689,7 +4964,8 @@
     "token1_amount": "2220555567783292042198143",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263101
   },
   {
     "block_number": 25003699,
@@ -4706,7 +4982,8 @@
     "token1_amount": "2000668200674941",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261986
   },
   {
     "block_number": 25003700,
@@ -4723,7 +5000,8 @@
     "token1_amount": "1033146271980445461",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1244313
   },
   {
     "block_number": 25003700,
@@ -4740,7 +5018,8 @@
     "token1_amount": "382117064650196",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1251577
   },
   {
     "block_number": 25003701,
@@ -4757,7 +5036,8 @@
     "token1_amount": "1990762977794547",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263985
   },
   {
     "block_number": 25003702,
@@ -4774,7 +5054,8 @@
     "token1_amount": "1987149158341010",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264080
   },
   {
     "block_number": 25003703,
@@ -4791,7 +5072,8 @@
     "token1_amount": "82343265320294769837",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271760
   },
   {
     "block_number": 25003703,
@@ -4808,7 +5090,8 @@
     "token1_amount": "1986284098089930",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261097
   },
   {
     "block_number": 25003704,
@@ -4825,7 +5108,8 @@
     "token1_amount": "1981158818047234",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264226
   },
   {
     "block_number": 25003705,
@@ -4842,7 +5126,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263313
   },
   {
     "block_number": 25003706,
@@ -4859,7 +5144,8 @@
     "token1_amount": "11218843746722287",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272030
   },
   {
     "block_number": 25003706,
@@ -4876,7 +5162,8 @@
     "token1_amount": "699834666769596",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272464
   },
   {
     "block_number": 25003706,
@@ -4893,7 +5180,8 @@
     "token1_amount": "1979999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1021424
   },
   {
     "block_number": 25003707,
@@ -4910,7 +5198,8 @@
     "token1_amount": "1979999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262043
   },
   {
     "block_number": 25003708,
@@ -4927,7 +5216,8 @@
     "token1_amount": "1411597441643537972",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1251577
   },
   {
     "block_number": 25003708,
@@ -4944,7 +5234,8 @@
     "token1_amount": "2527792931558762",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262006
   },
   {
     "block_number": 25003709,
@@ -4961,7 +5252,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263175
   },
   {
     "block_number": 25003710,
@@ -4978,7 +5270,8 @@
     "token1_amount": "1935499999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259769
   },
   {
     "block_number": 25003711,
@@ -4995,7 +5288,8 @@
     "token1_amount": "1922726447601850",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260656
   },
   {
     "block_number": 25003712,
@@ -5012,7 +5306,8 @@
     "token1_amount": "1903848249347329",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261213
   },
   {
     "block_number": 25003713,
@@ -5029,7 +5324,8 @@
     "token1_amount": "1898839190681739",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263993
   },
   {
     "block_number": 25003714,
@@ -5046,7 +5342,8 @@
     "token1_amount": "1897499999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1185992
   },
   {
     "block_number": 25003714,
@@ -5063,7 +5360,8 @@
     "token1_amount": "5323373",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1159912
   },
   {
     "block_number": 25003715,
@@ -5080,7 +5378,8 @@
     "token1_amount": "17844715725604061",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1037870
   },
   {
     "block_number": 25003716,
@@ -5097,7 +5396,8 @@
     "token1_amount": "1887934469366624",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1254422
   },
   {
     "block_number": 25003717,
@@ -5114,7 +5414,8 @@
     "token1_amount": "1885460635716378",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1242319
   },
   {
     "block_number": 25003718,
@@ -5131,7 +5432,8 @@
     "token1_amount": "1882135295362488",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262055
   },
   {
     "block_number": 25003719,
@@ -5148,7 +5450,8 @@
     "token1_amount": "1878387497721477",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1048736
   },
   {
     "block_number": 25003720,
@@ -5165,7 +5468,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265814
   },
   {
     "block_number": 25003721,
@@ -5182,7 +5486,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265799
   },
   {
     "block_number": 25003722,
@@ -5199,7 +5504,8 @@
     "token1_amount": "1841115034131689",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1253376
   },
   {
     "block_number": 25003723,
@@ -5216,7 +5522,8 @@
     "token1_amount": "1836500000000000",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1231305
   },
   {
     "block_number": 25003724,
@@ -5233,7 +5540,8 @@
     "token1_amount": "1824750499001997",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1019075
   },
   {
     "block_number": 25003725,
@@ -5250,7 +5558,8 @@
     "token1_amount": "1822262977794547",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1244961
   },
   {
     "block_number": 25003726,
@@ -5267,7 +5576,8 @@
     "token1_amount": "907499999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1190772
   },
   {
     "block_number": 25003727,
@@ -5284,7 +5594,8 @@
     "token1_amount": "1817086752340714",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263006
   },
   {
     "block_number": 25003728,
@@ -5301,7 +5612,8 @@
     "token1_amount": "1811350009571585",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259868
   },
   {
     "block_number": 25003729,
@@ -5318,7 +5630,8 @@
     "token1_amount": "2401073780028523",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1250412
   },
   {
     "block_number": 25003730,
@@ -5335,7 +5648,8 @@
     "token1_amount": "1800493426852142",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1102071
   },
   {
     "block_number": 25003731,
@@ -5352,7 +5666,8 @@
     "token1_amount": "72925514053304",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271818
   },
   {
     "block_number": 25003731,
@@ -5369,7 +5684,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262805
   },
   {
     "block_number": 25003732,
@@ -5386,7 +5702,8 @@
     "token1_amount": "1791248009402850",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260540
   },
   {
     "block_number": 25003733,
@@ -5403,7 +5720,8 @@
     "token1_amount": "1774999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1040924
   },
   {
     "block_number": 25003735,
@@ -5420,7 +5738,8 @@
     "token1_amount": "1770844705196737",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1111979
   },
   {
     "block_number": 25003736,
@@ -5437,7 +5756,8 @@
     "token1_amount": "1769221863050186",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264256
   },
   {
     "block_number": 25003737,
@@ -5454,7 +5774,8 @@
     "token1_amount": "1991338674706198024033744",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263148
   },
   {
     "block_number": 25003738,
@@ -5471,7 +5792,8 @@
     "token1_amount": "1750666666666666",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1203018
   },
   {
     "block_number": 25003739,
@@ -5488,7 +5810,8 @@
     "token1_amount": "1750441425120595",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265041
   },
   {
     "block_number": 25003740,
@@ -5505,7 +5828,8 @@
     "token1_amount": "1725111194614057",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262908
   },
   {
     "block_number": 25003741,
@@ -5522,7 +5846,8 @@
     "token1_amount": "1717604574383772",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263839
   },
   {
     "block_number": 25003742,
@@ -5539,7 +5864,8 @@
     "token1_amount": "1712828955860161",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265047
   },
   {
     "block_number": 25003743,
@@ -5556,7 +5882,8 @@
     "token1_amount": "1710989579587854",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259504
   },
   {
     "block_number": 25003744,
@@ -5573,7 +5900,8 @@
     "token1_amount": "2141278347111142690378758",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263030
   },
   {
     "block_number": 25003745,
@@ -5590,7 +5918,8 @@
     "token1_amount": "1701881148224532",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262909
   },
   {
     "block_number": 25003745,
@@ -5607,7 +5936,8 @@
     "token1_amount": "35092",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1232607
   },
   {
     "block_number": 25003746,
@@ -5624,7 +5954,8 @@
     "token1_amount": "1697000000000000",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259296
   },
   {
     "block_number": 25003747,
@@ -5641,7 +5972,8 @@
     "token1_amount": "1692884761571123",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263580
   },
   {
     "block_number": 25003748,
@@ -5658,7 +5990,8 @@
     "token1_amount": "1669199999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1246924
   },
   {
     "block_number": 25003749,
@@ -5675,7 +6008,8 @@
     "token1_amount": "39317675267618551",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271818
   },
   {
     "block_number": 25003749,
@@ -5692,7 +6026,8 @@
     "token1_amount": "1666666666666666",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1042576
   },
   {
     "block_number": 25003750,
@@ -5709,7 +6044,8 @@
     "token1_amount": "1661949999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1248649
   },
   {
     "block_number": 25003751,
@@ -5726,7 +6062,8 @@
     "token1_amount": "1659633826995305",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264304
   },
   {
     "block_number": 25003752,
@@ -5743,7 +6080,8 @@
     "token1_amount": "1656554266373384",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1014787
   },
   {
     "block_number": 25003753,
@@ -5760,7 +6098,8 @@
     "token1_amount": "1654767587390644",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264468
   },
   {
     "block_number": 25003754,
@@ -5777,7 +6116,8 @@
     "token1_amount": "1654187396351577",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1045830
   },
   {
     "block_number": 25003755,
@@ -5794,7 +6134,8 @@
     "token1_amount": "1653333333333335",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1014831
   },
   {
     "block_number": 25003756,
@@ -5811,7 +6152,8 @@
     "token1_amount": "1653333333333333",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1027716
   },
   {
     "block_number": 25003757,
@@ -5828,7 +6170,8 @@
     "token1_amount": "1651439332015820",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264285
   },
   {
     "block_number": 25003758,
@@ -5845,7 +6188,8 @@
     "token1_amount": "1650000000000001",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1096575
   },
   {
     "block_number": 25003759,
@@ -5862,7 +6206,8 @@
     "token1_amount": "1649999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1021835
   },
   {
     "block_number": 25003760,
@@ -5879,7 +6224,8 @@
     "token1_amount": "2605771837591217",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262894
   },
   {
     "block_number": 25003761,
@@ -5896,7 +6242,8 @@
     "token1_amount": "1615771837591217",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264184
   },
   {
     "block_number": 25003762,
@@ -5913,7 +6260,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263217
   },
   {
     "block_number": 25003763,
@@ -5930,7 +6278,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263231
   },
   {
     "block_number": 25003764,
@@ -5947,7 +6296,8 @@
     "token1_amount": "1603925280478019",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1245229
   },
   {
     "block_number": 25003765,
@@ -5964,7 +6314,8 @@
     "token1_amount": "1596987786142752",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263024
   },
   {
     "block_number": 25003766,
@@ -5981,7 +6332,8 @@
     "token1_amount": "1596043724579521",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263539
   },
   {
     "block_number": 25003767,
@@ -5998,7 +6350,8 @@
     "token1_amount": "4310435215251775",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1237416
   },
   {
     "block_number": 25003768,
@@ -6015,7 +6368,8 @@
     "token1_amount": "1390986868991572899414370",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260548
   },
   {
     "block_number": 25003769,
@@ -6032,7 +6386,8 @@
     "token1_amount": "1565857175978232",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263088
   },
   {
     "block_number": 25003770,
@@ -6049,7 +6404,8 @@
     "token1_amount": "1560934456473397",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263026
   },
   {
     "block_number": 25003771,
@@ -6066,7 +6422,8 @@
     "token1_amount": "1545997929677032",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263012
   },
   {
     "block_number": 25003772,
@@ -6083,7 +6440,8 @@
     "token1_amount": "1773778535590985846613198",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1249542
   },
   {
     "block_number": 25003773,
@@ -6100,7 +6458,8 @@
     "token1_amount": "1519058953876556",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261056
   },
   {
     "block_number": 25003774,
@@ -6117,7 +6476,8 @@
     "token1_amount": "1510286001977253",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262969
   },
   {
     "block_number": 25003774,
@@ -6134,7 +6494,8 @@
     "token1_amount": "3327318341725730303",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272878
   },
   {
     "block_number": 25003775,
@@ -6151,7 +6512,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1252155
   },
   {
     "block_number": 25003776,
@@ -6168,7 +6530,8 @@
     "token1_amount": "1486657175978232",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263094
   },
   {
     "block_number": 25003777,
@@ -6185,7 +6548,8 @@
     "token1_amount": "1485687424001674",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1221460
   },
   {
     "block_number": 25003778,
@@ -6202,7 +6566,8 @@
     "token1_amount": "3074149875621890",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1241878
   },
   {
     "block_number": 25003780,
@@ -6219,7 +6584,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260546
   },
   {
     "block_number": 25003781,
@@ -6236,7 +6602,8 @@
     "token1_amount": "1463751990049751",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1251311
   },
   {
     "block_number": 25003782,
@@ -6253,7 +6620,8 @@
     "token1_amount": "1891502504158026",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1247546
   },
   {
     "block_number": 25003783,
@@ -6270,7 +6638,8 @@
     "token1_amount": "14751652157365915",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1030910
   },
   {
     "block_number": 25003784,
@@ -6287,7 +6656,8 @@
     "token1_amount": "1445399999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263011
   },
   {
     "block_number": 25003785,
@@ -6304,7 +6674,8 @@
     "token1_amount": "1445262511302665",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1069070
   },
   {
     "block_number": 25003786,
@@ -6321,7 +6692,8 @@
     "token1_amount": "6858708236420281",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1129168
   },
   {
     "block_number": 25003787,
@@ -6338,7 +6710,8 @@
     "token1_amount": "1420442535950940",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263237
   },
   {
     "block_number": 25003788,
@@ -6355,7 +6728,8 @@
     "token1_amount": "1419098848855645",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262666
   },
   {
     "block_number": 25003789,
@@ -6372,7 +6746,8 @@
     "token1_amount": "1416191654442053",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1203932
   },
   {
     "block_number": 25003790,
@@ -6389,7 +6764,8 @@
     "token1_amount": "4716600000000000",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1064950
   },
   {
     "block_number": 25003791,
@@ -6406,7 +6782,8 @@
     "token1_amount": "1409618573797680",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1021783
   },
   {
     "block_number": 25003792,
@@ -6423,7 +6800,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264024
   },
   {
     "block_number": 25003793,
@@ -6440,7 +6818,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264441
   },
   {
     "block_number": 25003794,
@@ -6457,7 +6836,8 @@
     "token1_amount": "1396043724579521",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261144
   },
   {
     "block_number": 25003795,
@@ -6474,7 +6854,8 @@
     "token1_amount": "1396043724579521",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263553
   },
   {
     "block_number": 25003796,
@@ -6491,7 +6872,8 @@
     "token1_amount": "1396043724579521",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259507
   },
   {
     "block_number": 25003797,
@@ -6508,7 +6890,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259780
   },
   {
     "block_number": 25003798,
@@ -6525,7 +6908,8 @@
     "token1_amount": "1395884761571123",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261334
   },
   {
     "block_number": 25003799,
@@ -6542,7 +6926,8 @@
     "token1_amount": "1387567341674473",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264448
   },
   {
     "block_number": 25003800,
@@ -6559,7 +6944,8 @@
     "token1_amount": "1383361444588777",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260538
   },
   {
     "block_number": 25003801,
@@ -6576,7 +6962,8 @@
     "token1_amount": "1383361444588777",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260553
   },
   {
     "block_number": 25003802,
@@ -6593,7 +6980,8 @@
     "token1_amount": "1383348531363901",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263876
   },
   {
     "block_number": 25003803,
@@ -6610,7 +6998,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1185726
   },
   {
     "block_number": 25003804,
@@ -6627,7 +7016,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1260200
   },
   {
     "block_number": 25003804,
@@ -6644,7 +7034,8 @@
     "token1_amount": "43269192696539271260",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270929
   },
   {
     "block_number": 25003804,
@@ -6661,7 +7052,8 @@
     "token1_amount": "8999999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272918
   },
   {
     "block_number": 25003805,
@@ -6678,7 +7070,8 @@
     "token1_amount": "1377241444907251",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262086
   },
   {
     "block_number": 25003806,
@@ -6695,7 +7088,8 @@
     "token1_amount": "1377241444907251",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264891
   },
   {
     "block_number": 25003807,
@@ -6712,7 +7106,8 @@
     "token1_amount": "1368161892465914",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261692
   },
   {
     "block_number": 25003807,
@@ -6729,7 +7124,8 @@
     "token1_amount": "10006084726",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272880
   },
   {
     "block_number": 25003808,
@@ -6746,7 +7142,8 @@
     "token1_amount": "1363608143098402",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264049
   },
   {
     "block_number": 25003809,
@@ -6763,7 +7160,8 @@
     "token1_amount": "1356351029503238",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263171
   },
   {
     "block_number": 25003810,
@@ -6780,7 +7178,8 @@
     "token1_amount": "1817519734404855",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1041251
   },
   {
     "block_number": 25003811,
@@ -6797,7 +7196,8 @@
     "token1_amount": "1342959802232169",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1249529
   },
   {
     "block_number": 25003812,
@@ -6814,7 +7214,8 @@
     "token1_amount": "1342490118884766",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1245284
   },
   {
     "block_number": 25003813,
@@ -6831,7 +7232,8 @@
     "token1_amount": "1338499999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1246117
   },
   {
     "block_number": 25003814,
@@ -6848,7 +7250,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1080743
   },
   {
     "block_number": 25003815,
@@ -6865,7 +7268,8 @@
     "token1_amount": "1909430068899424958",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271140
   },
   {
     "block_number": 25003815,
@@ -6882,7 +7286,8 @@
     "token1_amount": "1323266332469676",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1244165
   },
   {
     "block_number": 25003816,
@@ -6899,7 +7304,8 @@
     "token1_amount": "1320700000000000",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1243079
   },
   {
     "block_number": 25003817,
@@ -6916,7 +7322,8 @@
     "token1_amount": "5778333333333336",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1178400
   },
   {
     "block_number": 25003818,
@@ -6933,7 +7340,8 @@
     "token1_amount": "1316746389216033",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263003
   },
   {
     "block_number": 25003819,
@@ -6950,7 +7358,8 @@
     "token1_amount": "1308110124141072",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1045272
   },
   {
     "block_number": 25003820,
@@ -6967,7 +7376,8 @@
     "token1_amount": "1468499999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1045308
   },
   {
     "block_number": 25003821,
@@ -6984,7 +7394,8 @@
     "token1_amount": "1302453233830845",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1246844
   },
   {
     "block_number": 25003822,
@@ -7001,7 +7412,8 @@
     "token1_amount": "1299013625671291",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261915
   },
   {
     "block_number": 25003823,
@@ -7018,7 +7430,8 @@
     "token1_amount": "1297884761571123",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264043
   },
   {
     "block_number": 25003824,
@@ -7035,7 +7448,8 @@
     "token1_amount": "1291989999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265739
   },
   {
     "block_number": 25003825,
@@ -7052,7 +7466,8 @@
     "token1_amount": "1283363712685465",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264362
   },
   {
     "block_number": 25003826,
@@ -7069,7 +7484,8 @@
     "token1_amount": "1691335154491544",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1053338
   },
   {
     "block_number": 25003827,
@@ -7086,7 +7502,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1014393
   },
   {
     "block_number": 25003828,
@@ -7103,7 +7520,8 @@
     "token1_amount": "1265151741293532",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1248513
   },
   {
     "block_number": 25003829,
@@ -7120,7 +7538,8 @@
     "token1_amount": "1259330013540603",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264469
   },
   {
     "block_number": 25003830,
@@ -7137,7 +7556,8 @@
     "token1_amount": "2062499999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1039582
   },
   {
     "block_number": 25003831,
@@ -7154,7 +7574,8 @@
     "token1_amount": "1232814176095159",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265044
   },
   {
     "block_number": 25003832,
@@ -7171,7 +7592,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264396
   },
   {
     "block_number": 25003833,
@@ -7188,7 +7610,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264366
   },
   {
     "block_number": 25003834,
@@ -7205,7 +7628,8 @@
     "token1_amount": "1208648421332160",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264142
   },
   {
     "block_number": 25003834,
@@ -7222,7 +7646,8 @@
     "token1_amount": "44522456385767327",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271242
   },
   {
     "block_number": 25003835,
@@ -7239,7 +7664,8 @@
     "token1_amount": "1208648421332160",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1256285
   },
   {
     "block_number": 25003836,
@@ -7256,7 +7682,8 @@
     "token1_amount": "1203399999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262298
   },
   {
     "block_number": 25003837,
@@ -7273,7 +7700,8 @@
     "token1_amount": "1201101814174679",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1249545
   },
   {
     "block_number": 25003838,
@@ -7290,7 +7718,8 @@
     "token1_amount": "2591801094980404",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1025982
   },
   {
     "block_number": 25003838,
@@ -7307,7 +7736,8 @@
     "token1_amount": "2139466709966863",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272926
   },
   {
     "block_number": 25003839,
@@ -7324,7 +7754,8 @@
     "token1_amount": "111966055864407360",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1128477
   },
   {
     "block_number": 25003839,
@@ -7341,7 +7772,8 @@
     "token1_amount": "1187999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1246711
   },
   {
     "block_number": 25003839,
@@ -7358,7 +7790,8 @@
     "token1_amount": "6749999999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272929
   },
   {
     "block_number": 25003840,
@@ -7375,7 +7808,8 @@
     "token1_amount": "1186709875566509",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261420
   },
   {
     "block_number": 25003841,
@@ -7392,7 +7826,8 @@
     "token1_amount": "1184780547431716",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263209
   },
   {
     "block_number": 25003842,
@@ -7409,7 +7844,8 @@
     "token1_amount": "1162500000000000",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1021102
   },
   {
     "block_number": 25003843,
@@ -7426,7 +7862,8 @@
     "token1_amount": "702176921911179512",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272150
   },
   {
     "block_number": 25003843,
@@ -7443,7 +7880,8 @@
     "token1_amount": "1160810781778190",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263437
   },
   {
     "block_number": 25003844,
@@ -7460,7 +7898,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1128477
   },
   {
     "block_number": 25003844,
@@ -7477,7 +7916,8 @@
     "token1_amount": "1158251137659600",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263149
   },
   {
     "block_number": 25003844,
@@ -7494,7 +7934,8 @@
     "token1_amount": "782263489256200962",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272113
   },
   {
     "block_number": 25003844,
@@ -7511,7 +7952,8 @@
     "token1_amount": "1473333333333333503",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272114
   },
   {
     "block_number": 25003845,
@@ -7528,7 +7970,8 @@
     "token1_amount": "1156103349480551",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263600
   },
   {
     "block_number": 25003846,
@@ -7545,7 +7988,8 @@
     "token1_amount": "1155166666666666",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1040910
   },
   {
     "block_number": 25003847,
@@ -7562,7 +8006,8 @@
     "token1_amount": "1154999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1020164
   },
   {
     "block_number": 25003848,
@@ -7579,7 +8024,8 @@
     "token1_amount": "1147508041877594",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1241151
   },
   {
     "block_number": 25003849,
@@ -7596,7 +8042,8 @@
     "token1_amount": "1137594203398234",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261662
   },
   {
     "block_number": 25003850,
@@ -7613,7 +8060,8 @@
     "token1_amount": "1125958233395319",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1245264
   },
   {
     "block_number": 25003851,
@@ -7630,7 +8078,8 @@
     "token1_amount": "1119414240009168",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1084987
   },
   {
     "block_number": 25003851,
@@ -7647,7 +8096,8 @@
     "token1_amount": "2138191927482",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 809660
   },
   {
     "block_number": 25003852,
@@ -7664,7 +8114,8 @@
     "token1_amount": "1108759270336336",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264472
   },
   {
     "block_number": 25003853,
@@ -7681,7 +8132,8 @@
     "token1_amount": "1106641500872642",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265106
   },
   {
     "block_number": 25003854,
@@ -7698,7 +8150,8 @@
     "token1_amount": "1098569478626386",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1016847
   },
   {
     "block_number": 25003855,
@@ -7715,7 +8168,8 @@
     "token1_amount": "199898776974776008",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272059
   },
   {
     "block_number": 25003855,
@@ -7732,7 +8186,8 @@
     "token1_amount": "370553080419724493",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272060
   },
   {
     "block_number": 25003855,
@@ -7749,7 +8204,8 @@
     "token1_amount": "545454545454545453",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272061
   },
   {
     "block_number": 25003855,
@@ -7766,7 +8222,8 @@
     "token1_amount": "727272727272727271",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272062
   },
   {
     "block_number": 25003855,
@@ -7783,7 +8240,8 @@
     "token1_amount": "909090909090909089",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272063
   },
   {
     "block_number": 25003855,
@@ -7800,7 +8258,8 @@
     "token1_amount": "1090909090909090908",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272064
   },
   {
     "block_number": 25003855,
@@ -7817,7 +8276,8 @@
     "token1_amount": "1272727272727272726",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272065
   },
   {
     "block_number": 25003855,
@@ -7834,7 +8294,8 @@
     "token1_amount": "1454545454545454544",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272066
   },
   {
     "block_number": 25003855,
@@ -7851,7 +8312,8 @@
     "token1_amount": "1636363636363636362",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272067
   },
   {
     "block_number": 25003855,
@@ -7868,7 +8330,8 @@
     "token1_amount": "1818181818181818185",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272068
   },
   {
     "block_number": 25003855,
@@ -7885,7 +8348,8 @@
     "token1_amount": "1096148558830845",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1246472
   },
   {
     "block_number": 25003856,
@@ -7902,7 +8366,8 @@
     "token1_amount": "1094999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1236838
   },
   {
     "block_number": 25003857,
@@ -7919,7 +8384,8 @@
     "token1_amount": "1093951052980326",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1259406
   },
   {
     "block_number": 25003858,
@@ -7936,7 +8402,8 @@
     "token1_amount": "3970833333333334",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1126300
   },
   {
     "block_number": 25003859,
@@ -7953,7 +8420,8 @@
     "token1_amount": "1044498999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263521
   },
   {
     "block_number": 25003860,
@@ -7970,7 +8438,8 @@
     "token1_amount": "1043452302124101",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1250839
   },
   {
     "block_number": 25003861,
@@ -7987,7 +8456,8 @@
     "token1_amount": "1036122568130668",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1248896
   },
   {
     "block_number": 25003861,
@@ -8004,7 +8474,8 @@
     "token1_amount": "1315392955476204",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257185
   },
   {
     "block_number": 25003862,
@@ -8021,7 +8492,8 @@
     "token1_amount": "1019847619407485",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1262628
   },
   {
     "block_number": 25003863,
@@ -8038,7 +8510,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263150
   },
   {
     "block_number": 25003864,
@@ -8055,7 +8528,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263154
   },
   {
     "block_number": 25003865,
@@ -8072,7 +8546,8 @@
     "token1_amount": "1008781890946707",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261664
   },
   {
     "block_number": 25003866,
@@ -8089,7 +8564,8 @@
     "token1_amount": "35628419",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261928
   },
   {
     "block_number": 25003866,
@@ -8106,7 +8582,8 @@
     "token1_amount": "1247484914844783989334337",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257519
   },
   {
     "block_number": 25003867,
@@ -8123,7 +8600,8 @@
     "token1_amount": "1000384103211743",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1265882
   },
   {
     "block_number": 25003868,
@@ -8140,7 +8618,8 @@
     "token1_amount": "995024875621891",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1264509
   },
   {
     "block_number": 25003869,
@@ -8157,7 +8636,8 @@
     "token1_amount": "993999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1241477
   },
   {
     "block_number": 25003871,
@@ -8174,7 +8654,8 @@
     "token1_amount": "989999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1249490
   },
   {
     "block_number": 25003872,
@@ -8191,7 +8672,8 @@
     "token1_amount": "989999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1263744
   },
   {
     "block_number": 25003872,
@@ -8208,7 +8690,8 @@
     "token1_amount": "754505024371973",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1229982
   },
   {
     "block_number": 25003873,
@@ -8225,7 +8708,8 @@
     "token1_amount": "0",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1227017
   },
   {
     "block_number": 25003874,
@@ -8242,7 +8726,8 @@
     "token1_amount": "989999999999999",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1014759
   },
   {
     "block_number": 25003875,
@@ -8259,7 +8744,8 @@
     "token1_amount": "980263820327526",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1261704
   },
   {
     "block_number": 25003879,
@@ -8276,7 +8762,8 @@
     "token1_amount": "424515833",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270550
   },
   {
     "block_number": 25003886,
@@ -8293,7 +8780,8 @@
     "token1_amount": "186677186095214569",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272030
   },
   {
     "block_number": 25003890,
@@ -8310,7 +8798,8 @@
     "token1_amount": "2188027677258004",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1270224
   },
   {
     "block_number": 25003893,
@@ -8327,7 +8816,8 @@
     "token1_amount": "846749013613928051",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272328
   },
   {
     "block_number": 25003895,
@@ -8344,7 +8834,8 @@
     "token1_amount": "3446079666061784886",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272879
   },
   {
     "block_number": 25003899,
@@ -8361,7 +8852,8 @@
     "token1_amount": "2022186",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257066
   },
   {
     "block_number": 25003909,
@@ -8378,7 +8870,8 @@
     "token1_amount": "1983276561931069222",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272919
   },
   {
     "block_number": 25003930,
@@ -8395,7 +8888,8 @@
     "token1_amount": "1323356538199238841",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271917
   },
   {
     "block_number": 25003932,
@@ -8412,7 +8906,8 @@
     "token1_amount": "349932511348974",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271779
   },
   {
     "block_number": 25003942,
@@ -8429,7 +8924,8 @@
     "token1_amount": "8296555",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1257814
   },
   {
     "block_number": 25003948,
@@ -8446,7 +8942,8 @@
     "token1_amount": "9134888072574",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1269379
   },
   {
     "block_number": 25003950,
@@ -8463,7 +8960,8 @@
     "token1_amount": "6184980133190",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1269391
   },
   {
     "block_number": 25003953,
@@ -8480,7 +8978,8 @@
     "token1_amount": "10097810",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1252391
   },
   {
     "block_number": 25003954,
@@ -8497,7 +8996,8 @@
     "token1_amount": "21702159037263715",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272931
   },
   {
     "block_number": 25003955,
@@ -8514,7 +9014,8 @@
     "token1_amount": "12417571",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1256745
   },
   {
     "block_number": 25003961,
@@ -8531,7 +9032,8 @@
     "token1_amount": "1618493801146769426",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1268366
   },
   {
     "block_number": 25003974,
@@ -8548,7 +9050,8 @@
     "token1_amount": "11449803077361555",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1271096
   },
   {
     "block_number": 25003983,
@@ -8565,7 +9068,8 @@
     "token1_amount": "19473452",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1206135
   },
   {
     "block_number": 25003985,
@@ -8582,7 +9086,8 @@
     "token1_amount": "7267260902028",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272345
   },
   {
     "block_number": 25003985,
@@ -8599,7 +9104,8 @@
     "token1_amount": "897145158184309",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272345
   },
   {
     "block_number": 25003997,
@@ -8616,7 +9122,8 @@
     "token1_amount": "3722518220524643409251",
     "liquidity_delta": "0",
     "source_event": "Collect",
-    "verified": true
+    "verified": true,
+    "nft_token_id": 1272471
   },
   {
     "block_number": 25003606,
