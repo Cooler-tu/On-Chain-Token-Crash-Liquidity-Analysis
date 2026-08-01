@@ -98,9 +98,48 @@ Dune 是数据入口；「不同做市方式的典型池」是分析对象。
 
 | 项                  | 结果  |
 | ------------------ | --- |
-| Dune 主路径拉数         |     |
-| 仍依赖 RPC 的部分        |     |
-| 典型非 Uni 池（地址 + 协议） |     |
-| 示范代币与输出目录          |     |
+| Dune 主路径拉数         | 池发现已接通：`--pools-file` 读 Dune 导出并进入验证，CRV demo 17/17 候选通过；swaps/tvl/holdings 仍待 DUNE_API_KEY 实测 |
+| 仍依赖 RPC 的部分        | 池验证（bytecode/factory/state）、Curve 流动性事件、持仓重建与余额快照 |
+| 典型非 Uni 池（地址 + 协议） | Curve v2 crypto `0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14`；Curve v1 stableswap `0x971add32ea87f10bd192671630be3be8a11b8623`；Balancer V2 `0x2d4d246d8f46d3a2a9cf6160bcabbf164c15b36f` |
+| 示范代币与输出目录          | CRV `0xD533a949740bb3306d119CC777fa900bA034cd52`，blocks 22000000–22005000，`output-dune-crv-validate/` |
 
 
+# Current Session State
+
+Date:
+2026-08-01
+
+## Current Task
+
+Dune Curve/Balancer integration.
+
+## Current Position
+
+Completed:
+- Dune client exists
+- CLI dune commands work
+- Pool discovery works
+
+Working on:
+- Connect Dune pool output into verification pipeline
+
+## Files involved
+
+src/cli.py
+
+src/data/dune_client.py
+
+output-dune-crv-demo/pools.json
+
+## Next action
+
+1. Inspect JSON fields
+2. Add --pools-file
+3. Convert records into VerifiedPool
+4. Run CRV/BAL validation
+
+## Do not redo
+
+- Uniswap pipeline
+- Dashboard
+- Existing Dune layer

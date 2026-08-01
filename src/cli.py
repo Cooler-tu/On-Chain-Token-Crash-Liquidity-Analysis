@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 from .client import get_web3
-from .discovery.engine import discover_pools
+from .discovery.engine import discover_pools, load_pools_file
 from .models import VerifiedPool, to_dict
 from .token.profiler import profile_token
 from .token.resolver import TokenResolveError, format_resolve_summary, resolve_token
@@ -61,6 +61,10 @@ def analyze(
         "auto",
         help="Holdings address source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
     ),
+    pools_file: str = typer.Option(
+        "",
+        help="Load pool candidates from a saved Dune pools JSON (skip live discovery)",
+    ),
 ):
     """End-to-end analysis: token → liquidity report + dashboard.
 
@@ -98,11 +102,25 @@ def analyze(
     )
     target_token = profile.address
 
-    # Step 2: Discover pools
+    # Step 2: Discover pools (or load a saved Dune pools file)
     typer.echo("[2/12] Discovering pools ...")
-    result = discover_pools(w3, token_address, from_block, to_block, chain_id_val)
+    if pools_file:
+        pf = Path(pools_file)
+        if not pf.exists():
+            typer.echo("Pools file not found: {}".format(pf), err=True)
+            raise typer.Exit(1)
+        result = load_pools_file(pf, token_address, from_block, to_block, chain_id_val)
+        typer.echo(
+            "  Loaded {} candidate(s) from {} (skipped {})".format(
+                len(result["pools"]), pf, result.get("skipped", 0)
+            )
+        )
+        for err in result.get("errors", []):
+            typer.echo("  warning: {}".format(err), err=True)
+    else:
+        result = discover_pools(w3, token_address, from_block, to_block, chain_id_val)
+        typer.echo("  Found {} candidate(s)".format(len(result["pools"])))
     _write_json(out / "pool_candidates.json", result)
-    typer.echo("  Found {} candidate(s)".format(len(result["pools"])))
 
     # Step 3: Verify pools
     typer.echo("[3/12] Verifying pools ...")
@@ -306,6 +324,10 @@ def discover_only(
     output_dir: str = typer.Option("output", help="Output directory"),
     pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
     chain_id: int = typer.Option(1, help="Chain ID"),
+    pools_file: str = typer.Option(
+        "",
+        help="Load pool candidates from a saved Dune pools JSON (skip live discovery)",
+    ),
 ):
     """Discover and verify pools for a token."""
     out = Path(output_dir)
@@ -320,9 +342,23 @@ def discover_only(
     profile = profile_token(w3, token_address, chain_id_val)
     _write_json(out / "token_profile.json", profile.__dict__)
 
-    result = discover_pools(w3, token_address, from_block, to_block, chain_id_val)
+    if pools_file:
+        pf = Path(pools_file)
+        if not pf.exists():
+            typer.echo("Pools file not found: {}".format(pf), err=True)
+            raise typer.Exit(1)
+        result = load_pools_file(pf, token_address, from_block, to_block, chain_id_val)
+        typer.echo(
+            "Loaded {} candidate(s) from {} (skipped {})".format(
+                len(result["pools"]), pf, result.get("skipped", 0)
+            )
+        )
+        for err in result.get("errors", []):
+            typer.echo("  warning: {}".format(err), err=True)
+    else:
+        result = discover_pools(w3, token_address, from_block, to_block, chain_id_val)
+        typer.echo("Found {} candidate(s)".format(len(result["pools"])))
     _write_json(out / "pool_candidates.json", result)
-    typer.echo("Found {} candidate(s)".format(len(result["pools"])))
 
     candidates = [VerifiedPool(**dict(pdata)) for pdata in result["pools"]]
     verified_pools = verify_pools(

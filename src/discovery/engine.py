@@ -1,6 +1,8 @@
 """Discovery engine — orchestrates all protocol adapters."""
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Optional
 
 from web3 import Web3
@@ -11,6 +13,7 @@ from ..registry.loader import (
     get_quote_assets,
     load_registry,
 )
+from ..models import VerifiedPool
 from .log_utils import dedupe_pools
 from .base import PoolDiscoveryAdapter
 from .uniswap_v1 import UniswapV1Adapter
@@ -29,6 +32,189 @@ _ADAPTER_MAP: dict[str, type[PoolDiscoveryAdapter]] = {
     "CurveAdapter": CurveAdapter,
     "BalancerV2Adapter": BalancerV2Adapter,
 }
+
+
+def _normalize_dune_row(row: dict) -> dict:
+    """Normalize a Dune pool row from either the CLI or a saved web-UI export."""
+    hints: list[str] = []
+    for key in ("token_hints", "token0", "token1", "token_bought", "token_sold"):
+        value = row.get(key)
+        if isinstance(value, list):
+            hints.extend(value)
+        elif value:
+            hints.append(value)
+    seen: set[str] = set()
+    clean_hints: list[str] = []
+    for hint in hints:
+        hint = str(hint).strip().lower()
+        if hint and hint not in seen:
+            seen.add(hint)
+            clean_hints.append(hint)
+    return {
+        "pool_address": row.get("pool_address") or row.get("pool_id") or "",
+        "project": (row.get("project") or row.get("protocol") or "").lower(),
+        "version": (row.get("version") or "").lower(),
+        "pool_name": row.get("pool_name") or "",
+        "token_hints": clean_hints,
+    }
+
+
+def _map_dune_project(row: dict) -> tuple[Optional[str], Optional[str]]:
+    """Map Dune project/version names to adapter + registry version keys."""
+    project = row["project"]
+    version = row["version"]
+    if project == "uniswap":
+        v = {
+            "1": "v1", "v1": "v1",
+            "2": "v2", "v2": "v2",
+            "3": "v3", "v3": "v3",
+            "4": "v4", "4.0": "v4", "v4": "v4",
+        }.get(version)
+        if v is None:
+            return None, None
+        return "Uniswap{}Adapter".format(v.upper()), v
+    if project == "curve":
+        v = (
+            "v2"
+            if "crypto" in version
+            or "v2" in version
+            or "crypto" in row["pool_name"].lower()
+            else "v1"
+        )
+        return "CurveAdapter", v
+    if project in ("balancer", "balancer-v2"):
+        return "BalancerV2Adapter", "v2"
+    return None, None
+
+
+def _dune_rows_to_pools(
+    rows: list[dict],
+    token_address: str,
+    chain_id: int,
+    deployments: list,
+) -> tuple[list, set[str]]:
+    """Convert Dune pool rows into unverified VerifiedPool candidates."""
+    all_pools = []
+    protocol_names: set[str] = set()
+    target = Web3.to_checksum_address(token_address)
+
+    for row in rows:
+        norm = _normalize_dune_row(row)
+        if not norm["pool_address"]:
+            continue
+        adapter_name, version = _map_dune_project(norm)
+        if adapter_name is None:
+            continue
+
+        pool_addr = norm["pool_address"]
+        # Balancer Dune pool_id is a bytes32 poolId; pool contract is the
+        # first 20 bytes.
+        if adapter_name == "BalancerV2Adapter" and pool_addr.startswith("0x") and len(pool_addr) == 66:
+            try:
+                pool_addr = Web3.to_checksum_address("0x" + pool_addr[2:42])
+            except Exception:
+                pass
+
+        # Find a matching deployment to inherit factory/router metadata.
+        dep = next(
+            (
+                d for d in deployments
+                if d.adapter == adapter_name
+                and (d.version == version or version in ("v1", "v2", "v3", "v4"))
+            ),
+            None,
+        )
+        if dep is None:
+            continue
+
+        t0 = Web3.to_checksum_address(token_address)
+        t1 = ""
+        explicit_tokens = []
+        for key in ("token0", "token1"):
+            value = row.get(key)
+            if value:
+                try:
+                    explicit_tokens.append(Web3.to_checksum_address(str(value)))
+                except Exception:
+                    pass
+        if len(explicit_tokens) == 2:
+            t0, t1 = explicit_tokens
+        else:
+            for hint in norm["token_hints"]:
+                try:
+                    cand = Web3.to_checksum_address(hint)
+                except Exception:
+                    continue
+                if cand.lower() != t0.lower():
+                    t1 = cand
+                    break
+        all_pools.append(VerifiedPool(
+            chain_id=chain_id,
+            protocol=dep.protocol,
+            version=version,
+            architecture=dep.architecture,
+            factory_address=dep.factory,
+            router_addresses=[dep.router] if dep.router else [],
+            pool_address=pool_addr,
+            custody_address=pool_addr,
+            token0=t0,
+            token1=t1,
+            verified=False,
+            verification_confidence=0.0,
+        ))
+        protocol_names.add("{}_{}".format(dep.protocol, version))
+    return all_pools, protocol_names
+
+
+def load_pools_file(
+    pools_file: Path | str,
+    token_address: str,
+    from_block: int,
+    to_block: int,
+    chain_id: int = 1,
+) -> dict:
+    """Load pool candidates from a saved Dune pools JSON file.
+
+    Accepts either the CLI ``dune pools`` output (a plain list) or a saved
+    web-UI export with a ``data`` array.  Records are normalized into
+    VerifiedPool candidates with the same shape as ``discover_pools()``.
+    """
+    path = Path(pools_file)
+    if not path.exists():
+        raise FileNotFoundError("Pools file not found: {}".format(path))
+    with open(path) as f:
+        payload = json.load(f)
+    if isinstance(payload, dict):
+        rows = payload.get("data") or payload.get("pools") or payload.get("rows")
+    elif isinstance(payload, list):
+        rows = payload
+    else:
+        raise ValueError("Unsupported pools file shape in {}".format(path))
+    rows = rows or []
+
+    errors: list[str] = []
+    file_token = str(payload.get("token") or "").strip().lower() if isinstance(payload, dict) else ""
+    if file_token.startswith("0x") and file_token != str(token_address).lower():
+        errors.append(
+            "Pools file token {} differs from requested token {}".format(
+                payload.get("token"), token_address
+            )
+        )
+
+    registry = load_registry()
+    chain_id = get_chain_id(registry)
+    deployments = get_enabled_protocols(registry)
+    pools, protocol_names = _dune_rows_to_pools(
+        rows, token_address, chain_id, deployments
+    )
+    pools = dedupe_pools(pools)
+    return {
+        "pools": [p.__dict__ for p in pools],
+        "protocols_used": list(protocol_names),
+        "errors": errors,
+        "pools_file": str(path),
+        "skipped": len(rows) - len(pools),
+    }
 
 
 def discover_pools(
@@ -59,7 +245,6 @@ def discover_pools(
     dune_error: Optional[str] = None
     try:
         from ..data.dune_client import DuneClient, dune_api_key_configured
-        from ..models import VerifiedPool as _VP
         if dune_api_key_configured():
             client = DuneClient()
             rows = client.fetch_pools_for_token(
@@ -67,71 +252,11 @@ def discover_pools(
                 from_block,
                 to_block,
             )
-            for row in rows:
-                project = row["project"]
-                version = row["version"]
-                pool_addr = row["pool_address"]
-                # Map Dune project/version names to our protocol config keys.
-                if project in ("uniswap",) and version in ("v2", "v3", "v4"):
-                    adapter_name = "Uniswap{}Adapter".format(version.upper())
-                elif project == "curve":
-                    adapter_name = "CurveAdapter"
-                    version = "v2" if "crypto" in row.get("pool_name", "").lower() else "v1"
-                elif project in ("balancer", "balancer-v2"):
-                    adapter_name = "BalancerV2Adapter"
-                    version = "v2"
-                else:
-                    adapter_name = None
-                if adapter_name is None:
-                    continue
-                # Balancer Dune pool_id is a bytes32 poolId; pool contract is
-                # the first 20 bytes.
-                if adapter_name == "BalancerV2Adapter":
-                    pid_raw = pool_addr
-                    if pid_raw.startswith("0x") and len(pid_raw) == 66:
-                        try:
-                            pool_addr = Web3.to_checksum_address(
-                                "0x" + pid_raw[2:42]
-                            )
-                        except Exception:
-                            pass
-                # Find a matching deployment to inherit factory/router metadata.
-                dep = next(
-                    (
-                        d for d in deployments
-                        if d.adapter == adapter_name
-                        and (d.version == version or version in ("v1", "v2", "v3", "v4"))
-                    ),
-                    None,
-                )
-                if dep is None:
-                    continue
-                hints = row.get("token_hints") or []
-                t0 = Web3.to_checksum_address(token_address)
-                t1 = ""
-                for h in hints:
-                    try:
-                        cand = Web3.to_checksum_address(h)
-                    except Exception:
-                        continue
-                    if cand.lower() != t0.lower():
-                        t1 = cand
-                        break
-                all_pools.append(_VP(
-                    chain_id=chain_id,
-                    protocol=dep.protocol,
-                    version=version,
-                    architecture=dep.architecture,
-                    factory_address=dep.factory,
-                    router_addresses=[dep.router] if dep.router else [],
-                    pool_address=pool_addr,
-                    custody_address=pool_addr,
-                    token0=t0,
-                    token1=t1,
-                    verified=False,
-                    verification_confidence=0.0,
-                ))
-                protocol_names.add(f"{dep.protocol}_{version}")
+            dune_pools, dune_protocols = _dune_rows_to_pools(
+                rows, token_address, chain_id, deployments
+            )
+            all_pools.extend(dune_pools)
+            protocol_names.update(dune_protocols)
     except Exception as e:
         dune_error = str(e)
 

@@ -93,6 +93,7 @@ python3 scripts/publish_site.py --serve  # preview
 | `--incident-block` | Crash block for temporal / impact scoring | `0` |
 | `--fast-mode` | Skip heavy exhaustive indexing | `false` |
 | `--output-dir` | Artifacts directory | `output` |
+| `--pools-file` | Load pool candidates from a saved Dune pools JSON (skip live discovery) | (none) |
 
 > Indexing is **resumable** via `event_indexer_checkpoint.json`. Change token/window or delete checkpoint to start clean.
 
@@ -112,6 +113,17 @@ python3 -m src.cli dune data-map
 ```
 
 See [docs/DUNE_DATA_MAP.md](docs/DUNE_DATA_MAP.md) for the full table.
+
+Saved Dune pool exports can be reused without an API key by passing
+`--pools-file` to `analyze` / `discover-only`. The loader accepts the CLI
+`dune pools` output or a web-UI export with a `data` array, maps rows to
+`VerifiedPool`, and warns if the file token differs from the requested token:
+
+```bash
+python3 -m src.cli discover-only 0xD533a949740bb3306d119CC777fa900bA034cd52 \
+  --pools-file output-dune-crv-demo/pools.json \
+  --from-block 22000000 --to-block 22005000
+```
 
 ---
 
@@ -252,6 +264,15 @@ export ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR_API_KEY"
 ```bash
 python3 -m src.cli dashboard --output-dir output
 python3 scripts/publish_site.py
+```
+
+也支持直接复用已保存的 Dune 池列表，跳过在线发现（例如
+`output-dune-crv-demo/pools.json`）：
+
+```bash
+python3 -m src.cli discover-only 0xD533a949740bb3306d119CC777fa900bA034cd52 \
+  --pools-file output-dune-crv-demo/pools.json \
+  --from-block 22000000 --to-block 22005000
 ```
 
 ---
