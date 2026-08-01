@@ -501,6 +501,7 @@ def _build_tvl_chart_js(
 def _table_top_holders(holders: list, symbol: str) -> str:
     if not holders:
         return '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
+        return '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
     rows = []
     for i, h in enumerate(holders[:20], 1):
         addr = h.get('address','')
@@ -517,6 +518,12 @@ def _table_top_holders(holders: list, symbol: str) -> str:
             f"<td>{h.get('tx_count',0)}</td>"
             f'<td><span class="expand-icon">+</span></td></tr>'
             f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
+            f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
+            f"<td>{_fmt_bal(h.get('balance_decimal',0),symbol)}</td>"
+            f"<td>{h.get('tx_count',0)}</td>"
+            f'<td><span class="expand-icon">+</span></td></tr>'
+            f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
+            f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
             f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
         )
     return "\n".join(rows)
