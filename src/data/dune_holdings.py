@@ -174,11 +174,11 @@ def fetch_token_balances_from_dune(
     addr_list = ", ".join(addrs)
     sql = f"""
 SELECT
-  wallet_address AS address,
-  CAST(amount_raw AS varchar) AS balance_raw
-FROM tokens_ethereum.balances
+  CAST(address AS varchar) AS address,
+  CAST(balance_raw AS varchar) AS balance_raw
+FROM balances_ethereum.latest
 WHERE token_address = {token}
-  AND wallet_address IN ({addr_list})
+  AND address IN ({addr_list})
 """
 
     try:

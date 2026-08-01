@@ -1,5 +1,6 @@
 output/
 output-*/
+dune_cache/
 site/
 .DS_Store
 __pycache__/

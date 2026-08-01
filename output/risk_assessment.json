@@ -7,10 +7,10 @@
   "migration_note": "Liquidity migration detected \u2014 reducing risk by 0.30.",
   "features": {
     "pool_concentration": {
-      "value": 0.9928,
+      "value": 0.9929,
       "weight": 0.15,
-      "description": "Main pool holds 99.28% of total DEX liquidity.",
-      "raw_data": 0.992814
+      "description": "Main pool holds 99.29% of total DEX liquidity.",
+      "raw_data": 0.992899
     },
     "lp_concentration": {
       "value": 1.0,

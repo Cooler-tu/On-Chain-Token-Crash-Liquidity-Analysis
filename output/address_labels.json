@@ -382,7 +382,7 @@
     ]
   },
   {
-    "address": "0x0000000000000000000000000000000000000000",
+    "address": "0x000000000000000000000000000000000000dead",
     "label": "Burn Address",
     "category": "burn",
     "confidence": 1.0,
@@ -391,7 +391,7 @@
     ]
   },
   {
-    "address": "0x000000000000000000000000000000000000dead",
+    "address": "0x0000000000000000000000000000000000000000",
     "label": "Burn Address",
     "category": "burn",
     "confidence": 1.0,

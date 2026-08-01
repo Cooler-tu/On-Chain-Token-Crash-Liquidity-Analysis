@@ -21,7 +21,7 @@
 
 ## 🎯 Current
 
-- _(nothing in progress)_
+- **Next week** — see [`NEXT_WEEK.md`](NEXT_WEEK.md): (1) pull analysis data primarily via Dune; (2) onboard typical non-Uniswap MM pools (Curve/Balancer) for contrast
 
 ---
 
@@ -32,7 +32,7 @@
 3. **Historical crash pattern research** — common LP-withdrawal signatures
 4. **Deep holder unwrap** — routers / aggregators / beneficial owners beyond surface EOA label
 5. **Multi-chain** — Arbitrum, Base, Polygon
-6. **TVL timeline in USD** — needs price oracle
+6. **TVL timeline in USD** — needs price oracle (related to next-week TVL ranking, but full USD oracle is later)
 7. **Real-time monitoring** — alert on sudden liquidity changes
 
 ---
