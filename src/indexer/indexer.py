@@ -660,7 +660,11 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
                 all_events.append(pub)
 
         # Curve pool events
-        elif stream.startswith("curve:"):
+        elif (
+            stream.startswith("curve:")
+            or stream.startswith("curve_v1:")
+            or stream.startswith("curve_crypto:")
+        ):
             if et == "SWAP":
                 swaps.append(pub)
                 all_events.append(pub)
@@ -788,7 +792,10 @@ def _normalize_balancer_event(evt, pool_id_map, block_timestamps):
     bn = evt["blockNumber"]
     evt_name = evt.get("event", "")
     try:
-        pool_id = evt.get("topics", [None])[0]
+        pool_id = args.get("poolId")
+        if pool_id is None:
+            topics = evt.get("topics") or []
+            pool_id = topics[1] if len(topics) > 1 else None
         if pool_id is not None:
             if hasattr(pool_id, "hex"):
                 pool_id_hex = pool_id.hex()
@@ -853,13 +860,21 @@ def index_curve_pool_events(
     w3, pool, from_block, to_block, checkpoint, checkpoint_path, cache_dir, ts_cache,
 ):
     from ..client import get_contract
-    contract = get_contract(w3, pool.pool_address, "curve_pool")
     events = []
-    for evt_name in ("TokenExchange", "AddLiquidity", "RemoveLiquidity",
-                     "RemoveLiquidityOne", "RemoveLiquidityImbalance", "TokenExchangeUnderlying"):
+    abi_name = "curve_pool_crypto" if pool.version == "v2" else "curve_pool"
+    contract = get_contract(w3, pool.pool_address, abi_name)
+    stream_prefix = "curve_crypto" if pool.version == "v2" else "curve_v1"
+    event_names = (
+        ("TokenExchange",)
+        if pool.version == "v2"
+        else ("TokenExchange", "AddLiquidity", "RemoveLiquidity",
+              "RemoveLiquidityOne", "RemoveLiquidityImbalance",
+              "TokenExchangeUnderlying")
+    )
+    for evt_name in event_names:
         if not hasattr(contract.events, evt_name):
             continue
-        key = _stream_key("curve", pool.pool_address, evt_name)
+        key = _stream_key(stream_prefix, pool.pool_address, evt_name)
 
         def make_norm(name=evt_name):
             def _norm(evt, timestamps):
@@ -875,8 +890,8 @@ def index_curve_pool_events(
         )
         try:
             events.extend(stream.run(getattr(contract.events, evt_name)))
-        except Exception:
-            pass
+        except Exception as exc:
+            _progress("{} skipped: {}".format(key, exc))
     return events
 
 
@@ -892,12 +907,26 @@ def index_balancer_events(
     vault_addr = Web3.to_checksum_address(vault_address)
     contract = get_contract(w3, vault_addr, "balancer_vault")
 
-    # Build pool ID -> pool address map
+    # Build pool ID -> pool address map from each pool's on-chain getPoolId().
+    # Dune's pool_address is the pool contract; the Vault emits Swap/PoolBalanceChanged
+    # with the real bytes32 poolId, so address-padded IDs are not reliable.
     pool_id_map = {}
     for p in verified_pools:
         if p.protocol == "balancer" and p.verified:
-            pid = p.pool_address.lower() + "0" * 24
-            pool_id_map[pid] = p.pool_address
+            try:
+                if p.pool_id:
+                    pid = p.pool_id
+                else:
+                    raw_pid = w3.eth.call({
+                        "to": Web3.to_checksum_address(p.pool_address),
+                        "data": "0xf89b4d55",
+                    })
+                    pid = raw_pid.hex() if hasattr(raw_pid, "hex") else str(raw_pid)
+                pool_id_map[pid.lower()] = p.pool_address
+            except Exception as exc:
+                _progress("balancer pool {} skipped (no getPoolId): {}".format(
+                    p.pool_address, exc
+                ))
 
     events = []
     for evt_name in ("Swap", "PoolBalanceChanged"):
@@ -1368,9 +1397,9 @@ def index_events(
     ts_cache: dict[int, int] = {}
     collected: list[dict] = []
 
-    v3_pools = [p for p in verified_pools if p.version == "v3" and p.verified]
-    v2_pools = [p for p in verified_pools if p.version == "v2" and p.verified]
-    v4_pools = [p for p in verified_pools if p.version == "v4" and p.verified]
+    v3_pools = [p for p in verified_pools if p.protocol == "uniswap" and p.version == "v3" and p.verified]
+    v2_pools = [p for p in verified_pools if p.protocol == "uniswap" and p.version == "v2" and p.verified]
+    v4_pools = [p for p in verified_pools if p.protocol == "uniswap" and p.version == "v4" and p.verified]
 
     for pool in v2_pools:
         evts = index_v2_pool_events(
@@ -1379,7 +1408,7 @@ def index_events(
         collected.extend(evts)
         _flush_outputs(out, collected, from_block, to_block)
 
-    v1_pools = [p for p in verified_pools if p.version == "v1" and p.verified]
+    v1_pools = [p for p in verified_pools if p.protocol == "uniswap" and p.version == "v1" and p.verified]
     for pool in v1_pools:
         evts = index_v1_pool_events(
             w3, pool, from_block, to_block, checkpoint, cp_path, cache_dir, ts_cache

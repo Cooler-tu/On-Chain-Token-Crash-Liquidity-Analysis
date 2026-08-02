@@ -221,6 +221,8 @@ def analyze_timeline(
     verified_pools: list[VerifiedPool],
     target_token: str,
     incident_block: int = 0,
+    from_block: Optional[int] = None,
+    to_block: Optional[int] = None,
     output_dir: str | Path = "output",
 ) -> dict[str, Any]:
     """Main entry point: build and analyze the crash timeline."""
@@ -230,6 +232,13 @@ def analyze_timeline(
         events_all, events_swaps, events_liquidity, events_transfers,
         target_token, verified_pools, incident_block,
     )
+    if not timeline.get("total_events") and from_block is not None and to_block is not None:
+        timeline["block_range"] = {
+            "first_block": from_block,
+            "first_timestamp": 0,
+            "last_block": to_block,
+            "last_timestamp": 0,
+        }
     _write_json(out / "incident_timeline.json", timeline)
 
     crash_window = build_crash_window(events_all, incident_block)
@@ -241,4 +250,3 @@ def analyze_timeline(
 def _write_json(path: Path, data):
     with open(path, "w") as f:
         json.dump(data, f, indent=2, default=str)
-

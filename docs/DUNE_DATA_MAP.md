@@ -7,8 +7,8 @@
 
 | 数据 | Dune 表 / SQL | CLI | 回退策略 |
 |------|---------------|-----|----------|
-| 池子列表（按代币） | `dex.trades`（project/version/pool_id 聚合） | `dune pools <TOKEN>` | RPC adapters |
-| Swap 事件（单池） | `dex.trades`（按 pool_id 过滤） | `dune swaps <POOL>` | RPC indexer |
+| 池子列表（按代币） | `dex.trades`（project/version/project_contract_address 聚合） | `dune pools <TOKEN>` | RPC adapters |
+| Swap 事件（单池） | `dex.trades`（按 project_contract_address 过滤） | `dune swaps <POOL>` | RPC indexer |
 | 持仓地址 | `erc20_ethereum.evt_Transfer` | `holdings --holdings-source auto` | RPC Transfer events |
 | 持仓余额 | `tokens_ethereum.balances` | 同上 | RPC `balanceOf` |
 | 池 TVL（USD） | `dex.pool_tvl` | `dune tvl <POOL>` | 链上余额近似 |

@@ -159,7 +159,7 @@ class DuneClient:
             if "FAIL" in state or "CANCEL" in state:
                 raise DuneQueryError(
                     "Dune execution {}: {}".format(
-                        state, status.text[:400]
+                        state, status.text[:4000]
                     )
                 )
             time.sleep(poll_seconds)
@@ -201,16 +201,14 @@ class DuneClient:
         token = Web3.to_checksum_address(token_address).lower()
         sql = f"""
 SELECT
-  pool_id AS pool_address,
   project,
   version,
+  CAST(project_contract_address AS varchar) AS pool_address,
   COUNT(*) AS trade_count,
   MIN(block_number) AS first_seen_block,
   MAX(block_number) AS last_seen_block,
-  MAX(pool_name) AS pool_name,
-  -- representative token pair hint (may not be the exact full set)
-  MAX(token_bought_address) AS token_hint,
-  MAX(token_sold_address) AS token_hint2
+  MAX(CAST(token_bought_address AS varchar)) AS token_hint,
+  MAX(CAST(token_sold_address AS varchar)) AS token_hint2
 FROM dex.trades
 WHERE blockchain = '{blockchain}'
   AND (token_bought_address = {token} OR token_sold_address = {token})
@@ -263,22 +261,24 @@ ORDER BY trade_count DESC
         pool = Web3.to_checksum_address(pool_address).lower()
         sql = f"""
 SELECT
-  block_time,
   block_number,
-  tx_hash,
-  taker,
-  token_bought_address,
-  token_sold_address,
-  amount_bought_raw,
-  amount_sold_raw,
+  CAST(block_time AS varchar) AS block_time,
+  CAST(tx_hash AS varchar) AS tx_hash,
+  evt_index AS log_index,
   project,
   version,
+  CAST(project_contract_address AS varchar) AS pool_address,
+  CAST(taker AS varchar) AS taker,
+  CAST(token_bought_address AS varchar) AS token_bought_address,
+  CAST(token_sold_address AS varchar) AS token_sold_address,
+  CAST(token_bought_amount_raw AS varchar) AS amount_bought_raw,
+  CAST(token_sold_amount_raw AS varchar) AS amount_sold_raw,
   amount_usd
 FROM dex.trades
 WHERE blockchain = '{blockchain}'
-  AND pool_id = {pool}
+  AND project_contract_address = {pool}
   AND block_number BETWEEN {int(from_block)} AND {int(to_block)}
-ORDER BY block_number
+ORDER BY block_number, evt_index
 LIMIT {int(limit)}
 """
         key = _cache_key(

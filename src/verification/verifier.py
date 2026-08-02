@@ -465,6 +465,8 @@ def _verify_balancer_pool(
     """Verify a Balancer V2 pool via bytecode + Vault token check."""
     from ..client import get_contract, has_bytecode
 
+    vault_ok = False
+
     checks_total += 1
     if has_bytecode(w3, pool.pool_address):
         checks_passed += 1
@@ -484,16 +486,21 @@ def _verify_balancer_pool(
         checks_total += 1
         try:
             vault = get_contract(w3, vault_addr, "balancer_vault")
-            pool_id_hex = pool.pool_address.lower() + "0" * 24  # poolId = addr + nonce padding
+            raw_pid = w3.eth.call({
+                "to": Web3.to_checksum_address(pool.pool_address),
+                "data": "0xf89b4d55",
+            })
+            pool_id_hex = raw_pid.hex() if hasattr(raw_pid, "hex") else str(raw_pid)
+            pool.pool_id = pool_id_hex
             tokens, _, _ = vault.functions.getPoolTokens(pool_id_hex).call()
             token_addrs = [t.lower() for t in tokens]
-            if target_token and target_token.lower() in token_addrs:
+            if target_token is None or target_token.lower() in token_addrs:
                 checks_passed += 1
+                vault_ok = True
         except Exception:
             pass
 
     confidence = checks_passed / max(checks_total, 1)
-    pool.verified = confidence >= MIN_CONFIDENCE
+    pool.verified = vault_ok and confidence >= MIN_CONFIDENCE
     pool.verification_confidence = round(confidence, 4)
     return pool
-

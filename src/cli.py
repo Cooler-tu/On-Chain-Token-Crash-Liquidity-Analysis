@@ -214,7 +214,8 @@ def analyze(
     timeline = analyze_timeline(
         events_all, swaps, liquidity_events, transfers,
         verified_pools, target_token,
-        incident_block=incident_block, output_dir=output_dir,
+        incident_block=incident_block, from_block=from_block, to_block=to_block,
+        output_dir=output_dir,
     )
     typer.echo("  {} total events in timeline".format(timeline.get("total_events", 0)))
 
@@ -272,8 +273,14 @@ def analyze(
             ],
             "holdings_count": 0,
             "total_unique_addresses": 0,
+            "real_holder_count": 0,
+            "contract_count": 0,
+            "resolved_contract_count": 0,
+            "unresolved_contract_count": 0,
+            "total_resolved_holders": 0,
             "query_time_human": "",
         }
+        eoa = 0
         _write_json(out / "holdings.json", holdings_result)
     else:
         holdings_result = analyze_holdings(
