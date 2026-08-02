@@ -18,6 +18,33 @@ from web3 import Web3
 from ..client import get_contract, has_bytecode
 from ..models import VerifiedPool
 
+_ZERO = "0x0000000000000000000000000000000000000000"
+
+
+def _ingest_transfer_events(
+    transfer_events: list[dict],
+    unique_addresses: set[str],
+    address_tx_count: dict[str, int],
+    address_first_seen: dict[str, int],
+    address_last_seen: dict[str, int],
+) -> None:
+    for evt in transfer_events:
+        bn = int(evt.get("block_number", 0) or 0)
+        for key in ("actor", "recipient"):
+            raw = evt.get(key, "")
+            if not raw or raw == _ZERO:
+                continue
+            try:
+                addr = Web3.to_checksum_address(raw)
+            except Exception:
+                continue
+            unique_addresses.add(addr)
+            address_tx_count[addr] += 1
+            if addr not in address_first_seen or bn < address_first_seen[addr]:
+                address_first_seen[addr] = bn
+            if addr not in address_last_seen or bn > address_last_seen[addr]:
+                address_last_seen[addr] = bn
+
 
 def analyze_holdings(
     w3: Web3,
@@ -29,13 +56,20 @@ def analyze_holdings(
     to_block: int,
     output_dir: str | Path = "output",
     source: str = "auto",
+    *,
+    max_rpc_balances: int = 80,
+    max_contract_checks: int = 80,
 ) -> dict[str, Any]:
     """Run the full holdings analysis pipeline.
 
     ``source``:
-      - ``auto`` — use Dune when ``DUNE_API_KEY`` is set, else RPC transfers
-      - ``dune`` — require Dune for address discovery
-      - ``rpc``  — only use local ``transfer_events`` + ``balanceOf``
+      - ``auto`` — prefer already-indexed ``transfer_events`` (from step 4);
+        only hit Dune when no transfers were indexed
+      - ``dune`` — force Dune address + balance queries
+      - ``rpc``  — local ``transfer_events`` + capped ``balanceOf``
+
+    RPC ``balanceOf`` / bytecode checks are capped so holdings cannot dominate
+    analyze wall time.
     """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -52,59 +86,73 @@ def analyze_holdings(
     balances: dict[str, str] = {}
     dune_error: Optional[str] = None
 
-    prefer_dune = source_norm == "dune"
-    if source_norm == "auto":
-        from ..data.dune_holdings import dune_api_key_configured
-        prefer_dune = dune_api_key_configured()
+    # Fast path: reuse Transfer rows already pulled in [4/12]. Avoids a second
+    # multi-minute Dune SQL round-trip for the same window.
+    if transfer_events and source_norm in ("auto", "rpc"):
+        _ingest_transfer_events(
+            transfer_events,
+            unique_addresses,
+            address_tx_count,
+            address_first_seen,
+            address_last_seen,
+        )
+        used_source = "index"
 
-    if prefer_dune:
+    force_dune = source_norm == "dune" or (
+        source_norm == "auto" and not unique_addresses
+    )
+    if force_dune:
         try:
             from ..data.dune_holdings import (
+                dune_api_key_configured,
                 fetch_token_balances_from_dune,
                 fetch_transfer_addresses_from_dune,
             )
-            for row in fetch_transfer_addresses_from_dune(
-                token_address, from_block, to_block
-            ):
-                addr = row["address"]
-                unique_addresses.add(addr)
-                address_tx_count[addr] = int(row.get("tx_count") or 0)
-                address_first_seen[addr] = int(row.get("first_seen_block") or 0)
-                address_last_seen[addr] = int(row.get("last_seen_block") or 0)
-            balances.update(
-                fetch_token_balances_from_dune(
-                    token_address, sorted(unique_addresses)
+            if not dune_api_key_configured() and source_norm == "dune":
+                raise RuntimeError("DUNE_API_KEY is not set")
+            if dune_api_key_configured():
+                for row in fetch_transfer_addresses_from_dune(
+                    token_address, from_block, to_block
+                ):
+                    addr = row["address"]
+                    unique_addresses.add(addr)
+                    address_tx_count[addr] = int(row.get("tx_count") or 0)
+                    address_first_seen[addr] = int(row.get("first_seen_block") or 0)
+                    address_last_seen[addr] = int(row.get("last_seen_block") or 0)
+                # Only ask Dune for balances of the busiest addresses.
+                ranked = sorted(
+                    unique_addresses,
+                    key=lambda a: (-address_tx_count.get(a, 0), a.lower()),
                 )
-            )
-            used_source = "dune"
+                balances.update(
+                    fetch_token_balances_from_dune(
+                        token_address, ranked[: max(50, max_rpc_balances)]
+                    )
+                )
+                used_source = "dune"
         except Exception as exc:
             dune_error = str(exc)
             if source_norm == "dune":
                 raise
-            unique_addresses.clear()
-            address_tx_count.clear()
-            address_first_seen.clear()
-            address_last_seen.clear()
-            balances.clear()
+            if not unique_addresses and transfer_events:
+                _ingest_transfer_events(
+                    transfer_events,
+                    unique_addresses,
+                    address_tx_count,
+                    address_first_seen,
+                    address_last_seen,
+                )
+                used_source = "index"
 
-    if used_source != "dune":
-        used_source = "rpc"
-        for evt in transfer_events:
-            bn = int(evt.get("block_number", 0) or 0)
-            for key in ("actor", "recipient"):
-                raw = evt.get(key, "")
-                if not raw or raw == "0x0000000000000000000000000000000000000000":
-                    continue
-                try:
-                    addr = Web3.to_checksum_address(raw)
-                except Exception:
-                    continue
-                unique_addresses.add(addr)
-                address_tx_count[addr] += 1
-                if addr not in address_first_seen or bn < address_first_seen[addr]:
-                    address_first_seen[addr] = bn
-                if addr not in address_last_seen or bn > address_last_seen[addr]:
-                    address_last_seen[addr] = bn
+    if not unique_addresses and transfer_events:
+        _ingest_transfer_events(
+            transfer_events,
+            unique_addresses,
+            address_tx_count,
+            address_first_seen,
+            address_last_seen,
+        )
+        used_source = "index"
 
     # Always include verified pools for labeling / balance snapshot
     for p in verified_pools:
@@ -120,23 +168,52 @@ def analyze_holdings(
             address_first_seen.setdefault(addr, from_block)
             address_last_seen.setdefault(addr, to_block)
 
-    # Fill missing balances via RPC balanceOf
+    # Fill missing balances via RPC balanceOf at analysis window end.
+    # Cap calls: prefer pools + highest-activity addresses first.
     token_contract = get_contract(w3, token_address, "erc20")
     query_timestamp = int(datetime.now(timezone.utc).timestamp())
-    missing = [a for a in sorted(unique_addresses) if a not in balances]
-    for addr in missing:
+    balance_block = int(to_block) if to_block else "latest"
+    pool_addrs_l = {
+        Web3.to_checksum_address(p.pool_address).lower()
+        for p in verified_pools if p.pool_address
+    }
+    missing = [a for a in unique_addresses if a not in balances]
+    missing.sort(
+        key=lambda a: (
+            0 if a.lower() in pool_addrs_l else 1,
+            -address_tx_count.get(a, 0),
+            a.lower(),
+        )
+    )
+    rpc_budget = max(0, int(max_rpc_balances))
+    to_query = missing[:rpc_budget]
+    skipped_balances = missing[rpc_budget:]
+    for addr in to_query:
         try:
             bal = token_contract.functions.balanceOf(
                 Web3.to_checksum_address(addr)
-            ).call()
+            ).call(block_identifier=balance_block)
             balances[addr] = str(bal)
         except Exception:
-            balances[addr] = "0"
+            # Archive RPC may reject historical calls — fall back to latest
+            try:
+                bal = token_contract.functions.balanceOf(
+                    Web3.to_checksum_address(addr)
+                ).call()
+                balances[addr] = str(bal)
+            except Exception:
+                balances[addr] = "0"
+    for addr in skipped_balances:
+        balances.setdefault(addr, "0")
 
-    if used_source == "dune" and missing and len(missing) < len(unique_addresses):
+    if used_source == "dune" and to_query:
         balance_source = "dune+rpc"
     elif used_source == "dune" and not missing:
         balance_source = "dune"
+    elif used_source == "index" and to_query:
+        balance_source = "rpc_capped"
+    elif skipped_balances and to_query:
+        balance_source = "rpc_capped"
     else:
         balance_source = "rpc"
 
@@ -157,9 +234,16 @@ def analyze_holdings(
         a = addr.lower()
         if a not in _contract_cache:
             try:
-                _contract_cache[a] = has_bytecode(w3, Web3.to_checksum_address(addr))
+                _contract_cache[a] = has_bytecode(
+                    w3, Web3.to_checksum_address(addr), block_identifier=balance_block
+                )
             except Exception:
-                _contract_cache[a] = False
+                try:
+                    _contract_cache[a] = has_bytecode(
+                        w3, Web3.to_checksum_address(addr)
+                    )
+                except Exception:
+                    _contract_cache[a] = False
         return _contract_cache[a]
 
     # ---- Beneficial owner tracing ----
@@ -177,10 +261,13 @@ def analyze_holdings(
             return addr
         # Try owner() call — use raw call to avoid needing a full ABI
         try:
-            data = w3.eth.call({
-                "to": Web3.to_checksum_address(addr),
-                "data": "0x8da5cb5b",  # keccak256("owner()")[:4]
-            })
+            data = w3.eth.call(
+                {
+                    "to": Web3.to_checksum_address(addr),
+                    "data": "0x8da5cb5b",  # keccak256("owner()")[:4]
+                },
+                block_identifier=balance_block,
+            )
             if data and len(data) >= 36:  # 4 bytes padding + 20 bytes address
                 owner_addr = Web3.to_checksum_address("0x" + data[-40:])
                 if owner_addr.lower() != _ZERO.lower() and owner_addr.lower() != a:
@@ -191,8 +278,20 @@ def analyze_holdings(
         _resolved_owner[a] = addr  # unresolved contract
         return addr
 
+    # Rank addresses for expensive contract/owner RPC checks.
+    ranked_addrs = sorted(
+        unique_addresses,
+        key=lambda a: (
+            0 if a.lower() in pool_addresses else 1,
+            -int(balances.get(a, "0") or "0") if str(balances.get(a, "0")).isdigit() else 0,
+            -address_tx_count.get(a, 0),
+            a.lower(),
+        ),
+    )
+    contract_check_set = set(ranked_addrs[: max(0, int(max_contract_checks))])
+
     holdings_rows: list[dict[str, Any]] = []
-    for addr in sorted(unique_addresses):
+    for addr in ranked_addrs:
         bal_raw = balances.get(addr, "0")
         try:
             bal_decimal = int(bal_raw) / (10 ** token_decimals)
@@ -204,22 +303,28 @@ def analyze_holdings(
         if is_pool and pool_info:
             pool_label = "{} {}".format(pool_info.protocol, pool_info.version).upper()
 
-        is_contract_addr = _is_contract(addr)
         if is_pool:
+            is_contract_addr = True
             addr_type = "pool"
-        elif is_contract_addr:
-            addr_type = "contract"
+            resolved = addr
+            resolution_method = "pool"
+        elif addr in contract_check_set:
+            is_contract_addr = _is_contract(addr)
+            if is_contract_addr:
+                addr_type = "contract"
+                # Skip owner() eth_call — doubles RPC cost; label as contract only.
+                resolved = addr
+                resolution_method = "contract_no_owner_lookup"
+            else:
+                addr_type = "eoa"
+                resolved = addr
+                resolution_method = "eoa"
         else:
-            addr_type = "eoa"
-
-        # Beneficial owner resolution
-        resolved = _resolve_owner(addr) if is_contract_addr else addr
-        if resolved != addr:
-            resolution_method = "owner_function"
-        elif is_contract_addr:
-            resolution_method = "unresolved_contract"
-        else:
-            resolution_method = "eoa"
+            # Skip bytecode/owner RPC for the long tail.
+            is_contract_addr = False
+            addr_type = "unknown"
+            resolved = addr
+            resolution_method = "skipped_rpc"
 
         holdings_rows.append({
             "address": addr,
@@ -281,6 +386,9 @@ def analyze_holdings(
         "contract_count": contract_count,
         "real_holder_balance": round(real_holder_balance, 6),
         "contract_balance": round(contract_balance, 6),
+        "from_block": from_block,
+        "to_block": to_block,
+        "balance_block": balance_block if isinstance(balance_block, int) else to_block,
         "query_timestamp": query_timestamp,
         "query_time_human": datetime.fromtimestamp(
             query_timestamp, tz=timezone.utc

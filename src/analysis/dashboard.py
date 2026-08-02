@@ -194,7 +194,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   {empty_note}
 
   <div class="info-bar">
-    <div class="info-item">Analysis &middot; <span>{query_time}</span></div>
+    <div class="info-item">Blocks &middot; <span>{block_window}</span></div>
+    <div class="info-item">Balance snap &middot; <span>{query_time}</span></div>
     <div class="info-item">Token &middot; <span>{token_name}</span></div>
     <div class="info-item">Decimals &middot; <span>{decimals}</span> <span style="opacity:.6">({decimals_source})</span></div>
     {supply_info}
@@ -359,6 +360,18 @@ def generate_dashboard(
     holdings_count = holdings.get("holdings_count", 0)
     total_addresses = holdings.get("total_unique_addresses", 0)
     query_time = holdings.get("query_time_human", "")
+    from_block = holdings.get("from_block") or 0
+    to_block = holdings.get("to_block") or holdings.get("balance_block") or 0
+    if not from_block or not to_block:
+        timeline_meta = _load_json(out / "incident_timeline.json", {})
+        from_block = from_block or timeline_meta.get("from_block") or 0
+        to_block = to_block or timeline_meta.get("to_block") or 0
+    if from_block and to_block:
+        block_window = "{:,} → {:,}".format(int(from_block), int(to_block))
+    elif to_block:
+        block_window = "… → {:,}".format(int(to_block))
+    else:
+        block_window = "N/A"
     main_pool_share = pool_conc.get("main_pool_share", 0) * 100
 
     risk_lvl_class = risk_level.lower() if risk_level != "N/A" else "n-a"
@@ -431,6 +444,7 @@ def generate_dashboard(
         "chain_id": chain_id,
         "token_address": token_addr or "N/A",
         "query_time": query_time or "N/A",
+        "block_window": block_window,
         "decimals": decimals,
         "decimals_source": decimals_source,
         "supply_info": supply_info,
@@ -500,30 +514,32 @@ def _build_tvl_chart_js(
 
 def _table_top_holders(holders: list, symbol: str) -> str:
     if not holders:
-        return '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
-        return '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr>'
+        return (
+            '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">'
+            "No holder data available</td></tr>"
+        )
     rows = []
     for i, h in enumerate(holders[:20], 1):
-        addr = h.get('address','')
-        addr_short = addr[:6] + "..." + addr[-4:]
-        banner = h.get("address_type", "eoa") if h.get("address_type") else ("pool" if h.get("is_pool") else "eoa")
-        dex_html = _dex_badges_html(h.get("dex_protocols") or [], h.get("dex_roles") or {})
+        addr = h.get("address", "")
+        addr_short = addr[:6] + "..." + addr[-4:] if len(addr) >= 10 else addr
+        banner = (
+            h.get("address_type", "eoa")
+            if h.get("address_type")
+            else ("pool" if h.get("is_pool") else "eoa")
+        )
+        dex_html = _dex_badges_html(
+            h.get("dex_protocols") or [], h.get("dex_roles") or {}
+        )
         rows.append(
             f'<tr class="holder-row" onclick="togglePortfolio(\'{addr}\')" data-owner="{addr}">'
             f"<td>{i}</td>"
             f'<td class="addr">{addr_short}</td>'
             f'<td><span class="badge-{banner}">{banner}</span></td>'
             f"<td>{dex_html}</td>"
-            f"<td>{_fmt_bal(h.get('balance_decimal',0),symbol)}</td>"
-            f"<td>{h.get('tx_count',0)}</td>"
+            f"<td>{_fmt_bal(h.get('balance_decimal', 0), symbol)}</td>"
+            f"<td>{h.get('tx_count', 0)}</td>"
             f'<td><span class="expand-icon">+</span></td></tr>'
             f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
-            f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
-            f"<td>{_fmt_bal(h.get('balance_decimal',0),symbol)}</td>"
-            f"<td>{h.get('tx_count',0)}</td>"
-            f'<td><span class="expand-icon">+</span></td></tr>'
-            f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
-            f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
             f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
         )
     return "\n".join(rows)

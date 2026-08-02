@@ -813,7 +813,7 @@ class DuneDataCollector:
                 for k, v in result.datasets.items()
             },
             "errors": result.errors,
-            "note": "SQL templates in src/data/dune_sql/. Not wired into analyze.",
+            "note": "SQL templates in src/data/dune_sql/. Wired into analyze --index-source auto|dune.",
         }
         self.store.write_dataset("manifest", manifest)
         print(f"=== done → {self.store.root} ===")

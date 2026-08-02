@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 from web3 import Web3
 
@@ -32,6 +33,16 @@ _ADAPTER_MAP: dict[str, type[PoolDiscoveryAdapter]] = {
     "CurveAdapter": CurveAdapter,
     "BalancerV2Adapter": BalancerV2Adapter,
 }
+
+# Heavy RPC scanners (thousands of eth_calls / getLogs). When Dune already
+# returned pools for the window, these are redundant and dominate wall time.
+_HEAVY_ADAPTERS = {
+    "UniswapV4Adapter",
+    "CurveAdapter",
+    "BalancerV2Adapter",
+}
+
+ProgressFn = Callable[[str], None]
 
 
 def _normalize_dune_row(row: dict) -> dict:
@@ -223,15 +234,33 @@ def discover_pools(
     from_block: int,
     to_block: int,
     chain_id: int = 1,
+    cache_dir: Optional[str | Path] = None,
+    rpc_mode: str = "auto",
+    on_progress: Optional[ProgressFn] = None,
 ) -> dict[str, list]:
     """Discover all pools containing *token_address* across all supported protocols.
 
     When ``DUNE_API_KEY`` is set, Dune ``dex.trades`` pool discovery runs first
-    (fast, cross-DEX); RPC adapters still run and are merged in.  Dune results
-    are marked ``verified=False`` and resolved during verification.
+    (cross-DEX).  ``rpc_mode`` controls how much on-chain scanning follows:
+
+    - ``auto`` (default): if Dune returns ≥1 pool, skip heavy RPC adapters
+      (Curve / Balancer / Uniswap V4 scans). Light Uniswap V1–V3 probes still run.
+    - ``full``: always run every RPC adapter (slow; previous behaviour).
+    - ``off``: Dune only (no RPC discovery).
+    - ``light``: Dune + Uniswap V1–V3 factory probes only.
+
+    Dune results are marked ``verified=False`` and resolved during verification.
 
     Returns {"pools": [...], "protocols_used": [...], "errors": [...]}.
     """
+    def _progress(msg: str) -> None:
+        if on_progress is not None:
+            on_progress(msg)
+
+    mode = (rpc_mode or "auto").strip().lower()
+    if mode not in ("auto", "full", "off", "light"):
+        mode = "auto"
+
     registry = load_registry()
     chain_id = get_chain_id(registry)
     deployments = get_enabled_protocols(registry)
@@ -241,40 +270,102 @@ def discover_pools(
     protocol_names: set[str] = set()
     errors: list[str] = []
 
-    # Optional Dune-first pool discovery (fast, cross-DEX)
+    # Optional Dune-first pool discovery (cross-DEX)
     dune_error: Optional[str] = None
+    dune_row_count = 0
+    dune_pool_count = 0
     try:
-        from ..data.dune_client import DuneClient, dune_api_key_configured
+        from ..data.dune_client import dune_api_key_configured, get_dune_client
+
         if dune_api_key_configured():
-            client = DuneClient()
+            resolved_cache = Path(cache_dir) if cache_dir else Path("dune_cache")
+            client = get_dune_client(cache_dir=resolved_cache)
+            _progress("Dune: querying dex.trades for pools (cached under {}) ...".format(
+                resolved_cache
+            ))
+            t0 = time.time()
+            last_state = {"v": ""}
+
+            def _on_status(poll_i: int, state: str) -> None:
+                if state == "CACHED":
+                    _progress("Dune: cache hit")
+                    return
+                # Throttle: print every ~4.5s (every 3rd poll at 1.5s)
+                if poll_i % 3 == 0 or state != last_state["v"]:
+                    _progress(
+                        "Dune: waiting for query ({}s, {})".format(
+                            int(time.time() - t0), state or "PENDING"
+                        )
+                    )
+                    last_state["v"] = state
+
             rows = client.fetch_pools_for_token(
                 Web3.to_checksum_address(token_address),
                 from_block,
                 to_block,
+                on_status=_on_status,
             )
+            dune_row_count = len(rows)
             dune_pools, dune_protocols = _dune_rows_to_pools(
                 rows, token_address, chain_id, deployments
             )
+            dune_pool_count = len(dune_pools)
             all_pools.extend(dune_pools)
             protocol_names.update(dune_protocols)
+            _progress(
+                "Dune: {} row(s) → {} mapped pool(s) in {:.1f}s".format(
+                    dune_row_count, dune_pool_count, time.time() - t0
+                )
+            )
+        else:
+            _progress("Dune: skipped (DUNE_API_KEY not set)")
     except Exception as e:
         dune_error = str(e)
+        _progress("Dune: failed ({}) — falling back to RPC".format(dune_error))
 
-    for dep in deployments:
+    # auto/light + Dune hits: keep Uniswap V1–V3 factory probes; skip heavy scanners
+    skip_heavy = (mode == "auto" and dune_pool_count > 0) or mode == "light"
+    if mode == "off":
+        _progress("RPC discovery: skipped (rpc_mode=off)")
+        deployments_to_run = []
+    elif skip_heavy:
+        reason = (
+            "Dune found pools; skipping Curve/Balancer/V4 scans"
+            if mode == "auto"
+            else "rpc_mode=light"
+        )
+        _progress("RPC discovery: light only ({})".format(reason))
+        deployments_to_run = [
+            d for d in deployments if d.adapter not in _HEAVY_ADAPTERS
+        ]
+    else:
+        _progress("RPC discovery: full (all protocol adapters)")
+        deployments_to_run = list(deployments)
+
+    for dep in deployments_to_run:
         adapter_cls = _ADAPTER_MAP.get(dep.adapter)
         if adapter_cls is None:
             errors.append(f"No adapter registered for {dep.adapter}")
             continue
 
+        label = "{}_{}".format(dep.protocol, dep.version)
+        _progress("RPC: {} ...".format(label))
+        t1 = time.time()
         adapter = adapter_cls(w3, dep)
         try:
             pools = adapter.discover(
                 token_address, from_block, to_block, quote_assets
             )
             all_pools.extend(pools)
-            protocol_names.add(f"{dep.protocol}_{dep.version}")
+            protocol_names.add(label)
+            _progress(
+                "RPC: {} done ({} pool(s), {:.1f}s)".format(
+                    label, len(pools), time.time() - t1
+                )
+            )
         except Exception as e:
             errors.append(f"{dep.protocol}_{dep.version}: {e}")
+            _progress("RPC: {} failed ({})".format(label, e))
 
     all_pools = dedupe_pools(all_pools)
 
@@ -282,6 +373,12 @@ def discover_pools(
         "pools": [p.__dict__ for p in all_pools],
         "protocols_used": list(protocol_names),
         "errors": errors,
+        "discovery": {
+            "rpc_mode": mode,
+            "dune_rows": dune_row_count,
+            "dune_pools": dune_pool_count,
+            "skipped_heavy_rpc": skip_heavy,
+        },
     }
     if dune_error:
         result["dune_error"] = dune_error

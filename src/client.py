@@ -84,7 +84,14 @@ def get_contract(w3: Web3, address: str, abi_name: str) -> Contract:
     return w3.eth.contract(address=Web3.to_checksum_address(address), abi=abi)
 
 
-def has_bytecode(w3: Web3, address: str) -> bool:
+def has_bytecode(
+    w3: Web3,
+    address: str,
+    block_identifier: int | str = "latest",
+) -> bool:
     """Return True if the address has non-empty bytecode."""
-    code = w3.eth.get_code(Web3.to_checksum_address(address))
+    code = w3.eth.get_code(
+        Web3.to_checksum_address(address),
+        block_identifier=block_identifier,
+    )
     return code.hex() not in ("0x", "")

@@ -111,15 +111,21 @@ class DuneClient:
         force: bool = False,
         poll_seconds: float = 1.5,
         max_polls: int = 120,
+        on_status: Optional[Any] = None,
     ) -> list[dict[str, Any]]:
         """Execute SQL via Dune /sql/execute, polling until completion.
 
         If ``cache_key`` is provided and a cached result exists, it is returned
         without hitting the API (unless ``force=True``).
+
+        ``on_status`` is an optional ``(poll_index, state) -> None`` callback
+        invoked on each status poll (useful for CLI progress).
         """
         if cache_key:
             cached = self._load_cache(cache_key)
             if cached is not None and not force:
+                if on_status is not None:
+                    on_status(-1, "CACHED")
                 return cached
 
         headers = {
@@ -141,7 +147,7 @@ class DuneClient:
         if not execution_id:
             raise DuneQueryError("Dune SQL execute returned no execution_id")
 
-        for _ in range(max_polls):
+        for poll_i in range(max_polls):
             try:
                 status = requests.get(
                     f"{_DUNE_API}/execution/{execution_id}/status",
@@ -154,6 +160,8 @@ class DuneClient:
                     "Dune status poll failed: {}".format(exc)
                 ) from exc
             state = (status.json().get("state") or "").upper()
+            if on_status is not None:
+                on_status(poll_i, state)
             if "COMPLETED" in state:
                 break
             if "FAIL" in state or "CANCEL" in state:
@@ -192,6 +200,7 @@ class DuneClient:
         from_block: int,
         to_block: int,
         blockchain: str = "ethereum",
+        on_status: Optional[Any] = None,
     ) -> list[dict[str, Any]]:
         """Find pools that traded a token via ``dex.trades``.
 
@@ -219,7 +228,7 @@ ORDER BY trade_count DESC
         key = _cache_key(
             "pools", token, from_block, to_block, blockchain
         )
-        rows = self.run_sql(sql, cache_key=key)
+        rows = self.run_sql(sql, cache_key=key, on_status=on_status)
         out = []
         for row in rows:
             addr = _normalize_addr(row.get("pool_address"))

@@ -1,22 +1,22 @@
 {
-  "final_score": 0.4364,
-  "risk_level": "MEDIUM",
-  "raw_score": 0.7364,
+  "final_score": 0.3338,
+  "risk_level": "LOW",
+  "raw_score": 0.6338,
   "evidence_confidence": 1.0,
   "migration_adjusted": true,
   "migration_note": "Liquidity migration detected \u2014 reducing risk by 0.30.",
   "features": {
     "pool_concentration": {
-      "value": 0.9929,
+      "value": 0.9506,
       "weight": 0.15,
-      "description": "Main pool holds 99.29% of total DEX liquidity.",
-      "raw_data": 0.992899
+      "description": "Main pool holds 95.06% of total DEX liquidity.",
+      "raw_data": 0.950628
     },
     "lp_concentration": {
-      "value": 1.0,
+      "value": 0.5249,
       "weight": 0.15,
-      "description": "Largest LP holds 100.00% of pool shares.",
-      "raw_data": 100.0
+      "description": "Largest LP holds 52.49% of pool shares.",
+      "raw_data": 52.488011
     },
     "withdrawal_severity": {
       "value": 1.0,
@@ -27,7 +27,7 @@
     "temporal_proximity": {
       "value": 0.45,
       "weight": 0.15,
-      "description": "No incident block \u2014 130 liquidity removals in window."
+      "description": "No incident block \u2014 121 liquidity removals in window."
     },
     "role_sensitivity": {
       "value": 0.8,
@@ -40,9 +40,9 @@
       "description": "No incident block \u2014 market impact requires a crash reference."
     },
     "combined_activity": {
-      "value": 1.0,
+      "value": 0.5,
       "weight": 0.05,
-      "description": "Suspicious activity: 130 withdrawals and large sells detected."
+      "description": "Suspicious activity: 121 withdrawals."
     }
   }
 }

@@ -379,6 +379,34 @@ def _pool_id_hex(value) -> str:
     return "0x" + s
 
 
+def _topic_filter_ids(raw_ids: list[str]) -> list[str]:
+    """Normalize bytes32 pool IDs for eth_getLogs argument_filters."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in raw_ids:
+        pid = _pool_id_hex(raw).lower()
+        if not pid:
+            continue
+        # eth_getLogs topics are 32-byte; pad short values on the left.
+        body = pid[2:] if pid.startswith("0x") else pid
+        if len(body) < 64:
+            pid = "0x" + body.zfill(64)
+        elif len(body) > 64:
+            pid = "0x" + body[-64:]
+        if pid in seen:
+            continue
+        seen.add(pid)
+        out.append(pid)
+    return out
+
+
+def _id_argument_filter(field: str, raw_ids: list[str]) -> Optional[dict[str, Any]]:
+    ids = _topic_filter_ids(raw_ids)
+    if not ids:
+        return None
+    return {field: ids[0] if len(ids) == 1 else ids}
+
+
 def _normalize_v4_pool_event(
     evt: EventData,
     pools_by_id: dict[str, VerifiedPool],
@@ -506,6 +534,7 @@ class _StreamIndexer:
         ts_cache: dict[int, int],
         normalize: Callable[[EventData, dict[int, int]], Optional[NormalizedEvent]],
         on_raw_chunk: Optional[Callable[[list[EventData]], None]] = None,
+        argument_filters: Optional[dict[str, Any]] = None,
     ):
         self.w3 = w3
         self.key = key
@@ -517,6 +546,7 @@ class _StreamIndexer:
         self.ts_cache = ts_cache
         self.normalize = normalize
         self.on_raw_chunk = on_raw_chunk
+        self.argument_filters = argument_filters
         self.events: list[dict] = _load_jsonl(self.cache_path)
 
     @property
@@ -587,6 +617,7 @@ class _StreamIndexer:
             event_obj,
             start,
             self.to_block,
+            argument_filters=self.argument_filters,
             chunk_size=DEFAULT_CHUNK_SIZE,
             on_chunk=on_chunk,
         )
@@ -634,8 +665,13 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
                 if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES"):
                     liquidity.append(pub)
                 all_events.append(pub)
-        # V2 / V3 / V4 pool events
-        elif stream.startswith("v2:") or stream.startswith("v3:") or stream.startswith("v4:"):
+        # V2 / V3 / V4 pool events (v4id = topic-filtered PoolManager streams)
+        elif (
+            stream.startswith("v2:")
+            or stream.startswith("v3:")
+            or stream.startswith("v4:")
+            or stream.startswith("v4id:")
+        ):
             if et == "SWAP":
                 swaps.append(pub)
                 all_events.append(pub)
@@ -672,8 +708,8 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
                 liquidity.append(pub)
                 all_events.append(pub)
 
-        # Balancer V2 pool events
-        elif stream.startswith("balancer:"):
+        # Balancer V2 pool events (balid = topic-filtered Vault streams)
+        elif stream.startswith("balancer:") or stream.startswith("balid:"):
             if et == "SWAP":
                 swaps.append(pub)
                 all_events.append(pub)
@@ -922,17 +958,29 @@ def index_balancer_events(
                         "data": "0xf89b4d55",
                     })
                     pid = raw_pid.hex() if hasattr(raw_pid, "hex") else str(raw_pid)
-                pool_id_map[pid.lower()] = p.pool_address
+                pool_id_map[_pool_id_hex(pid).lower()] = p.pool_address
             except Exception as exc:
                 _progress("balancer pool {} skipped (no getPoolId): {}".format(
                     p.pool_address, exc
                 ))
 
+    if not pool_id_map:
+        return []
+
+    # Vault is a singleton — filter by indexed poolId at eth_getLogs time.
+    id_filter = _id_argument_filter("poolId", list(pool_id_map.keys()))
+    _progress(
+        "balancer {}: topic-filter {} poolId(s)".format(
+            vault_addr, len(pool_id_map)
+        )
+    )
+
     events = []
     for evt_name in ("Swap", "PoolBalanceChanged"):
         if not hasattr(contract.events, evt_name):
             continue
-        key = _stream_key("balancer", vault_addr, evt_name)
+        # Stream key versioned (`balid`) so old unfiltered vault scans are not resumed.
+        key = _stream_key("balid", vault_addr, evt_name)
 
         def make_norm(name=evt_name, pim=pool_id_map):
             def _norm(evt, timestamps):
@@ -944,12 +992,12 @@ def index_balancer_events(
 
         stream = _StreamIndexer(
             w3, key, from_block, to_block, checkpoint, checkpoint_path,
-            cache_dir, ts_cache, make_norm(),
+            cache_dir, ts_cache, make_norm(), argument_filters=id_filter,
         )
         try:
             events.extend(stream.run(getattr(contract.events, evt_name)))
-        except Exception:
-            pass
+        except Exception as exc:
+            _progress("balancer {} skipped: {}".format(evt_name, exc))
     return events
 
 
@@ -1184,7 +1232,15 @@ def index_v3_position_events(
             _save_pm_token_map(cache_dir, position_manager_address, addr_map)
 
     events: list[dict] = []
-    ordered = ("IncreaseLiquidity", "DecreaseLiquidity", "Collect", "Transfer")
+    # Skip Transfer: NPM Transfer is global across all Uniswap V3 NFTs and cannot
+    # be topic-filtered by pool. Liquidity deltas already come from pool Mint/Burn
+    # plus Increase/DecreaseLiquidity below.
+    ordered = ("IncreaseLiquidity", "DecreaseLiquidity", "Collect")
+    _progress(
+        "v3_pm {}: indexing {} (skipping Transfer)".format(
+            position_manager_address, ", ".join(ordered)
+        )
+    )
     for evt_name in ordered:
         key = _stream_key("v3_pm", position_manager_address, evt_name)
 
@@ -1258,19 +1314,39 @@ def index_v4_pool_events(
     cache_dir: Path,
     ts_cache: dict[int, int],
 ) -> list[dict]:
-    """Index Swap/ModifyLiquidity on PoolManager, filtered to discovered pool IDs."""
+    """Index Swap/ModifyLiquidity on PoolManager, filtered to discovered pool IDs.
+
+    PoolManager is a singleton: without a topic filter this downloads every V4
+    swap on Ethereum.  ``id`` is indexed, so we push pool IDs into eth_getLogs.
+    """
     if not v4_pools:
         return []
     contract = get_contract(w3, pool_manager, "uniswap_v4_pool_manager")
     pools_by_id: dict[str, VerifiedPool] = {}
+    raw_ids: list[str] = []
     for p in v4_pools:
-        pid = (p.pool_id or p.pool_address or "").lower()
-        if pid:
-            pools_by_id[pid] = p
+        pid = _pool_id_hex(p.pool_id or p.pool_address).lower()
+        if not pid:
+            continue
+        pools_by_id[pid] = p
+        # also index padded form used in topics
+        padded = _topic_filter_ids([pid])
+        if padded:
+            pools_by_id[padded[0].lower()] = p
+        raw_ids.append(pid)
+
+    id_filter = _id_argument_filter("id", raw_ids)
+    if not id_filter:
+        _progress("v4 {}: no pool IDs to filter — skipping".format(pool_manager))
+        return []
+    _progress(
+        "v4 {}: topic-filter {} pool id(s)".format(pool_manager, len(raw_ids))
+    )
 
     events: list[dict] = []
     for evt_name in ("Swap", "ModifyLiquidity"):
-        key = _stream_key("v4", pool_manager, evt_name)
+        # Stream key versioned (`v4id`) so old unfiltered PoolManager scans are not resumed.
+        key = _stream_key("v4id", pool_manager, evt_name)
 
         def make_norm(name=evt_name):
             def _norm(evt: EventData, timestamps: dict[int, int]):
@@ -1282,7 +1358,7 @@ def index_v4_pool_events(
 
         stream = _StreamIndexer(
             w3, key, from_block, to_block, checkpoint, checkpoint_path,
-            cache_dir, ts_cache, make_norm(),
+            cache_dir, ts_cache, make_norm(), argument_filters=id_filter,
         )
         events.extend(stream.run(getattr(contract.events, evt_name)))
     return events
@@ -1348,7 +1424,15 @@ def index_v4_position_events(
         _save_pm_token_map(cache_dir, position_manager_address, addr_map)
 
     events: list[dict] = []
-    for evt_name in ("Transfer", "ModifyLiquidity"):
+    # Skip Transfer: V4 PM Transfer is global across all position NFTs and has no
+    # poolId topic. Liquidity already comes from PoolManager ModifyLiquidity.
+    evt_names = ("ModifyLiquidity",)
+    _progress(
+        "v4pm {}: indexing {} (skipping Transfer)".format(
+            position_manager_address, ", ".join(evt_names)
+        )
+    )
+    for evt_name in evt_names:
         if not hasattr(pm_contract.events, evt_name):
             continue
         key = _stream_key("v4pm", position_manager_address, evt_name)
@@ -1382,7 +1466,53 @@ def index_events(
     output_dir: str | Path = "output",
     checkpoint_file: str = "event_indexer_checkpoint.json",
     index_token_transfer: bool = True,
+    source: str = "auto",
+    force_dune_refresh: bool = False,
 ) -> dict[str, list]:
+    """Index swaps / liquidity / transfers.
+
+    ``source``:
+      - ``auto`` (default): Dune when ``DUNE_API_KEY`` is set, else RPC
+      - ``dune``: require Dune (raise on failure)
+      - ``rpc``: Alchemy/Infura eth_getLogs path (slow on free tiers)
+    """
+    mode = (source or "auto").strip().lower()
+    if mode not in ("auto", "dune", "rpc"):
+        mode = "auto"
+
+    prefer_dune = mode == "dune"
+    if mode == "auto":
+        try:
+            from ..data.dune_client import dune_api_key_configured
+            prefer_dune = dune_api_key_configured()
+        except Exception:
+            prefer_dune = False
+
+    if prefer_dune:
+        try:
+            from .dune_index import index_events_from_dune
+
+            _progress("Indexing via Dune (source={}) ...".format(mode))
+            return index_events_from_dune(
+                verified_pools,
+                target_token,
+                from_block,
+                to_block,
+                output_dir=output_dir,
+                index_token_transfer=index_token_transfer,
+                force_refresh=force_dune_refresh,
+                on_progress=lambda m: _progress(m),
+            )
+        except Exception as exc:
+            if mode == "dune":
+                raise
+            _progress(
+                "Dune indexing failed ({}) — falling back to RPC eth_getLogs".format(
+                    exc
+                )
+            )
+
+    _progress("Indexing via RPC eth_getLogs (source={}) ...".format(mode))
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     cache_dir = out / "indexer_cache"
@@ -1488,6 +1618,20 @@ def index_events(
         collected.extend(token_evts)
 
     result = _flush_outputs(out, collected, from_block, to_block)
+    _write_json(
+        out / "index_source.json",
+        {
+            "source": "rpc",
+            "from_block": from_block,
+            "to_block": to_block,
+            "token": target_token,
+            "counts": {
+                "swaps": len(result["swaps"]),
+                "liquidity_events": len(result["liquidity_events"]),
+                "transfers": len(result["transfers"]),
+            },
+        },
+    )
     _progress(
         "Indexing done: {} swaps, {} liquidity, {} transfers".format(
             len(result["swaps"]),

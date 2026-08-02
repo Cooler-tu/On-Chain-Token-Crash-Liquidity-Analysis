@@ -157,10 +157,10 @@ def fetch_token_balances_from_dune(
     api_key: Optional[str] = None,
     limit: int = 500,
 ) -> dict[str, str]:
-    """Best-effort latest raw balances from Dune ``tokens_ethereum.balances``.
+    """Best-effort latest raw balances from Dune ``balances_ethereum.latest``.
 
     Returns ``{checksum_address: balance_raw_str}``. Empty on failure — caller
-    should fall back to RPC ``balanceOf``. Caps IN-list size for free-tier SQL.
+    should fall back to RPC ``balanceOf`` at ``to_block``. Caps IN-list size.
     """
     if not addresses:
         return {}

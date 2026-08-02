@@ -42,7 +42,12 @@ def get_logs_chunked(event, from_block, to_block, argument_filters=None,
         size = min(adaptive_size, ceiling)
         end = min(start + size - 1, to_block)
         try:
-            entries = event.get_logs(from_block=start, to_block=end)
+            kwargs = {"from_block": start, "to_block": end}
+            # Push indexed-field filters into eth_getLogs (topics), not a
+            # client-side pass after downloading every log on the contract.
+            if argument_filters:
+                kwargs["argument_filters"] = argument_filters
+            entries = event.get_logs(**kwargs)
             logs.extend(entries)
             if on_chunk is not None:
                 on_chunk(start, end, entries)

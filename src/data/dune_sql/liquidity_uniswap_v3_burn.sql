@@ -12,6 +12,6 @@ SELECT
   CAST(amount0 AS varchar) AS token0_amount,
   CAST(amount1 AS varchar) AS token1_amount,
   'Burn' AS source_event
-FROM uniswap_v3_ethereum.Pool_evt_Burn
+FROM uniswap_v3_ethereum.Pair_evt_Burn
 WHERE evt_block_number BETWEEN {{from_block}} AND {{to_block}}
   AND contract_address IN ({{pool_list}})

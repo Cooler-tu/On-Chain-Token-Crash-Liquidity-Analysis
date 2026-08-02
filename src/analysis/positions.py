@@ -22,6 +22,8 @@ def reconstruct_v2_holders(
     events_by_pool: dict[str, list[dict]],
     from_block: int,
     to_block: int,
+    *,
+    allow_rpc_scan: bool = False,
 ) -> list[Position]:
     """Snapshot V2 LP-token holders at ``to_block``.
 
@@ -48,18 +50,6 @@ def reconstruct_v2_holders(
             continue
 
         candidates: set[str] = set()
-        try:
-            for evt in get_logs_chunked(
-                pair_contract.events.Transfer, from_block, to_block
-            ):
-                args = evt["args"]
-                for raw in (args["from"], args["to"]):
-                    addr = Web3.to_checksum_address(raw)
-                    if addr.lower() != _ZERO.lower():
-                        candidates.add(addr)
-        except Exception:
-            pass
-
         for evt in events_by_pool.get(pair_addr.lower(), []):
             for key in ("actor", "recipient"):
                 a = evt.get(key) or ""
@@ -68,6 +58,20 @@ def reconstruct_v2_holders(
                         candidates.add(Web3.to_checksum_address(a))
                     except Exception:
                         continue
+
+        # Optional: scan Pair Transfer logs (slow on free RPC). Off by default.
+        if allow_rpc_scan and not candidates:
+            try:
+                for evt in get_logs_chunked(
+                    pair_contract.events.Transfer, from_block, to_block
+                ):
+                    args = evt["args"]
+                    for raw in (args["from"], args["to"]):
+                        addr = Web3.to_checksum_address(raw)
+                        if addr.lower() != _ZERO.lower():
+                            candidates.add(addr)
+            except Exception:
+                pass
 
         for addr in sorted(candidates):
             try:
@@ -134,6 +138,8 @@ def reconstruct_v3_position_owners(
     to_block: int,
     indexed_events: Optional[list[dict]] = None,
     cache_dir: Optional[str | Path] = None,
+    *,
+    allow_rpc_scan: bool = False,
 ) -> list[Position]:
     """Snapshot V3 LP NFTs for verified pools at ``to_block``.
 
@@ -141,6 +147,9 @@ def reconstruct_v3_position_owners(
     Token amounts and ``share_pct`` use tick-range math at ``to_block``:
     L + tickLower/tickUpper + sqrtPriceX96 → amount0/amount1 → value share.
     Only positions with L > 0 at ``to_block`` are kept.
+
+    When ``allow_rpc_scan`` is False (default), never fall back to scanning
+    the global NonfungiblePositionManager logs (very slow on free RPC).
     """
     positions: list[Position] = []
     pm_addr = Web3.to_checksum_address(position_manager_address)
@@ -154,10 +163,19 @@ def reconstruct_v3_position_owners(
     pools_by_addr: dict[str, VerifiedPool] = {}
     for p in pools:
         if p.version == "v3" and p.verified:
+            fee = p.fee
+            # Dune discovery often omits fee; positions() match needs the real tier.
+            if fee is None:
+                try:
+                    pc = get_contract(w3, p.pool_address, "uniswap_v3_pool")
+                    fee = int(pc.functions.fee().call())
+                    p.fee = fee
+                except Exception:
+                    fee = 0
             pool_map[(
                 Web3.to_checksum_address(p.token0),
                 Web3.to_checksum_address(p.token1),
-                int(p.fee or 0),
+                int(fee or 0),
             )] = p
             pools_by_addr[p.pool_address.lower()] = p
 
@@ -221,7 +239,42 @@ def reconstruct_v3_position_owners(
             else:
                 _consider(token_id)
 
+    # Dune path: recover tokenIds by joining pool Mint → NPM ERC721 mint Transfer.
+    # Pool Mint/Burn from dex indexing do not carry nft_token_id (owner is often NPM).
     if not relevant_ids:
+        try:
+            from ..data.dune_client import dune_api_key_configured
+            from ..data.dune_positions import fetch_v3_npm_token_ids_for_pools
+
+            if dune_api_key_configured():
+                dune_dir = None
+                if cache_dir is not None:
+                    dune_dir = Path(cache_dir).parent / "dune_cache" / "positions"
+                rows = fetch_v3_npm_token_ids_for_pools(
+                    list(pools_by_addr.keys()),
+                    pm_addr,
+                    from_block,
+                    to_block,
+                    cache_dir=dune_dir,
+                )
+                print(
+                    "  [positions] Dune Mint→NPM tokenIds: {} candidate(s)".format(
+                        len(rows)
+                    )
+                )
+                for row in rows:
+                    tid = int(row["nft_token_id"])
+                    pool_hint = (row.get("pool_address") or "").lower()
+                    if pool_hint and pool_hint in pools_by_addr:
+                        relevant_ids.add(tid)
+                    else:
+                        _consider(tid)
+            else:
+                print("  [positions] Dune API key missing; cannot recover V3 tokenIds")
+        except Exception as exc:
+            print("  [positions] Dune tokenId recovery failed: {}".format(exc))
+
+    if not relevant_ids and allow_rpc_scan:
         try:
             for evt in get_logs_chunked(
                 pm_contract.events.IncreaseLiquidity, from_block, to_block
@@ -236,6 +289,9 @@ def reconstruct_v3_position_owners(
                 _consider(int(evt["args"]["tokenId"]))
         except Exception:
             pass
+
+    if not relevant_ids:
+        return positions
 
     # Pool price + reserves at window end (for tick→amounts and value share).
     pool_state: dict[str, dict[str, Any]] = {}
@@ -431,6 +487,8 @@ def reconstruct_v4_position_owners(
     to_block: int,
     indexed_events: Optional[list[dict]] = None,
     cache_dir: Optional[str | Path] = None,
+    *,
+    allow_rpc_scan: bool = False,
 ) -> list[Position]:
     """Snapshot V4 LP NFTs at ``to_block``.
 
@@ -512,7 +570,7 @@ def reconstruct_v4_position_owners(
             else:
                 _consider(token_id)
 
-    if not relevant_ids:
+    if not relevant_ids and allow_rpc_scan:
         try:
             for evt in get_logs_chunked(
                 pm_contract.events.Transfer, from_block, to_block
@@ -523,6 +581,9 @@ def reconstruct_v4_position_owners(
                     _consider(int(tid))
         except Exception:
             pass
+
+    if not relevant_ids:
+        return positions
 
     # Pool sqrt price + active liquidity at to_block
     pool_state: dict[str, dict[str, Any]] = {}
@@ -775,8 +836,14 @@ def analyze_positions(
     from_block: int,
     to_block: int,
     output_dir: str | Path = "output",
+    *,
+    allow_rpc_scan: bool = False,
 ) -> tuple[list[Position], dict[str, Any]]:
-    """Reconstruct LP positions as of ``to_block`` and write summary files."""
+    """Reconstruct LP positions as of ``to_block`` and write summary files.
+
+    ``allow_rpc_scan=False`` (default) never scans global PM / Pair Transfer
+    logs — required for usable speed after Dune indexing.
+    """
     out = Path(output_dir)
     cache_dir = out / "indexer_cache"
     positions: list[Position] = []
@@ -797,7 +864,8 @@ def analyze_positions(
         w3, verified_pools, events_by_pool, from_block, to_block
     ))
     positions.extend(reconstruct_v2_holders(
-        w3, verified_pools, events_by_pool, from_block, to_block
+        w3, verified_pools, events_by_pool, from_block, to_block,
+        allow_rpc_scan=allow_rpc_scan,
     ))
 
     pm_addresses = {
@@ -814,6 +882,7 @@ def analyze_positions(
             to_block,
             indexed_events=events_all,
             cache_dir=cache_dir,
+            allow_rpc_scan=allow_rpc_scan,
         ))
 
     # V4 PMs + StateView from registry / pool fields
@@ -857,6 +926,7 @@ def analyze_positions(
             to_block,
             indexed_events=events_all,
             cache_dir=cache_dir,
+            allow_rpc_scan=allow_rpc_scan,
         ))
 
     pos_dicts = [p.__dict__ for p in positions]

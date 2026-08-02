@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -33,6 +34,69 @@ from .analysis.dashboard import generate_dashboard
 app = typer.Typer()
 
 
+def _fmt_duration(seconds: float) -> str:
+    """Human-readable duration for step timing lines."""
+    if seconds < 60:
+        return "{:.1f}s".format(seconds)
+    minutes, secs = divmod(seconds, 60)
+    if minutes < 60:
+        return "{:.0f}m {:.1f}s".format(minutes, secs)
+    hours, minutes = divmod(minutes, 60)
+    return "{:.0f}h {:.0f}m {:.1f}s".format(hours, minutes, secs)
+
+
+class _StepTimer:
+    """Track per-step wall times and print a summary at the end."""
+
+    def __init__(self) -> None:
+        self.t0 = time.time()
+        self.steps: list[dict] = []
+        self._current: Optional[str] = None
+        self._step_t0 = 0.0
+
+    def begin(self, name: str) -> None:
+        self._current = name
+        self._step_t0 = time.time()
+
+    def end(self, extra: str = "") -> float:
+        elapsed = time.time() - self._step_t0
+        name = self._current or "?"
+        self.steps.append({"step": name, "seconds": round(elapsed, 3)})
+        suffix = " — {}".format(extra) if extra else ""
+        typer.echo("  time: {} done in {}{}".format(name, _fmt_duration(elapsed), suffix))
+        self._current = None
+        return elapsed
+
+    def total_seconds(self) -> float:
+        return time.time() - self.t0
+
+    def summary_lines(self) -> list[str]:
+        total = self.total_seconds()
+        lines = ["=== Timing ==="]
+        width = max((len(s["step"]) for s in self.steps), default=8)
+        for s in self.steps:
+            pct = (100.0 * s["seconds"] / total) if total > 0 else 0.0
+            lines.append(
+                "  {name:<{w}}  {dur:>12}  ({pct:5.1f}%)".format(
+                    name=s["step"],
+                    w=width,
+                    dur=_fmt_duration(s["seconds"]),
+                    pct=pct,
+                )
+            )
+        lines.append("  {name:<{w}}  {dur:>12}".format(
+            name="TOTAL", w=width, dur=_fmt_duration(total)
+        ))
+        return lines
+
+    def to_dict(self) -> dict:
+        return {
+            "steps": self.steps,
+            "total_seconds": round(self.total_seconds(), 3),
+            "total_human": _fmt_duration(self.total_seconds()),
+        }
+
+
 def _resolve_or_exit(token_query: str, chain_id: int, pick: int) -> str:
     """Resolve address/symbol/name → checksum address, or exit with a clear error."""
     try:
@@ -59,11 +123,23 @@ def analyze(
     pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
     holdings_source: str = typer.Option(
         "auto",
-        help="Holdings address source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
+        help=(
+            "Holdings source: auto (reuse indexed Transfers; fastest) | dune | rpc"
+        ),
     ),
     pools_file: str = typer.Option(
         "",
         help="Load pool candidates from a saved Dune pools JSON (skip live discovery)",
+    ),
+    discovery_rpc: str = typer.Option(
+        "off",
+        help=(
+            "RPC discovery after Dune: off (default, fastest) | auto | light | full"
+        ),
+    ),
+    index_source: str = typer.Option(
+        "auto",
+        help="Event indexing source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
     ),
 ):
     """End-to-end analysis: token → liquidity report + dashboard.
@@ -84,6 +160,7 @@ def analyze(
     """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+    timer = _StepTimer()
 
     token_address = _resolve_or_exit(token, chain_id, pick)
 
@@ -93,6 +170,7 @@ def analyze(
 
     # Step 1: Token profile
     typer.echo("[1/12] Profiling token ...")
+    timer.begin("[1/12] Profile token")
     profile = profile_token(w3, token_address, chain_id_val)
     _write_json(out / "token_profile.json", profile.__dict__)
     typer.echo(
@@ -101,9 +179,11 @@ def analyze(
         )
     )
     target_token = profile.address
+    timer.end()
 
     # Step 2: Discover pools (or load a saved Dune pools file)
     typer.echo("[2/12] Discovering pools ...")
+    timer.begin("[2/12] Discover pools")
     if pools_file:
         pf = Path(pools_file)
         if not pf.exists():
@@ -118,12 +198,25 @@ def analyze(
         for err in result.get("errors", []):
             typer.echo("  warning: {}".format(err), err=True)
     else:
-        result = discover_pools(w3, token_address, from_block, to_block, chain_id_val)
+        result = discover_pools(
+            w3,
+            token_address,
+            from_block,
+            to_block,
+            chain_id_val,
+            cache_dir=out / "dune_cache",
+            rpc_mode=discovery_rpc,
+            on_progress=lambda msg: typer.echo("  {}".format(msg)),
+        )
         typer.echo("  Found {} candidate(s)".format(len(result["pools"])))
+        if result.get("dune_error"):
+            typer.echo("  Dune warning: {}".format(result["dune_error"]), err=True)
     _write_json(out / "pool_candidates.json", result)
+    timer.end("{} candidate(s)".format(len(result["pools"])))
 
     # Step 3: Verify pools
     typer.echo("[3/12] Verifying pools ...")
+    timer.begin("[3/12] Verify pools")
     candidates = [VerifiedPool(**dict(pdata)) for pdata in result["pools"]]
     verified_pools = verify_pools(
         w3, candidates, target_token=token_address,
@@ -135,6 +228,7 @@ def analyze(
         typer.echo("  {} {}".format(status, p.pool_address))
     _write_json(out / "verified_pools.json", [to_dict(p) for p in verified_pools])
     typer.echo("  {} verified / {} total".format(verified_count, len(verified_pools)))
+    timer.end("{} verified".format(verified_count))
 
     if verified_count == 0:
         typer.echo("No verified pools found. Cannot proceed with analysis.")
@@ -143,6 +237,7 @@ def analyze(
     # Step 4: Event indexing
     typer.echo("[4/12] Indexing events (chunk-level resume enabled; Ctrl+C is safe) ...")
     typer.echo("  Progress: {}/indexer_cache + event_indexer_checkpoint.json".format(output_dir))
+    timer.begin("[4/12] Index events")
     indexed = index_events(
         w3,
         verified_pools,
@@ -151,6 +246,7 @@ def analyze(
         to_block,
         output_dir=output_dir,
         index_token_transfer=not fast_mode,
+        source=index_source,
     )
     swaps = indexed["swaps"]
     liquidity_events = indexed["liquidity_events"]
@@ -159,6 +255,11 @@ def analyze(
     typer.echo("  {} swaps, {} liquidity events, {} transfers".format(
         len(swaps), len(liquidity_events), len(transfers)
     ))
+    timer.end(
+        "{} swaps / {} liq / {} xfer".format(
+            len(swaps), len(liquidity_events), len(transfers)
+        )
+    )
 
     # Load events_all for analysis
     events_all_path = out / "events_all.json"
@@ -170,16 +271,26 @@ def analyze(
 
     # Step 5: Position analysis
     typer.echo("[5/12] Analyzing positions ...")
+    typer.echo("  V3 tokenIds via Dune Mint→NPM join (no full PM RPC scan)")
+    timer.begin("[5/12] Positions")
     positions, pos_summary = analyze_positions(
         w3, verified_pools, events_all, target_token,
         from_block, to_block, output_dir=output_dir,
+        allow_rpc_scan=False,
     )
     typer.echo("  {} position(s), {} unique holder(s)".format(
         len(positions), pos_summary.get("total_unique_holders", 0)
     ))
+    if not positions:
+        typer.echo(
+            "  note: 0 positions can mean no in-window V3 mints, or only V4 "
+            "(V4 LP snapshot not fully wired yet)"
+        )
+    timer.end()
 
     # Step 6: Address labeling
     typer.echo("[6/12] Labeling addresses ...")
+    timer.begin("[6/12] Labels")
     deployer = None
     try:
         deployer = find_deployer(w3, target_token, from_block)
@@ -196,21 +307,26 @@ def analyze(
         deployer=deployer, output_dir=output_dir,
     )
     typer.echo("  {} label(s) assigned".format(len(labels)))
+    timer.end()
 
     # Step 7: Metrics calculation
     typer.echo("[7/12] Calculating metrics ...")
+    timer.begin("[7/12] Metrics")
     token_decimals = profile.decimals or 18
     metrics = calculate_all_metrics(
         verified_pools, events_all, liquidity_events,
         positions, target_token, token_decimals,
         incident_block=incident_block, output_dir=output_dir, w3=w3,
+        to_block=to_block,
     )
     typer.echo("  TVL timeline: {} points".format(metrics.get("tvl_timeline_length", 0)))
     pool_conc = metrics.get("pool_concentration", {})
     typer.echo("  Main pool share: {:.2%}".format(pool_conc.get("main_pool_share", 0)))
+    timer.end()
 
     # Step 8: Timeline analysis
     typer.echo("[8/12] Building timeline ...")
+    timer.begin("[8/12] Timeline")
     timeline = analyze_timeline(
         events_all, swaps, liquidity_events, transfers,
         verified_pools, target_token,
@@ -218,9 +334,11 @@ def analyze(
         output_dir=output_dir,
     )
     typer.echo("  {} total events in timeline".format(timeline.get("total_events", 0)))
+    timer.end()
 
     # Step 9: Risk assessment
     typer.echo("[9/12] Computing risk score ...")
+    timer.begin("[9/12] Risk")
     risk = compute_risk(
         pool_concentration=metrics.get("pool_concentration", {}),
         lp_concentration=metrics.get("lp_concentration", {}),
@@ -235,9 +353,11 @@ def analyze(
     typer.echo("  Risk score: {:.4f} ({})".format(
         risk.get("final_score", 0), risk.get("risk_level", "N/A")
     ))
+    timer.end()
 
     # Step 10: Report generation
     typer.echo("[10/12] Generating report ...")
+    timer.begin("[10/12] Report")
     report = generate_report(
         token_profile=profile.__dict__,
         verified_pools=[to_dict(p) for p in verified_pools],
@@ -253,9 +373,11 @@ def analyze(
         output_dir=output_dir,
     )
     typer.echo("  report.md written")
+    timer.end()
 
     # Step 11: Holdings
     typer.echo("[11/12] Analyzing holdings ...")
+    timer.begin("[11/12] Holdings")
     if fast_mode and not transfers:
         typer.echo("  Skipping balance queries (--fast-mode with no transfers)")
         holdings_result = {
@@ -283,6 +405,12 @@ def analyze(
         eoa = 0
         _write_json(out / "holdings.json", holdings_result)
     else:
+        if transfers:
+            typer.echo(
+                "  Reusing {} indexed Transfer(s); capped RPC balanceOf/bytecode".format(
+                    len(transfers)
+                )
+            )
         holdings_result = analyze_holdings(
             w3, target_token, token_decimals, transfers,
             verified_pools, from_block, to_block,
@@ -304,11 +432,17 @@ def analyze(
             holdings_result.get("total_unique_addresses", 0),
             eoa, resolved, unresolved, total_resolved,
         ))
+    timer.end()
 
     # Step 12: Dashboard
     typer.echo("[12/12] Generating dashboard ...")
+    timer.begin("[12/12] Dashboard")
     dashboard_path = generate_dashboard(output_dir=output_dir)
     typer.echo("  {}".format(dashboard_path))
+    timer.end()
+
+    timing = timer.to_dict()
+    _write_json(out / "timing.json", timing)
 
     # Summary
     typer.echo("\n=== Analysis Complete ===")
@@ -318,6 +452,10 @@ def analyze(
     ))
     typer.echo("Dashboard: {}".format(dashboard_path))
     typer.echo("Output directory: {}".format(out.resolve()))
+    typer.echo("")
+    for line in timer.summary_lines():
+        typer.echo(line)
+    typer.echo("Timing saved: {}".format((out / "timing.json").resolve()))
 
 
 @app.command()
@@ -334,6 +472,13 @@ def discover_only(
     pools_file: str = typer.Option(
         "",
         help="Load pool candidates from a saved Dune pools JSON (skip live discovery)",
+    ),
+    discovery_rpc: str = typer.Option(
+        "auto",
+        help=(
+            "RPC discovery after Dune: auto (skip heavy RPC if Dune found pools) | "
+            "full | light | off"
+        ),
     ),
 ):
     """Discover and verify pools for a token."""
@@ -363,8 +508,19 @@ def discover_only(
         for err in result.get("errors", []):
             typer.echo("  warning: {}".format(err), err=True)
     else:
-        result = discover_pools(w3, token_address, from_block, to_block, chain_id_val)
+        result = discover_pools(
+            w3,
+            token_address,
+            from_block,
+            to_block,
+            chain_id_val,
+            cache_dir=out / "dune_cache",
+            rpc_mode=discovery_rpc,
+            on_progress=lambda msg: typer.echo("  {}".format(msg)),
+        )
         typer.echo("Found {} candidate(s)".format(len(result["pools"])))
+        if result.get("dune_error"):
+            typer.echo("Dune warning: {}".format(result["dune_error"]), err=True)
     _write_json(out / "pool_candidates.json", result)
 
     candidates = [VerifiedPool(**dict(pdata)) for pdata in result["pools"]]
@@ -431,7 +587,16 @@ def holdings(
     token_decimals = profile.decimals or 18
 
     typer.echo("[2] Discovering and verifying pools ...")
-    result = _discover(w3, token_address, from_block, to_block, chain_id_val)
+    result = _discover(
+        w3,
+        token_address,
+        from_block,
+        to_block,
+        chain_id_val,
+        cache_dir=out / "dune_cache",
+        rpc_mode="auto",
+        on_progress=lambda msg: typer.echo("  {}".format(msg)),
+    )
     candidates = [_VP(**dict(pdata)) for pdata in result["pools"]]
     verified_pools = _verify(
         w3, candidates, target_token=token_address,
@@ -447,7 +612,7 @@ def holdings(
     typer.echo("[3] Indexing token transfer events ...")
     indexed = _index(
         w3, verified_pools, target_token, from_block, to_block,
-        output_dir=output_dir, index_token_transfer=True,
+        output_dir=output_dir, index_token_transfer=True, source="auto",
     )
     transfers = indexed["transfers"]
     typer.echo("  {} transfer events indexed".format(len(transfers)))
@@ -491,6 +656,48 @@ def dashboard(
     """
     dashboard_path = generate_dashboard(output_dir=output_dir)
     typer.echo("Dashboard generated: {}".format(dashboard_path))
+
+
+@app.command("serve-dashboard")
+def serve_dashboard(
+    output_dir: str = typer.Option("output", help="Output directory"),
+    port: int = typer.Option(8080, help="HTTP port"),
+    host: str = typer.Option("127.0.0.1", help="Bind host"),
+):
+    """Serve local dashboard.html over HTTP (for Tailscale serve/funnel)."""
+    import http.server
+    import socketserver
+    import webbrowser
+
+    out = Path(output_dir).resolve()
+    dash = out / "dashboard.html"
+    if not dash.exists():
+        typer.echo(
+            "Missing {}. Run `python3 -m src.cli dashboard --output-dir {}` first.".format(
+                dash, output_dir
+            ),
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    class _Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=str(out), **kwargs)
+
+        def log_message(self, fmt, *args):
+            typer.echo(fmt % args)
+
+    typer.echo("Serving {} on http://{}:{}/dashboard.html".format(out, host, port))
+    typer.echo("For Tailscale: `tailscale serve {}` or `tailscale funnel --https=443 {}`".format(port, port))
+    try:
+        webbrowser.open("http://{}:{}/dashboard.html".format(host, port))
+    except Exception:
+        pass
+    with socketserver.TCPServer((host, port), _Handler) as httpd:
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            typer.echo("\nStopped.")
 
 
 @app.command()
@@ -627,13 +834,13 @@ def dune(
 def _echo_dune_data_map() -> None:
     """Print the Dune data map (what comes from Dune vs RPC)."""
     typer.echo("=== Dune data map ===")
-    typer.echo("Pool discovery      : Dune dex.trades -> dune_pools.json")
-    typer.echo("Swaps              : Dune dex.trades -> dune_swaps.json")
+    typer.echo("Pool discovery      : Dune dex.trades (analyze step 2)")
+    typer.echo("Event indexing      : Dune swaps + V2/V3 Mint/Burn + ERC20 Transfer")
+    typer.echo("                      (--index-source auto|dune; falls back to RPC)")
     typer.echo("Holdings addresses : Dune erc20_ethereum.evt_Transfer")
-    typer.echo("Holdings balances  : Dune tokens_ethereum.balances")
-    typer.echo("Pool TVL           : Dune dex.pool_tvl -> dune_tvl.json")
-    typer.echo("Balancer liquidity : Dune balancer_v2_ethereum.Vault_evt_PoolBalanceChanged")
-    typer.echo("Curve liquidity    : RPC (per-pool contracts; Dune tables are per-pool)")
+    typer.echo("Holdings balances  : Dune balances_ethereum.latest (fallback RPC)")
+    typer.echo("Pool TVL           : Dune dex.pool_tvl (CLI) / RPC in metrics snapshots")
+    typer.echo("Balancer / V4 LP   : partial on Dune; swaps covered via dex.trades")
     typer.echo("Verification       : RPC (bytecode/factory/state checks)")
     typer.echo("Positions          : RPC (balanceOf/totalSupply snapshots)")
 

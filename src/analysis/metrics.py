@@ -12,6 +12,8 @@ from web3 import Web3
 from ..client import get_contract
 from ..models import NormalizedEvent, Position, VerifiedPool
 
+_ZERO_ADDR = "0x0000000000000000000000000000000000000000"
+
 
 def estimate_price_v2(
     pool: VerifiedPool,
@@ -95,7 +97,9 @@ def calculate_tvl_v2(
 
 
 
-def _snapshot_curve_tvl(w3, pool, target_token) -> int:
+def _snapshot_curve_tvl(
+    w3, pool, target_token, block_identifier: int | str = "latest"
+) -> int:
     """Approximate Curve pool TVL in target-token raw units.
 
     Uses ``coins(i)`` + ``balances(i)`` and assumes the pool targets a
@@ -111,7 +115,9 @@ def _snapshot_curve_tvl(w3, pool, target_token) -> int:
     coin_addrs: list[str] = []
     for i in range(8):
         try:
-            c = Web3.to_checksum_address(contract.functions.coins(i).call())
+            c = Web3.to_checksum_address(
+                contract.functions.coins(i).call(block_identifier=block_identifier)
+            )
         except Exception:
             break
         if c.lower() == _ZERO_ADDR.lower():
@@ -126,7 +132,9 @@ def _snapshot_curve_tvl(w3, pool, target_token) -> int:
         return 0
     try:
         target_bal = int(
-            contract.functions.balances(target_idx).call()
+            contract.functions.balances(target_idx).call(
+                block_identifier=block_identifier
+            )
         )
     except Exception:
         target_bal = 0
@@ -136,7 +144,9 @@ def _snapshot_curve_tvl(w3, pool, target_token) -> int:
     return target_bal * n
 
 
-def _snapshot_balancer_tvl(w3, pool, target_token) -> int:
+def _snapshot_balancer_tvl(
+    w3, pool, target_token, block_identifier: int | str = "latest"
+) -> int:
     """Approximate Balancer V2 pool TVL in target-token raw units.
 
     Reads balances from the Vault via ``getPoolTokens(poolId)`` and uses
@@ -148,7 +158,9 @@ def _snapshot_balancer_tvl(w3, pool, target_token) -> int:
     try:
         vault = get_contract(w3, vault_addr, "balancer_vault")
         pool_id = pool.pool_address.lower() + "0" * 24
-        tokens, balances, _ = vault.functions.getPoolTokens(pool_id).call()
+        tokens, balances, _ = vault.functions.getPoolTokens(pool_id).call(
+            block_identifier=block_identifier
+        )
     except Exception:
         return 0
     if not tokens:
@@ -169,11 +181,20 @@ def snapshot_onchain_pool_tvl(
     w3: Web3,
     verified_pools: list[VerifiedPool],
     target_token: str,
+    block_identifier: int | str = "latest",
 ) -> dict[str, int]:
-    """Read live pool balances/reserves and return TVL in target-token raw units."""
+    """Read pool balances/reserves and return TVL in target-token raw units."""
     target = Web3.to_checksum_address(target_token)
     token = get_contract(w3, target, "erc20")
     tvl_by_pool: dict[str, int] = {}
+
+    def _call_with_fallback(fn):
+        try:
+            return fn(block_identifier)
+        except Exception:
+            if block_identifier == "latest":
+                raise
+            return fn("latest")
 
     for pool in verified_pools:
         if not pool.verified:
@@ -182,15 +203,37 @@ def snapshot_onchain_pool_tvl(
         try:
             if pool.version == "v2":
                 pair = get_contract(w3, pa, "uniswap_v2_pair")
-                reserve0, reserve1, _ = pair.functions.getReserves().call()
+                reserve0, reserve1, _ = _call_with_fallback(
+                    lambda blk: pair.functions.getReserves().call(
+                        block_identifier=blk
+                    )
+                )
                 tvl = int(calculate_tvl_v2(pool, target, int(reserve0), int(reserve1)))
             elif pool.protocol == "curve":
-                tvl = _snapshot_curve_tvl(w3, pool, target)
+                tvl = _snapshot_curve_tvl(
+                    w3, pool, target, block_identifier=block_identifier
+                )
+                if tvl <= 0 and block_identifier != "latest":
+                    tvl = _snapshot_curve_tvl(
+                        w3, pool, target, block_identifier="latest"
+                    )
             elif pool.protocol == "balancer":
-                tvl = _snapshot_balancer_tvl(w3, pool, target)
+                tvl = _snapshot_balancer_tvl(
+                    w3, pool, target, block_identifier=block_identifier
+                )
+                if tvl <= 0 and block_identifier != "latest":
+                    tvl = _snapshot_balancer_tvl(
+                        w3, pool, target, block_identifier="latest"
+                    )
             else:
                 # V3 / others: target-token balance held by the pool contract
-                bal = int(token.functions.balanceOf(Web3.to_checksum_address(pa)).call())
+                bal = int(
+                    _call_with_fallback(
+                        lambda blk: token.functions.balanceOf(
+                            Web3.to_checksum_address(pa)
+                        ).call(block_identifier=blk)
+                    )
+                )
                 # Approximate full-pool TVL as 2x the target side when target is in the pair
                 t0 = Web3.to_checksum_address(pool.token0)
                 t1 = Web3.to_checksum_address(pool.token1)
@@ -368,13 +411,31 @@ def calculate_lp_concentration(
     positions: list[Position],
     top_n: int = 5,
 ) -> dict[str, Any]:
-    """Calculate LP concentration: top LP and top-N shares."""
+    """Calculate LP concentration: top LP and top-N shares.
+
+    Computed per-pool (``share_pct`` is pool-local), then aggregated as the
+    max across pools so multi-pool positions cannot sum past 100%.
+    """
     if not positions:
         return {"top_lp_share": 0, "top_n_share": 0, "num_lps": 0}
 
-    sorted_pos = sorted(positions, key=lambda p: p.share_pct, reverse=True)
-    top_lp_share = sorted_pos[0].share_pct if sorted_pos else 0
-    top_n_share = sum(p.share_pct for p in sorted_pos[:top_n])
+    by_pool: dict[str, list[Position]] = defaultdict(list)
+    for pos in positions:
+        by_pool[pos.pool_address or ""].append(pos)
+
+    pool_top_lp: list[float] = []
+    pool_top_n: list[float] = []
+    for pos_list in by_pool.values():
+        sorted_pos = sorted(pos_list, key=lambda p: p.share_pct, reverse=True)
+        if not sorted_pos:
+            continue
+        pool_top_lp.append(float(sorted_pos[0].share_pct or 0))
+        pool_top_n.append(
+            min(100.0, sum(float(p.share_pct or 0) for p in sorted_pos[:top_n]))
+        )
+
+    top_lp_share = max(pool_top_lp) if pool_top_lp else 0.0
+    top_n_share = max(pool_top_n) if pool_top_n else 0.0
 
     return {
         "top_lp_share": round(top_lp_share, 6),
@@ -382,6 +443,7 @@ def calculate_lp_concentration(
         "top_{}_share".format(top_n): round(top_n_share, 6),
         "total_lp_positions": len(positions),
         "num_lps": len(set(p.owner for p in positions)),
+        "aggregation": "max_across_pools",
     }
 
 
@@ -459,6 +521,7 @@ def calculate_all_metrics(
     incident_block: int = 0,
     output_dir: str | Path = "output",
     w3: Optional[Web3] = None,
+    to_block: int = 0,
 ) -> dict[str, Any]:
     """Main entry point: compute all liquidity and risk metrics."""
     out = Path(output_dir)
@@ -469,15 +532,20 @@ def calculate_all_metrics(
     _write_json(out / "tvl_timeline.json", timeline)
 
     onchain_tvl = None
+    snapshot_block: int | str = int(to_block) if to_block else "latest"
     if w3 is not None:
         try:
-            onchain_tvl = snapshot_onchain_pool_tvl(w3, verified_pools, target_token)
+            onchain_tvl = snapshot_onchain_pool_tvl(
+                w3, verified_pools, target_token, block_identifier=snapshot_block
+            )
         except Exception:
             onchain_tvl = None
 
     pool_conc = calculate_pool_concentration(
         verified_pools, timeline, onchain_tvl=onchain_tvl
     )
+    if onchain_tvl is not None:
+        pool_conc["snapshot_block"] = snapshot_block
     lp_conc = calculate_lp_concentration(positions)
 
     pre_event_tvl = int(pool_conc.get("total_tvl", 0) or 0)
