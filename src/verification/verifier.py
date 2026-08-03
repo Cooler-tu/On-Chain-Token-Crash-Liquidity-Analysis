@@ -187,7 +187,27 @@ def _verify_v4_pool(
         checks_passed += 1
 
     if not pool.pool_id:
-        pool.pool_id = pool.pool_address
+        # Prefer bytes32 pool_address; never promote the PoolManager (20-byte) to pool_id.
+        addr = (pool.pool_address or "").lower()
+        factory = (pool.factory_address or "").lower()
+        if addr.startswith("0x") and len(addr) == 66:
+            pool.pool_id = pool.pool_address
+        elif addr and addr != factory:
+            pool.pool_id = pool.pool_address
+
+    # Reject obviously wrong IDs (PoolManager address mistaken for poolId).
+    pid = (pool.pool_id or "").lower()
+    factory = (pool.factory_address or "").lower()
+    if pid and len(pid) == 42 and pid == factory:
+        pool.pool_id = None
+        pool.verified = False
+        pool.verification_confidence = 0.0
+        return pool
+
+    if not pool.pool_id:
+        pool.verified = False
+        pool.verification_confidence = 0.0
+        return pool
 
     if state_view_addr:
         checks_total += 1

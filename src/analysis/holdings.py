@@ -103,32 +103,42 @@ def analyze_holdings(
     )
     if force_dune:
         try:
-            from ..data.dune_holdings import (
-                dune_api_key_configured,
-                fetch_token_balances_from_dune,
-                fetch_transfer_addresses_from_dune,
-            )
-            if not dune_api_key_configured() and source_norm == "dune":
+            from ..data.dune import configured, query
+            if not configured() and source_norm == "dune":
                 raise RuntimeError("DUNE_API_KEY is not set")
-            if dune_api_key_configured():
-                for row in fetch_transfer_addresses_from_dune(
-                    token_address, from_block, to_block
+            if configured():
+                cache = out / "dune_cache" / "holdings"
+                for row in query(
+                    "transfer_addresses",
+                    cache_dir=cache,
+                    token=token_address,
+                    from_block=from_block,
+                    to_block=to_block,
                 ):
-                    addr = row["address"]
+                    addr = Web3.to_checksum_address(str(row["address"]))
                     unique_addresses.add(addr)
                     address_tx_count[addr] = int(row.get("tx_count") or 0)
                     address_first_seen[addr] = int(row.get("first_seen_block") or 0)
                     address_last_seen[addr] = int(row.get("last_seen_block") or 0)
-                # Only ask Dune for balances of the busiest addresses.
                 ranked = sorted(
                     unique_addresses,
                     key=lambda a: (-address_tx_count.get(a, 0), a.lower()),
                 )
-                balances.update(
-                    fetch_token_balances_from_dune(
-                        token_address, ranked[: max(50, max_rpc_balances)]
-                    )
-                )
+                top = ranked[: max(50, max_rpc_balances)]
+                if top:
+                    for row in query(
+                        "balances",
+                        cache_dir=cache,
+                        token=token_address,
+                        address_list=top,
+                    ):
+                        try:
+                            addr = Web3.to_checksum_address(str(row["address"]))
+                            bal = row.get("balance_raw")
+                            if bal is not None:
+                                balances[addr] = str(int(bal))
+                        except Exception:
+                            continue
                 used_source = "dune"
         except Exception as exc:
             dune_error = str(exc)
@@ -154,29 +164,39 @@ def analyze_holdings(
         )
         used_source = "index"
 
-    # Always include verified pools for labeling / balance snapshot
+    # Always include verified pools for labeling / balance snapshot.
+    # V4 pool_address is often a bytes32 poolId — use custody (PoolManager) instead.
+    def _holder_addr(raw: str) -> Optional[str]:
+        if not raw or not str(raw).startswith("0x"):
+            return None
+        if len(str(raw)) != 42:
+            return None
+        try:
+            return Web3.to_checksum_address(raw)
+        except Exception:
+            return None
+
     for p in verified_pools:
-        for raw in (p.pool_address, p.custody_address or ""):
-            if not raw:
-                continue
-            try:
-                addr = Web3.to_checksum_address(raw)
-            except Exception:
+        for raw in (p.custody_address or "", p.pool_address or ""):
+            addr = _holder_addr(raw)
+            if not addr:
                 continue
             unique_addresses.add(addr)
             address_tx_count.setdefault(addr, 0)
             address_first_seen.setdefault(addr, from_block)
             address_last_seen.setdefault(addr, to_block)
 
-    # Fill missing balances via RPC balanceOf at analysis window end.
-    # Cap calls: prefer pools + highest-activity addresses first.
+    # Fill missing balances: Dune latest table first (one SQL), then capped
+    # historical RPC balanceOf at to_block for gaps (pools prioritized).
     token_contract = get_contract(w3, token_address, "erc20")
     query_timestamp = int(datetime.now(timezone.utc).timestamp())
     balance_block = int(to_block) if to_block else "latest"
-    pool_addrs_l = {
-        Web3.to_checksum_address(p.pool_address).lower()
-        for p in verified_pools if p.pool_address
-    }
+    pool_addrs_l: set[str] = set()
+    for p in verified_pools:
+        for raw in (p.custody_address or "", p.pool_address or ""):
+            addr = _holder_addr(raw)
+            if addr:
+                pool_addrs_l.add(addr.lower())
     missing = [a for a in unique_addresses if a not in balances]
     missing.sort(
         key=lambda a: (
@@ -185,9 +205,52 @@ def analyze_holdings(
             a.lower(),
         )
     )
+    dune_filled = 0
+    if missing and used_source != "dune":
+        try:
+            from ..data.dune import configured, query
+            if configured():
+                cache = out / "dune_cache" / "holdings"
+                top = missing[: max(50, max_rpc_balances * 3)]
+                for batch_start in range(0, len(top), 80):
+                    batch = top[batch_start : batch_start + 80]
+                    for row in query(
+                        "balances",
+                        cache_dir=cache,
+                        token=token_address,
+                        address_list=batch,
+                        chunk_blocks=0,
+                    ):
+                        try:
+                            addr = Web3.to_checksum_address(str(row["address"]))
+                            bal = row.get("balance_raw")
+                            if bal is not None and addr not in balances:
+                                balances[addr] = str(int(bal))
+                                dune_filled += 1
+                        except Exception:
+                            continue
+                if dune_filled:
+                    print(
+                        "  [holdings] Dune balances.latest filled {} addr(s)".format(
+                            dune_filled
+                        )
+                    )
+                    missing = [a for a in unique_addresses if a not in balances]
+                    missing.sort(
+                        key=lambda a: (
+                            0 if a.lower() in pool_addrs_l else 1,
+                            -address_tx_count.get(a, 0),
+                            a.lower(),
+                        )
+                    )
+        except Exception as exc:
+            print("  [holdings] Dune balance fill skipped: {}".format(exc))
     rpc_budget = max(0, int(max_rpc_balances))
-    to_query = missing[:rpc_budget]
-    skipped_balances = missing[rpc_budget:]
+    # Always RPC-check pool custody at to_block (historical accuracy).
+    pool_missing = [a for a in missing if a.lower() in pool_addrs_l]
+    other_missing = [a for a in missing if a.lower() not in pool_addrs_l]
+    to_query = (pool_missing + other_missing)[:rpc_budget]
+    skipped_balances = [a for a in missing if a not in to_query]
     for addr in to_query:
         try:
             bal = token_contract.functions.balanceOf(
@@ -210,6 +273,10 @@ def analyze_holdings(
         balance_source = "dune+rpc"
     elif used_source == "dune" and not missing:
         balance_source = "dune"
+    elif dune_filled and to_query:
+        balance_source = "dune_latest+rpc_capped"
+    elif dune_filled:
+        balance_source = "dune_latest"
     elif used_source == "index" and to_query:
         balance_source = "rpc_capped"
     elif skipped_balances and to_query:

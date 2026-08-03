@@ -1,32 +1,29 @@
 # Dune SQL templates
 
-Edit these `.sql` files to change what we pull from Dune.
-Python (`dune_collector.py`) only substitutes placeholders and runs the API.
+Call from Python:
 
-## Placeholders
+```python
+from src.data.dune import configured, query
 
-| Placeholder | Meaning | Example |
-|-------------|---------|---------|
-| `{{token}}` | token address (0x… lowercase) | `0xd533…` |
-| `{{chain}}` | Dune blockchain name | `ethereum` |
-| `{{from_block}}` / `{{to_block}}` | inclusive block window | `22000000` |
-| `{{pool_list}}` | comma-separated pool addresses | `0xabc…, 0xdef…` |
-| `{{pool_filter}}` | optional AND clause (may be empty) | `AND project_contract_address IN (…)` |
-| `{{address_list}}` | wallet IN-list for balances | `0x…, 0x…` |
-| `{{zero_address}}` | zero address literal | `0x000…000` |
-
-## Try in Dune UI
-
-1. Open a `.sql` file
-2. Replace `{{…}}` with real values
-3. Run on [dune.com](https://dune.com)
-4. Paste back / commit when it works
-
-## Run collector
-
-```bash
-python3 -m src.data.dune_collector \
-  --token 0xD533a949740bb3306d119CC777fa900bA034cd52 \
-  --from-block 22000000 --to-block 22005000 \
-  --out-dir dune_cache/crv
+if configured():
+    rows = query("pools", token="0x…", from_block=N, to_block=M, cache_dir="output/dune_cache")
 ```
+
+| Template | Step |
+|----------|------|
+| `pools.sql` | Discovery (non-V4) |
+| `pools_v4.sql` | Discovery — real V4 bytes32 poolIds |
+| `swaps.sql` | Index swaps |
+| `liquidity_uniswap_v2_*.sql` / `v3_*.sql` | Index V2/V3 LP |
+| `liquidity_uniswap_v4_modify.sql` | Index V4 LP by poolId |
+| `liquidity_uniswap_v3_npm_token_ids.sql` | Positions RPC-fallback tokenIds |
+| `positions_uniswap_v3_snapshot.sql` | Positions — V3 owner+L+ticks at to_block |
+| `positions_uniswap_v3_base.sql` | Positions — V3 mint→tokenId (staged) |
+| `positions_uniswap_v3_liquidity.sql` | Positions — V3 net L for tokenId list |
+| `positions_uniswap_v4_liquidity.sql` | Positions — V4 net L by poolId+salt |
+| `positions_nft_owners.sql` | Positions — ERC721 owners for tokenId list |
+| `pool_sqrt_price_v3.sql` | Positions — last V3 sqrtPriceX96 |
+| `transfers.sql` | Index ERC20 transfers |
+| `transfer_addresses.sql` / `balances.sql` | Holdings (optional) |
+| `swaps_by_pool.sql` / `pool_tvl.sql` | CLI helpers |
+| `token_meta.sql` | Optional metadata |

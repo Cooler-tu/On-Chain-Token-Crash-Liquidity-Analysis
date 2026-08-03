@@ -1,32 +1,5 @@
 [
   {
-    "address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
-    "label": "Factory (uniswap)_v4",
-    "category": "protocol_deployment",
-    "confidence": 1.0,
-    "evidence": [
-      "Whitelisted protocol factory"
-    ]
-  },
-  {
-    "address": "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e",
-    "label": "PositionManager (uniswap_v4)",
-    "category": "position_manager",
-    "confidence": 1.0,
-    "evidence": [
-      "Manages LP position NFTs"
-    ]
-  },
-  {
-    "address": "0x66a9893Cc07d91d95644cfDcE5591279A7Dd6748",
-    "label": "Router (uniswap_v4)",
-    "category": "router",
-    "confidence": 1.0,
-    "evidence": [
-      "Protocol router for swaps"
-    ]
-  },
-  {
     "address": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
     "label": "Factory (uniswap)_v3",
     "category": "protocol_deployment",
@@ -63,6 +36,33 @@
     ]
   },
   {
+    "address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+    "label": "Factory (uniswap)_v4",
+    "category": "protocol_deployment",
+    "confidence": 1.0,
+    "evidence": [
+      "Whitelisted protocol factory"
+    ]
+  },
+  {
+    "address": "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e",
+    "label": "PositionManager (uniswap_v4)",
+    "category": "position_manager",
+    "confidence": 1.0,
+    "evidence": [
+      "Manages LP position NFTs"
+    ]
+  },
+  {
+    "address": "0x66a9893Cc07d91d95644cfDcE5591279A7Dd6748",
+    "label": "Router (uniswap_v4)",
+    "category": "router",
+    "confidence": 1.0,
+    "evidence": [
+      "Protocol router for swaps"
+    ]
+  },
+  {
     "address": "0x02eD43292C6be3F49f2B287C499C77560E426E83",
     "label": "Deployer",
     "category": "token_creator",
@@ -72,13 +72,353 @@
     ]
   },
   {
-    "address": "0xB3aA9923489Bc2BFEc323Bf05346AcD4afbc92A0",
+    "address": "0x68AB1FB84eEE0C3B087302F424467fcD1c604AE4",
     "label": "Whale LP",
     "category": "large_liquidity_provider",
     "confidence": 0.8,
     "evidence": [
-      "LP share: 52.49%",
-      "Pool: 0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775"
+      "LP share: 8.03%",
+      "Pool: 0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21"
+    ]
+  },
+  {
+    "address": "0x3aEb4a9Cc29C1c83a35AfA29Beb1933fb9F32Ff3",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 17.52%",
+      "Pool: 0xa28b1e4224e9096d88da48b9a884b77dde28b3434490738964d81f4b8683373f"
+    ]
+  },
+  {
+    "address": "0x0a40De5dDDE08Ce34048fC0A8627912cb4fCfc61",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 100.00%",
+      "Pool: 0xd470e7683562410bf7c285d397b406cf95c4bb1fe76d9f62c28c6dc219627060"
+    ]
+  },
+  {
+    "address": "0xb1b775699A2d26Ea9a0050c8c7fB4a0c98033b40",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 10.10%",
+      "Pool: 0xa28b1e4224e9096d88da48b9a884b77dde28b3434490738964d81f4b8683373f"
+    ]
+  },
+  {
+    "address": "0x4382e6e8c5F85DbaEd55d00D83dFD407e3a43962",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 20.81%",
+      "Pool: 0xa871c0036ce8c1924b270d0959b53c9dbee487daf838e8b18d461a920dc920ea"
+    ]
+  },
+  {
+    "address": "0xBaF072587232b3C617811C41400090D5b05a37e8",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 7.50%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0xFD07345e7433bA954DDfEa2e2A0Bf8c860178aa2",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 19.75%",
+      "Pool: 0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21"
+    ]
+  },
+  {
+    "address": "0x920a25Ab35b733285EFC067A5EB72639c1a3cD42",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 7.98%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0x1dd06d1735356Ed27FC2cfd4Ac2eFB18892E1c39",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 35.07%",
+      "Pool: 0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433"
+    ]
+  },
+  {
+    "address": "0xbb0fe61c293354cd6c0Db0C4BaFf2cdebfb8dB4e",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 13.04%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0x2b36CBe91885040cD5e1f73d322cfd368310A34D",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 100.00%",
+      "Pool: 0xe1dfa27c22e8a4911ce89c59c71fe0cbf837546f23dc2c49d3113fb1a8241483"
+    ]
+  },
+  {
+    "address": "0xdF78f8a5BcEa7dBD02d2469Dfb0f02d01B3BD316",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 5.17%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0x0eEefFc4A5f297846CbD97189BC1be18608346EC",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 33.74%",
+      "Pool: 0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21"
+    ]
+  },
+  {
+    "address": "0x0d56D0f7d148b75af0527A5Cea73Ab926b59A190",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 31.87%",
+      "Pool: 0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433"
+    ]
+  },
+  {
+    "address": "0xF9DE33A560F8A1b42Fe6beA12F38356CC26F8903",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 73.23%",
+      "Pool: 0x259d3ac6dc6d22ac5aebdba55ba32bf3bcc5dd62b954d4873b2cd562259850ee"
+    ]
+  },
+  {
+    "address": "0x1b4BF2d6Fc540d243C96C11d808E97522FEE6E1A",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 26.77%",
+      "Pool: 0x259d3ac6dc6d22ac5aebdba55ba32bf3bcc5dd62b954d4873b2cd562259850ee"
+    ]
+  },
+  {
+    "address": "0x76450FE69FbF5EfE18E014Fd19D15202d1B238d0",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 11.71%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0x589d6Fe4be8c5d90f9E91d64c405541F949c577b",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 100.00%",
+      "Pool: 0xc6cea77726a4cfb835390801451b9abe851e4050a9fa8a0e2eea339f880af3b4"
+    ]
+  },
+  {
+    "address": "0x147AECa171a79466Fe9E2c03f21b45155Ff403F8",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 36.96%",
+      "Pool: 0x94af294207a2c592c08a39c82a7df42a18613d986eeb520b7164fe9ccd66a000"
+    ]
+  },
+  {
+    "address": "0x7f27D26398CAb21998CDe56dd7dF89Cb81aebD42",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 5.42%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0xa21957306BD617E489f2A4070975e5Abf4F6F1AF",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 6.92%",
+      "Pool: 0x18aeda83c51876cab01f5896839c9863d7fb30ca024e4479cc4984e7d835ec7a"
+    ]
+  },
+  {
+    "address": "0xBef147E2404eAF8C5642B560abFdcEFbFBB28f38",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 7.09%",
+      "Pool: 0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21"
+    ]
+  },
+  {
+    "address": "0xF5241939809c5fe43cD1de0Be03FD3545692b558",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 12.73%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0xE0DD25972a4907879335880F2adDBeb53264F3Df",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 100.00%",
+      "Pool: 0x2b19b55ee60ebf4bddda01f9b59f4e11987e74db3d2831837289918efe983a9e"
+    ]
+  },
+  {
+    "address": "0x3A664c54Dfe28Fd8bAf2380c86DAEF2F777a5C29",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 6.11%",
+      "Pool: 0xc28dd8d8f8d1eaca22fb881602122aed85002e1cc2e8b14c9cfa18bffeb54433"
+    ]
+  },
+  {
+    "address": "0x791BC2E9b8af6463feBc52FD500399a3a7395Ce5",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 34.66%",
+      "Pool: 0xa28b1e4224e9096d88da48b9a884b77dde28b3434490738964d81f4b8683373f"
+    ]
+  },
+  {
+    "address": "0xF42D657C6642dB3F4F1A8DfA48C8AffA706F6D21",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 8.72%",
+      "Pool: 0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21"
+    ]
+  },
+  {
+    "address": "0xfE8e9273aB86B12C0102202F3DaA073Eb14a509F",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 6.30%",
+      "Pool: 0x94af294207a2c592c08a39c82a7df42a18613d986eeb520b7164fe9ccd66a000"
+    ]
+  },
+  {
+    "address": "0x751809994899078F72A3eD0BDc6d079AC19BbCAf",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 100.00%",
+      "Pool: 0x107f141b19cfd7af731a703879804f76faf149306401e20b79e7658628ba5068"
+    ]
+  },
+  {
+    "address": "0x1a36667CF81Da1fE9dc263B9CFd555E2c5a8fc6B",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 9.73%",
+      "Pool: 0xe7e394a49ecc14872b8c9d46c08a3f3f11f260a7551cca4f603756990bc35a85"
+    ]
+  },
+  {
+    "address": "0xB0f7E039B606972141Cb0267df9C998B377f02a1",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 13.46%",
+      "Pool: 0xa28b1e4224e9096d88da48b9a884b77dde28b3434490738964d81f4b8683373f"
+    ]
+  },
+  {
+    "address": "0x369227053DeD48BE2DeC9B04CB7b312Fc09Dc381",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 93.08%",
+      "Pool: 0x18aeda83c51876cab01f5896839c9863d7fb30ca024e4479cc4984e7d835ec7a"
+    ]
+  },
+  {
+    "address": "0x89B585dF208c727829232d892A50806C3A20a4E6",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 48.80%",
+      "Pool: 0x94af294207a2c592c08a39c82a7df42a18613d986eeb520b7164fe9ccd66a000"
+    ]
+  },
+  {
+    "address": "0xee67b29f25a44A1cF65D3500aFCF29aF25033A67",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 17.39%",
+      "Pool: 0xa28b1e4224e9096d88da48b9a884b77dde28b3434490738964d81f4b8683373f"
+    ]
+  },
+  {
+    "address": "0x642fc004883398E1f8a756D741f15d6007822427",
+    "label": "Whale LP",
+    "category": "large_liquidity_provider",
+    "confidence": 0.8,
+    "evidence": [
+      "LP share: 11.09%",
+      "Pool: 0x2a1c3953050d960207992c60878c7371cfab656c2e55c61d10c2a8693559cd21"
     ]
   },
   {
@@ -87,7 +427,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 5345 transfer(s)"
+      "Received token in 3145 transfer(s)"
     ]
   },
   {
@@ -96,7 +436,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 1103 transfer(s)"
+      "Received token in 877 transfer(s)"
     ]
   },
   {
@@ -105,16 +445,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 960 transfer(s)"
-    ]
-  },
-  {
-    "address": "0x4C82D1fBFe28C977cBB58D8C7FF8FCF9F70a2cCA",
-    "label": "Frequent Token Receiver",
-    "category": "frequent_interactor",
-    "confidence": 0.5,
-    "evidence": [
-      "Received token in 615 transfer(s)"
+      "Received token in 722 transfer(s)"
     ]
   },
   {
@@ -123,7 +454,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 572 transfer(s)"
+      "Received token in 523 transfer(s)"
     ]
   },
   {
@@ -132,7 +463,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 506 transfer(s)"
+      "Received token in 485 transfer(s)"
     ]
   },
   {
@@ -141,7 +472,16 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 381 transfer(s)"
+      "Received token in 344 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x4C82D1fBFe28C977cBB58D8C7FF8FCF9F70a2cCA",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 305 transfer(s)"
     ]
   },
   {
@@ -150,25 +490,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 346 transfer(s)"
-    ]
-  },
-  {
-    "address": "0x3611B82c7B13e72b26eb0E9BE0613bEE7A45aC7c",
-    "label": "Frequent Token Receiver",
-    "category": "frequent_interactor",
-    "confidence": 0.5,
-    "evidence": [
-      "Received token in 346 transfer(s)"
-    ]
-  },
-  {
-    "address": "0x13Be2E8e6877061032cDf813cB7FFfD934602992",
-    "label": "Frequent Token Receiver",
-    "category": "frequent_interactor",
-    "confidence": 0.5,
-    "evidence": [
-      "Received token in 304 transfer(s)"
+      "Received token in 220 transfer(s)"
     ]
   },
   {
@@ -177,7 +499,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 223 transfer(s)"
+      "Received token in 182 transfer(s)"
     ]
   },
   {
@@ -186,34 +508,7 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 199 transfer(s)"
-    ]
-  },
-  {
-    "address": "0x74de5d4FCbf63E00296fd95d33236B9794016631",
-    "label": "Frequent Token Receiver",
-    "category": "frequent_interactor",
-    "confidence": 0.5,
-    "evidence": [
-      "Received token in 168 transfer(s)"
-    ]
-  },
-  {
-    "address": "0x8F10B468b06c6FD214B65F87778827F7D113f996",
-    "label": "Frequent Token Receiver",
-    "category": "frequent_interactor",
-    "confidence": 0.5,
-    "evidence": [
-      "Received token in 165 transfer(s)"
-    ]
-  },
-  {
-    "address": "0x6747BcaF9bD5a5F0758Cbe08903490E45DdfACB5",
-    "label": "Frequent Token Receiver",
-    "category": "frequent_interactor",
-    "confidence": 0.5,
-    "evidence": [
-      "Received token in 160 transfer(s)"
+      "Received token in 135 transfer(s)"
     ]
   },
   {
@@ -222,7 +517,34 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 136 transfer(s)"
+      "Received token in 130 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x3611B82c7B13e72b26eb0E9BE0613bEE7A45aC7c",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 130 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x74de5d4FCbf63E00296fd95d33236B9794016631",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 128 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x6747BcaF9bD5a5F0758Cbe08903490E45DdfACB5",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 116 transfer(s)"
     ]
   },
   {
@@ -231,16 +553,25 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 119 transfer(s)"
+      "Received token in 104 transfer(s)"
     ]
   },
   {
-    "address": "0x06CFf7088619C7178F5e14f0B119458d08d2f5ef",
+    "address": "0xdD51eA746902382607923D96360e6A4Ee38FAF25",
     "label": "Frequent Token Receiver",
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 119 transfer(s)"
+      "Received token in 98 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x8F10B468b06c6FD214B65F87778827F7D113f996",
+    "label": "Frequent Token Receiver",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Received token in 86 transfer(s)"
     ]
   },
   {
@@ -249,25 +580,25 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 107 transfer(s)"
+      "Received token in 85 transfer(s)"
     ]
   },
   {
-    "address": "0xba4c928807450c57E4F5Aa18cd507987840847bf",
+    "address": "0xB55a7B37A99e9728EB4d195Ba5645bDd3F66862F",
     "label": "Frequent Token Receiver",
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Received token in 87 transfer(s)"
+      "Received token in 82 transfer(s)"
     ]
   },
   {
-    "address": "0x4313C378Cc91eA583C91387B9216e2c03096b27f",
-    "label": "Frequent Token Sender",
+    "address": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
+    "label": "Frequent Token Receiver",
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Sent token in 158 transfer(s)"
+      "Received token in 76 transfer(s)"
     ]
   },
   {
@@ -276,7 +607,16 @@
     "category": "frequent_interactor",
     "confidence": 0.5,
     "evidence": [
-      "Sent token in 114 transfer(s)"
+      "Sent token in 90 transfer(s)"
+    ]
+  },
+  {
+    "address": "0x88538812e41b89689f5e23871ef5d5CE2be0F987",
+    "label": "Frequent Token Sender",
+    "category": "frequent_interactor",
+    "confidence": 0.5,
+    "evidence": [
+      "Sent token in 60 transfer(s)"
     ]
   },
   {
