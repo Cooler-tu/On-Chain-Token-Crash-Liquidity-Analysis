@@ -1,63 +1,7 @@
 {
-  "total_positions": 265,
-  "total_unique_holders": 148,
-  "snapshot_block": 25020000,
+  "total_positions": 0,
+  "total_unique_holders": 0,
+  "snapshot_block": 19607000,
   "share_basis": "v3_tick_token_value_over_pool_balances;v4_in_range_L_over_pool_active_liquidity;v1_v2_lp_balance_share",
-  "top_5_holders": [
-    {
-      "owner": "0x0a40De5dDDE08Ce34048fC0A8627912cb4fCfc61",
-      "share_pct": 100.0,
-      "pool": "0xd470e7683562410bf7c285d397b406cf95c4bb1fe76d9f62c28c6dc219627060",
-      "liquidity": "202684692215225601",
-      "token0_amount": "23007473618081479",
-      "token1_amount": "33872478279796345",
-      "tick_lower": 780,
-      "tick_upper": 6708,
-      "resolution_method": "v4_dune_active_liquidity_share_at_to_block"
-    },
-    {
-      "owner": "0x2b36CBe91885040cD5e1f73d322cfd368310A34D",
-      "share_pct": 100.0,
-      "pool": "0xe1dfa27c22e8a4911ce89c59c71fe0cbf837546f23dc2c49d3113fb1a8241483",
-      "liquidity": "47384172770843",
-      "token0_amount": "40785672401285737",
-      "token1_amount": "1929886322",
-      "tick_lower": -887046,
-      "tick_upper": -201468,
-      "resolution_method": "v4_dune_active_liquidity_share_at_to_block"
-    },
-    {
-      "owner": "0x589d6Fe4be8c5d90f9E91d64c405541F949c577b",
-      "share_pct": 100.0,
-      "pool": "0xc6cea77726a4cfb835390801451b9abe851e4050a9fa8a0e2eea339f880af3b4",
-      "liquidity": "6375415613978",
-      "token0_amount": "65531443089008174",
-      "token1_amount": "56578314",
-      "tick_lower": -206880,
-      "tick_upper": -191040,
-      "resolution_method": "v4_dune_active_liquidity_share_at_to_block"
-    },
-    {
-      "owner": "0xE0DD25972a4907879335880F2adDBeb53264F3Df",
-      "share_pct": 100.0,
-      "pool": "0x2b19b55ee60ebf4bddda01f9b59f4e11987e74db3d2831837289918efe983a9e",
-      "liquidity": "9474251496880",
-      "token0_amount": "231441602954607470",
-      "token1_amount": "387836241",
-      "tick_lower": -882000,
-      "tick_upper": 882000,
-      "resolution_method": "v4_dune_active_liquidity_share_at_to_block"
-    },
-    {
-      "owner": "0x0a40De5dDDE08Ce34048fC0A8627912cb4fCfc61",
-      "share_pct": 100.0,
-      "pool": "0x5615ef19f5d58bf6978c08015b7b5aa77f0621a00836e346c9cf06c9a6d28194",
-      "liquidity": "294206492922844240956",
-      "token0_amount": "117795904831090513",
-      "token1_amount": "21707135013674001534515",
-      "tick_lower": 110000,
-      "tick_upper": 118000,
-      "resolution_method": "v4_dune_active_liquidity_share_at_to_block"
-    }
-  ]
+  "top_5_holders": []
 }

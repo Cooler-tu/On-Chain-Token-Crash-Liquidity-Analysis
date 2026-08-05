@@ -1,10 +1,10 @@
 {
-  "final_score": 0.4125,
-  "risk_level": "MEDIUM",
-  "raw_score": 0.7125,
-  "evidence_confidence": 1.0,
-  "migration_adjusted": true,
-  "migration_note": "Liquidity migration detected \u2014 reducing risk by 0.30.",
+  "final_score": 0.1971,
+  "risk_level": "LOW",
+  "raw_score": 0.27,
+  "evidence_confidence": 0.73,
+  "migration_adjusted": false,
+  "migration_note": "",
   "features": {
     "pool_concentration": {
       "value": 1.0,
@@ -13,21 +13,21 @@
       "raw_data": 1.0
     },
     "lp_concentration": {
-      "value": 1.0,
+      "value": 0.0,
       "weight": 0.15,
-      "description": "Largest LP holds 100.00% of pool shares.",
-      "raw_data": 100.0
+      "description": "Largest LP holds 0.00% of pool shares.",
+      "raw_data": 0.0
     },
     "withdrawal_severity": {
-      "value": 1.0,
+      "value": 0.0,
       "weight": 0.2,
-      "description": "Liquidity removed is 100.00% of reference TVL.",
-      "raw_data": 1.0
+      "description": "Liquidity removed is 0.00% of reference TVL.",
+      "raw_data": 0.0
     },
     "temporal_proximity": {
-      "value": 0.45,
+      "value": 0.0,
       "weight": 0.15,
-      "description": "No incident block \u2014 426 liquidity removals in window."
+      "description": "No withdrawals to evaluate."
     },
     "role_sensitivity": {
       "value": 0.8,
@@ -40,9 +40,9 @@
       "description": "No incident block \u2014 market impact requires a crash reference."
     },
     "combined_activity": {
-      "value": 0.5,
+      "value": 0.0,
       "weight": 0.05,
-      "description": "Suspicious activity: 426 withdrawals."
+      "description": "Suspicious activity: 0 withdrawals."
     }
   }
 }

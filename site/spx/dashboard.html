@@ -113,7 +113,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>All Non-Pool Holders</h2>
+      <h2>Largest token balances (pool contracts excluded)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Ranked by ERC-20 balance. Pool <em>contracts</em> (the addresses that custody AMM reserves) are listed separately below — LP providers and other wallets are still included here. DEX = venue activity in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = no DEX link found.</p>
       <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (SPX)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr><td>1</td><td class="addr">0x0376b46804BE07379829bb321002EC170D52cBfc</td><td>0.0000 SPX</td><td>1</td><td></td></tr>
 <tr><td>2</td><td class="addr">0x2dfaDAB8266483beD9Fd9A292Ce56596a2D1378D</td><td>0.0000 SPX</td><td>2</td><td></td></tr></tbody></table></div>
     </div>
@@ -121,7 +122,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>Pool-Labeled Addresses</h2>
+      <h2>DEX pool contracts (token reserves)</h2>
       <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody><tr><td class="addr">0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39</td><td>UNISWAP V2</td><td>12.92M SPX</td><td><span class="plabel">POOL</span></td></tr></tbody></table></div>
     </div>
   </div>
@@ -287,7 +288,7 @@ const tvlD = [];
   tc('c1',{
     type:'doughnut',
     data:{
-      labels:['Pool LP Holders','Regular Holders'],
+      labels:['Pool contracts','Wallets & other contracts'],
       datasets:[{data:[1,2],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}

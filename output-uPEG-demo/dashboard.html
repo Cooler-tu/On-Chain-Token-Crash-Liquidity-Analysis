@@ -126,7 +126,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>All Non-Pool Holders</h2>
+      <h2>Largest token balances (pool contracts excluded)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Ranked by ERC-20 balance. Pool <em>contracts</em> (the addresses that custody AMM reserves) are listed separately below — LP providers and other wallets are still included here. DEX = venue activity in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = no DEX link found.</p>
       <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (uPEG)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr class="holder-row" onclick="togglePortfolio('0x000000000004444c5dc75cB358380D2e3dE08A90')" data-owner="0x000000000004444c5dc75cB358380D2e3dE08A90"><td>1</td><td class="addr">0x0000...8A90 <span class="badge-eoa">eoa</span></td><td>1.12K uPEG</td><td>595</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x000000000004444c5dc75cB358380D2e3dE08A90" style="display:none"><td colspan="5"><div class="portfolio-inner">Loading...</div></td></tr>
 <tr class="holder-row" onclick="togglePortfolio('0x9642b23Ed1E01Df1092B92641051881a322F5D4E')" data-owner="0x9642b23Ed1E01Df1092B92641051881a322F5D4E"><td>2</td><td class="addr">0x9642...5D4E <span class="badge-eoa">eoa</span></td><td>94.6424 uPEG</td><td>13</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x9642b23Ed1E01Df1092B92641051881a322F5D4E" style="display:none"><td colspan="5"><div class="portfolio-inner">Loading...</div></td></tr>
 <tr class="holder-row" onclick="togglePortfolio('0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1')" data-owner="0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1"><td>3</td><td class="addr">0x4Ff1...09A1 <span class="badge-eoa">eoa</span></td><td>49.4902 uPEG</td><td>3</td><td><span class="expand-icon">+</span></td></tr><tr class="portfolio-row" id="portfolio-0x4Ff1D40fb7B56665bf95D8D8e3A5320dE46709A1" style="display:none"><td colspan="5"><div class="portfolio-inner">Loading...</div></td></tr>
@@ -152,7 +153,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>Pool-Labeled Addresses</h2>
+      <h2>DEX pool contracts (token reserves)</h2>
       <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody><tr><td class="addr">0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775</td><td>UNISWAP V3</td><td>5.0047 uPEG</td><td><span class="plabel">POOL</span></td></tr>
 <tr><td class="addr">0x21ff5cf76f562c6fb3871b59133a9E214eBc0078</td><td>UNISWAP V2</td><td>0.0326 uPEG</td><td><span class="plabel">POOL</span></td></tr>
 <tr><td class="addr">0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890</td><td>UNISWAP V3</td><td>0.0037 uPEG</td><td><span class="plabel">POOL</span></td></tr>
@@ -4482,7 +4483,7 @@ const tokenSymbol = "{symbol}";
   tc('c1',{
     type:'doughnut',
     data:{
-      labels:['Pool LP Holders','Regular Holders'],
+      labels:['Pool contracts','Wallets & other contracts'],
       datasets:[{data:[4,416],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
