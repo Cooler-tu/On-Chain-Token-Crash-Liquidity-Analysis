@@ -21,6 +21,10 @@ from ..models import VerifiedPool
 _ZERO = "0x0000000000000000000000000000000000000000"
 
 
+def _chunks(items: list, size: int = 500) -> list[list]:
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
 def _ingest_transfer_events(
     transfer_events: list[dict],
     unique_addresses: set[str],
@@ -84,6 +88,12 @@ def analyze_holdings(
     address_first_seen: dict[str, int] = {}
     address_last_seen: dict[str, int] = {}
     balances: dict[str, str] = {}
+    balances_start: dict[str, str] = {}
+    peak_balances: dict[str, str] = {}
+    moved_in: dict[str, str] = {}
+    moved_out: dict[str, str] = {}
+    row_balance_source: dict[str, str] = {}
+    row_trajectory_source: dict[str, str] = {}
     dune_error: Optional[str] = None
 
     # Fast path: reuse Transfer rows already pulled in [4/12]. Avoids a second
@@ -177,6 +187,48 @@ def analyze_holdings(
         Web3.to_checksum_address(p.pool_address).lower()
         for p in verified_pools if p.pool_address
     }
+
+    # Dune historical snapshots at window start/end. tokens_ethereum.balances
+    # is a sparse ledger (one row per address per balance-change block), so we
+    # take the latest row at/before each boundary instead of replaying events.
+    dune_historical_ok = False
+    if source_norm in ("auto", "dune"):
+        try:
+            from ..data.dune_holdings import (
+                dune_api_key_configured as _dune_configured,
+                fetch_historical_token_balances_from_dune,
+            )
+            dune_historical_ok = _dune_configured()
+        except Exception:
+            dune_historical_ok = False
+    if dune_historical_ok:
+        snapshot_budget = max(100, int(max_rpc_balances) * 2)
+        ranked = sorted(
+            unique_addresses,
+            key=lambda a: (
+                0 if a.lower() in pool_addrs_l else 1,
+                -address_tx_count.get(a, 0),
+                a.lower(),
+            ),
+        )[:snapshot_budget]
+        try:
+            for chunk in _chunks(ranked, 500):
+                end_map = fetch_historical_token_balances_from_dune(
+                    token_address, chunk, int(to_block)
+                )
+                start_map = fetch_historical_token_balances_from_dune(
+                    token_address, chunk, int(from_block)
+                )
+                for addr in chunk:
+                    if addr in end_map:
+                        balances[addr] = end_map[addr]
+                        row_balance_source[addr] = "dune_historical"
+                        balances_start[addr] = start_map.get(addr, "0")
+                        row_trajectory_source.setdefault(addr, "two_point_snapshot")
+        except Exception:
+            # Keep Dune latest / RPC balances as fallback.
+            pass
+
     missing = [a for a in unique_addresses if a not in balances]
     missing.sort(
         key=lambda a: (
@@ -203,10 +255,39 @@ def analyze_holdings(
                 balances[addr] = str(bal)
             except Exception:
                 balances[addr] = "0"
+        row_balance_source[addr] = "rpc"
     for addr in skipped_balances:
         balances.setdefault(addr, "0")
+        row_balance_source.setdefault(addr, "zero_fill")
 
-    if used_source == "dune" and to_query:
+    # Fill missing start balances for the same RPC-queried addresses so net
+    # change stays available even when Dune has no pre-window row.
+    for addr in to_query:
+        if addr in balances and addr not in balances_start:
+            try:
+                balances_start[addr] = str(
+                    token_contract.functions.balanceOf(
+                        Web3.to_checksum_address(addr)
+                    ).call(
+                        block_identifier=int(from_block)
+                        if from_block else "latest"
+                    )
+                )
+            except Exception:
+                balances_start[addr] = "0"
+
+    dune_historical_count = sum(
+        1 for v in row_balance_source.values() if v == "dune_historical"
+    )
+    if dune_historical_count:
+        has_rpc_fallback = any(
+            v not in ("dune_historical",)
+            for v in row_balance_source.values()
+        )
+        balance_source = (
+            "dune_historical+rpc" if has_rpc_fallback else "dune_historical"
+        )
+    elif used_source == "dune" and to_query:
         balance_source = "dune+rpc"
     elif used_source == "dune" and not missing:
         balance_source = "dune"
@@ -226,6 +307,64 @@ def analyze_holdings(
         if p.custody_address:
             pool_addresses.add(p.custody_address.lower())
             pool_by_addr[p.custody_address.lower()] = p
+
+    # Event-flow reconstruction for pools + top end-balance addresses.
+    pool_checksum = [a for a in unique_addresses if a.lower() in pool_addresses]
+    non_pool_ranked = sorted(
+        [a for a in unique_addresses if a.lower() not in pool_addresses],
+        key=lambda a: (
+            -int(balances.get(a, "0") or 0)
+            if str(balances.get(a, "0") or "0").isdigit() else 0,
+            -address_tx_count.get(a, 0),
+            a.lower(),
+        ),
+    )
+    trajectory_targets = pool_checksum + non_pool_ranked[:20]
+    _seen: set[str] = set()
+    trajectory_targets = [
+        a for a in trajectory_targets
+        if not (a.lower() in _seen or _seen.add(a.lower()))
+    ]
+    try:
+        from ..data.dune_holdings import fetch_balance_trajectory_from_dune
+        for chunk in _chunks(trajectory_targets, 500):
+            traj_map = fetch_balance_trajectory_from_dune(
+                token_address, chunk, int(from_block), int(to_block)
+            )
+            for addr in chunk:
+                rows = traj_map.get(addr)
+                if not rows:
+                    continue
+                prev = int(balances_start.get(addr, "0") or "0")
+                peak = prev
+                _in = 0
+                _out = 0
+                for row in rows:
+                    cur = int(row["balance_raw"])
+                    if cur > peak:
+                        peak = cur
+                    delta = cur - prev
+                    if delta > 0:
+                        _in += delta
+                    elif delta < 0:
+                        _out += -delta
+                    prev = cur
+                peak_balances[addr] = str(peak)
+                moved_in[addr] = str(_in)
+                moved_out[addr] = str(_out)
+                row_trajectory_source[addr] = "event_rebuild"
+    except Exception:
+        pass
+
+    # Two-point peak lower bound when no event-flow rows were fetched.
+    for addr in unique_addresses:
+        if addr in balances and addr not in peak_balances:
+            try:
+                start_i = int(balances_start.get(addr, "0") or "0")
+                end_i = int(balances[addr] or "0")
+                peak_balances[addr] = str(max(start_i, end_i))
+            except (TypeError, ValueError):
+                pass
 
     # Check which addresses are contracts (has bytecode on-chain)
     _contract_cache: dict[str, bool] = {}
@@ -297,6 +436,33 @@ def analyze_holdings(
             bal_decimal = int(bal_raw) / (10 ** token_decimals)
         except (ValueError, TypeError):
             bal_decimal = 0.0
+        start_raw = balances_start.get(addr, "")
+        try:
+            start_decimal = (
+                round(int(start_raw) / (10 ** token_decimals), 6)
+                if start_raw not in (None, "")
+                else None
+            )
+        except (TypeError, ValueError):
+            start_decimal = None
+        net_raw = ""
+        if start_raw not in (None, ""):
+            try:
+                net_raw = str(int(bal_raw) - int(start_raw))
+            except (TypeError, ValueError):
+                net_raw = ""
+        net_decimal = (
+            round(int(net_raw) / (10 ** token_decimals), 6)
+            if net_raw else None
+        )
+        peak_raw = peak_balances.get(addr, "")
+        try:
+            peak_decimal = (
+                round(int(peak_raw) / (10 ** token_decimals), 6)
+                if peak_raw else None
+            )
+        except (TypeError, ValueError):
+            peak_decimal = None
         is_pool = addr.lower() in pool_addresses
         pool_info = pool_by_addr.get(addr.lower())
         pool_label = ""
@@ -330,6 +496,21 @@ def analyze_holdings(
             "address": addr,
             "balance_raw": bal_raw,
             "balance_decimal": round(bal_decimal, 6),
+            "balance_start_raw": start_raw or "",
+            "balance_start_decimal": start_decimal,
+            "balance_end_raw": bal_raw,
+            "net_change_raw": net_raw,
+            "net_change_decimal": net_decimal,
+            "peak_balance_raw": peak_raw,
+            "peak_balance_decimal": peak_decimal,
+            "moved_in_raw": moved_in.get(addr, ""),
+            "moved_out_raw": moved_out.get(addr, ""),
+            "balance_source": row_balance_source.get(addr, "zero_fill"),
+            "trajectory_source": (
+                row_trajectory_source.get(
+                    addr, "two_point_snapshot" if balances_start.get(addr) else "none"
+                )
+            ),
             "is_pool": is_pool,
             "pool_label": pool_label,
             "is_contract": is_contract_addr,
@@ -389,6 +570,8 @@ def analyze_holdings(
         "from_block": from_block,
         "to_block": to_block,
         "balance_block": balance_block if isinstance(balance_block, int) else to_block,
+        "balance_start_block": from_block,
+        "balance_end_block": balance_block if isinstance(balance_block, int) else to_block,
         "query_timestamp": query_timestamp,
         "query_time_human": datetime.fromtimestamp(
             query_timestamp, tz=timezone.utc
@@ -398,6 +581,10 @@ def analyze_holdings(
         "source": used_source,
         "balance_source": balance_source,
         "dune_error": dune_error,
+        "dune_historical_balance_count": dune_historical_count,
+        "event_rebuild_count": sum(
+            1 for v in row_trajectory_source.values() if v == "event_rebuild"
+        ),
         "holdings": holdings_rows,
         "pool_identification": pool_rows,
     }

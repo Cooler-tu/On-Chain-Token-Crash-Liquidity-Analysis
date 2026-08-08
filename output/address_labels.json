@@ -63,6 +63,51 @@
     ]
   },
   {
+    "address": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+    "label": "Factory (uniswap)_v2",
+    "category": "protocol_deployment",
+    "confidence": 1.0,
+    "evidence": [
+      "Whitelisted protocol factory"
+    ]
+  },
+  {
+    "address": "0x21ff5cf76f562c6fb3871b59133a9E214eBc0078",
+    "label": "Uniswap V2 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xC02aaA39"
+    ]
+  },
+  {
+    "address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "label": "Router (uniswap_v2)",
+    "category": "router",
+    "confidence": 1.0,
+    "evidence": [
+      "Protocol router for swaps"
+    ]
+  },
+  {
+    "address": "0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890",
+    "label": "Uniswap V3 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xA0b86991"
+    ]
+  },
+  {
+    "address": "0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230",
+    "label": "Uniswap V3 Pool",
+    "category": "pool",
+    "confidence": 1.0,
+    "evidence": [
+      "Verified pool for token pair 0x44b28991/0xA0b86991"
+    ]
+  },
+  {
     "address": "0x02eD43292C6be3F49f2B287C499C77560E426E83",
     "label": "Deployer",
     "category": "token_creator",
@@ -289,7 +334,7 @@
     ]
   },
   {
-    "address": "0x000000000000000000000000000000000000dead",
+    "address": "0x0000000000000000000000000000000000000000",
     "label": "Burn Address",
     "category": "burn",
     "confidence": 1.0,
@@ -298,7 +343,7 @@
     ]
   },
   {
-    "address": "0x0000000000000000000000000000000000000000",
+    "address": "0x000000000000000000000000000000000000dead",
     "label": "Burn Address",
     "category": "burn",
     "confidence": 1.0,

@@ -209,19 +209,33 @@ class DuneClient:
         """
         token = Web3.to_checksum_address(token_address).lower()
         sql = f"""
+WITH trades AS (
+  SELECT
+    project,
+    version,
+    CAST(project_contract_address AS varchar) AS pool_address,
+    block_number,
+    CAST(tx_hash AS varchar) AS tx_hash,
+    evt_index,
+    amount_usd,
+    CAST(token_bought_address AS varchar) AS token_bought,
+    CAST(token_sold_address AS varchar) AS token_sold
+  FROM dex.trades
+  WHERE blockchain = '{blockchain}'
+    AND (token_bought_address = {token} OR token_sold_address = {token})
+    AND block_number BETWEEN {int(from_block)} AND {int(to_block)}
+)
 SELECT
   project,
   version,
-  CAST(project_contract_address AS varchar) AS pool_address,
-  COUNT(*) AS trade_count,
+  pool_address,
+  ARRAY_AGG(DISTINCT side.token_address) AS token_hints,
+  COUNT(DISTINCT CONCAT(tx_hash, ':', CAST(evt_index AS varchar))) AS trade_count,
   MIN(block_number) AS first_seen_block,
   MAX(block_number) AS last_seen_block,
-  MAX(CAST(token_bought_address AS varchar)) AS token_hint,
-  MAX(CAST(token_sold_address AS varchar)) AS token_hint2
-FROM dex.trades
-WHERE blockchain = '{blockchain}'
-  AND (token_bought_address = {token} OR token_sold_address = {token})
-  AND block_number BETWEEN {int(from_block)} AND {int(to_block)}
+  COALESCE(SUM(amount_usd), 0) AS volume_usd
+FROM trades
+CROSS JOIN UNNEST(ARRAY[token_bought, token_sold]) AS side(token_address)
 GROUP BY 1, 2, 3
 ORDER BY trade_count DESC
 """
@@ -234,11 +248,10 @@ ORDER BY trade_count DESC
             addr = _normalize_addr(row.get("pool_address"))
             if not addr:
                 continue
-            hints = set()
-            for k in ("token_hint", "token_hint2"):
-                h = row.get(k)
-                if h:
-                    hints.add(h.lower())
+            hints = row.get("token_hints") or []
+            if isinstance(hints, str):
+                hints = [hints]
+            hints = {str(h).lower() for h in hints if h}
             out.append({
                 "pool_address": addr,
                 "project": (row.get("project") or "").lower(),

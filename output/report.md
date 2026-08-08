@@ -6,7 +6,7 @@
 - **Chain:** Ethereum (Chain ID: 1)
 - **Analysis Window:** Block 25008000 to 25011999
 - **Incident Block:** Not specified
-- **Report Generated:** 2026-08-02 17:03:06 UTC
+- **Report Generated:** 2026-08-08 07:32:46 UTC
 
 ### Risk Score
 
@@ -36,12 +36,15 @@
 
 ## Pool Summary
 
-**2** verified pool(s), **0** unverified candidate(s).
+**5** verified pool(s), **0** unverified candidate(s).
 
 | Pool Address | Protocol | Version | Token0 | Token1 | Fee | Confidence |
 |-------------|----------|---------|--------|--------|-----|------------|
-| [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | uniswap | v4 | 0x44b28991... | 0xA0b86991... | N/A | 83.33% |
+| [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | uniswap | v4 | 0x44b28991... | 0x00000000... | N/A | 83.33% |
 | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | uniswap | v3 | 0x44b28991... | 0xC02aaA39... | 10000 | 100.00% |
+| [0x21ff5cf7...Bc0078](https://etherscan.io/address/0x21ff5cf76f562c6fb3871b59133a9E214eBc0078) | uniswap | v2 | 0x44b28991... | 0xC02aaA39... | N/A | 100.00% |
+| [0x7059A9f1...77a890](https://etherscan.io/address/0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890) | uniswap | v3 | 0x44b28991... | 0xA0b86991... | 3000 | 100.00% |
+| [0x84a69fcD...314230](https://etherscan.io/address/0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230) | uniswap | v3 | 0x44b28991... | 0xA0b86991... | 10000 | 100.00% |
 
 
 ## Related Addresses
@@ -55,6 +58,11 @@
 | [0xdc893995...ab0775](https://etherscan.io/address/0xdc893995d488E5BE8eC8CA1Db92CBEc2a1ab0775) | Uniswap V3 Pool | pool | 100% |
 | [0xC36442b4...11FE88](https://etherscan.io/address/0xC36442b4a4522E871399CD717aBDD847Ab11FE88) | PositionManager (uniswap_v3) | position_manager | 100% |
 | [0xE592427A...861564](https://etherscan.io/address/0xE592427A0AEce92De3Edee1F18E0157C05861564) | Router (uniswap_v3) | router | 100% |
+| [0x5C69bEe7...c5aA6f](https://etherscan.io/address/0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f) | Factory (uniswap)_v2 | protocol_deployment | 100% |
+| [0x21ff5cf7...Bc0078](https://etherscan.io/address/0x21ff5cf76f562c6fb3871b59133a9E214eBc0078) | Uniswap V2 Pool | pool | 100% |
+| [0x7a250d56...F2488D](https://etherscan.io/address/0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D) | Router (uniswap_v2) | router | 100% |
+| [0x7059A9f1...77a890](https://etherscan.io/address/0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890) | Uniswap V3 Pool | pool | 100% |
+| [0x84a69fcD...314230](https://etherscan.io/address/0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230) | Uniswap V3 Pool | pool | 100% |
 | [0x02eD4329...426E83](https://etherscan.io/address/0x02eD43292C6be3F49f2B287C499C77560E426E83) | Deployer | token_creator | 100% |
 | [0xB3aA9923...bc92A0](https://etherscan.io/address/0xB3aA9923489Bc2BFEc323Bf05346AcD4afbc92A0) | Whale LP | large_liquidity_provider | 80% |
 | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Frequent Token Receiver | frequent_interactor | 50% |
@@ -80,15 +88,15 @@
 | [0x4313C378...96b27f](https://etherscan.io/address/0x4313C378Cc91eA583C91387B9216e2c03096b27f) | Frequent Token Sender | frequent_interactor | 50% |
 | [0x9642b23E...2F5D4E](https://etherscan.io/address/0x9642b23Ed1E01Df1092B92641051881a322F5D4E) | Frequent Token Sender | frequent_interactor | 50% |
 | [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
-| [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
 | [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
+| [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
 
 
 ## TVL & Price History
 
 | Metric | Value |
 |--------|-------|
-| Total TVL (in token units) | 1316.4890 |
+| Total TVL (in token units) | 1316.5353 |
 | Active Pools | 0 |
 | Main Pool | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) |
 | Main Pool Share | 95.06% |
@@ -146,7 +154,7 @@
 |--------|-------|
 | Pre-Crash Withdrawals | 121 |
 | Total Removed (token0) | 13123.7238 |
-| Pre-Event TVL | 1316.4890 |
+| Pre-Event TVL | 1316.5353 |
 | Withdrawal Severity | 100.00% of pre-event TVL |
 
 

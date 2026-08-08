@@ -16,6 +16,9 @@
 - **uPEG analysis** (`output/`) — blocks 25003546–25004000, 10 Uni pools (V2/V3/V4), 36 positions, risk ~0.44 MEDIUM, DEX tags on dashboard (2026-07-28)
 - **SPX6900 demo** (`output-spx-demo/`) — earlier demo data
 - **USDC test** (`output-test/`) — minimal window smoke test
+- **Dashboard metrics layer** (2026-08-07) — V3/V4 price + per-pool TVL timeline + per-pool volume; dashboard multi-line TVL / price / volume, Top Movers, withdrawals; `docs/HOLDER_BALANCE_DESIGN.md`, `docs/LP_CORRELATION_DESIGN.md`, `docs/ADDRESS_ASSOCIATION_DESIGN.md`, LP correlation + fund flow prototypes
+- **Dune historical balance snapshot** (2026-08-08) — `tokens_ethereum.balances` 稀疏余额账本按 `block_number` 取期初/期末/窗口轨迹；uPEG 12 个抽样地址与 RPC `balanceOf` 精确一致；新增 `src/data/dune_holdings.py` 历史快照与轨迹查询函数
+- **Dashboard holder snapshot columns** (2026-08-08) — Top Holders 增加期初/期末/净变动/峰值列并标注快照块与来源；Top Movers 切换为持仓净变动优先、排除池地址、swap 仅作上下文
 
 ---
 
@@ -30,6 +33,7 @@
   - ✅ docs/DUNE_DATA_MAP.md + research-notes/curve-balancer-vs-uniswap.md
   - ⏳ 端到端验证：需要 `DUNE_API_KEY`（用户侧）或真实 RPC 跑 CRV/BAL
   - 📋 Next week ref: pull analysis data primarily via Dune; onboard typical non-Uniswap MM pools for contrast
+- **Dashboard 口径落地**（本周）— 数据层已完成，下一步接 holdings 双时间点快照与地址关联可视化
 
 ---
 

@@ -10,7 +10,7 @@
       "value": 0.9506,
       "weight": 0.15,
       "description": "Main pool holds 95.06% of total DEX liquidity.",
-      "raw_data": 0.950628
+      "raw_data": 0.950595
     },
     "lp_concentration": {
       "value": 0.5249,

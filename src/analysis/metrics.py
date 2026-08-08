@@ -77,6 +77,94 @@ def _guess_quote_symbol(addr: str) -> str:
     return known.get(addr_lower, "???")
 
 
+def _known_decimals(addr: str) -> int:
+    """Best-effort quote token decimals for known stablecoins / WETH."""
+    addr_lower = addr.lower()
+    known = {
+        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": 18,
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": 6,
+        "0xdac17f958d2ee523a2206206994597c13d831ec7": 6,
+        "0x6b175474e89094c44da98b954eedeac495271d0f": 18,
+    }
+    return known.get(addr_lower, 18)
+
+
+_STABLE_QUOTES = {
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",  # USDC
+    "0xdac17f958d2ee523a2206206994597c13d831ec7",  # USDT
+    "0x6b175474e89094c44da98b954eedeac495271d0f",  # DAI
+}
+
+
+def _resolve_target_side(
+    evt: dict,
+    pool_token0: str,
+    pool_token1: str,
+    target_token: str,
+    target_decimals: int,
+) -> Optional[tuple[str, str, int]]:
+    """Return ``(target_side, quote_address_lower, quote_decimals)`` or None.
+
+    Dune swap rows store ``token0_amount`` = sold and ``token1_amount`` =
+    bought, which is not necessarily the pool token order.  New Dune events
+    carry ``token0_address`` / ``token1_address``; legacy events fall back to a
+    decimal-magnitude inference when target and quote decimals differ.
+    """
+    target = target_token.lower()
+    pt0 = (pool_token0 or "").lower()
+    pt1 = (pool_token1 or "").lower()
+
+    t0 = (evt.get("token0_address") or pt0).lower()
+    t1 = (evt.get("token1_address") or pt1).lower()
+    if t0 and t1 and t0 != t1:
+        if target == t0:
+            return "0", t1, _known_decimals(t1)
+        if target == t1:
+            return "1", t0, _known_decimals(t0)
+        return None
+
+    source = (evt.get("source_event") or "").lower()
+    if source != "dex.trades" and target == pt0:
+        return "0", pt1, _known_decimals(pt1)
+    if source != "dex.trades" and target == pt1:
+        return "1", pt0, _known_decimals(pt0)
+    if target not in (pt0, pt1):
+        return None
+
+    # Legacy Dune swap: sold = token0, bought = token1.  Use magnitudes when
+    # decimal counts differ; otherwise the side is genuinely ambiguous.
+    try:
+        a0 = abs(int(evt.get("token0_amount", "0") or "0"))
+        a1 = abs(int(evt.get("token1_amount", "0") or "0"))
+    except (TypeError, ValueError):
+        return None
+    quote_addr = pt1 if target == pt0 else pt0
+    quote_dec = _known_decimals(quote_addr)
+    if target_decimals == quote_dec or a0 <= 0 or a1 <= 0:
+        return None
+
+    d0 = abs(math.log10(max(a0, 1)) - target_decimals)
+    d1 = abs(math.log10(max(a1, 1)) - target_decimals)
+    if d0 < d1:
+        return "0", quote_addr, quote_dec
+    return "1", quote_addr, quote_dec
+
+
+def _event_matches_pool(evt: dict, pool_token0: str, pool_token1: str) -> bool:
+    """True when a swap event belongs to the pool's exact token pair.
+
+    V4 events all share the PoolManager contract address, so token addresses
+    (when present) are required to avoid mixing pools from the same custody.
+    """
+    t0 = evt.get("token0_address") or ""
+    t1 = evt.get("token1_address") or ""
+    if not t0 or not t1:
+        return True
+    pair = {t0.lower(), t1.lower()}
+    pool_pair = {(pool_token0 or "").lower(), (pool_token1 or "").lower()}
+    return pool_pair == pair
+
+
 def calculate_tvl_v2(
     pool: VerifiedPool, token_address: str, reserve0: int, reserve1: int
 ) -> float:
@@ -269,7 +357,10 @@ def build_tvl_timeline(
         if not pool.verified:
             continue
         pa = pool.pool_address.lower()
-        events = pool_events.get(pa, [])
+        events = [
+            e for e in pool_events.get(pa, [])
+            if _event_matches_pool(e, pool.token0, pool.token1)
+        ]
         if not events:
             continue
         events.sort(key=lambda e: (e["block_number"], e.get("log_index", 0)))
@@ -322,7 +413,7 @@ def build_tvl_timeline(
                     "quote_symbol": quote,
                 })
 
-        elif pool.version == "v3":
+        elif pool.version in ("v3", "v4"):
             cum_liquidity = 0
             for evt in events:
                 bn = evt["block_number"]
@@ -338,8 +429,31 @@ def build_tvl_timeline(
 
                 # Approximate TVL in target-token units from event amounts
                 tvl_approx = (a0 * 2) if target_is_t0 else (a1 * 2)
+                side_info = _resolve_target_side(
+                    evt, pool.token0, pool.token1, target_token, token_decimals
+                )
                 if etype == "SWAP":
-                    tvl_approx = a0 if target_is_t0 else a1
+                    if side_info:
+                        tvl_approx = a0 if side_info[0] == "0" else a1
+                    else:
+                        tvl_approx = a0 if target_is_t0 else a1
+
+                # Swap-derived price: quote token per target token.
+                price = 0.0
+                price_usd = 0.0
+                quote_symbol = "N/A"
+                if etype == "SWAP" and a0 > 0 and a1 > 0 and side_info:
+                    target_side, quote_addr, quote_decimals = side_info
+                    target_raw = a0 if target_side == "0" else a1
+                    quote_raw = a1 if target_side == "0" else a0
+                    quote_symbol = _guess_quote_symbol(quote_addr)
+                    if target_raw > 0:
+                        price = (quote_raw / (10 ** quote_decimals)) / (
+                            target_raw / (10 ** token_decimals)
+                        )
+                    amount_usd = float(evt.get("amount_usd") or 0)
+                    if amount_usd > 0 and target_raw > 0:
+                        price_usd = amount_usd / (target_raw / (10 ** token_decimals))
 
                 timeline.append({
                     "block_number": bn,
@@ -353,11 +467,151 @@ def build_tvl_timeline(
                     "token0_amount": str(a0),
                     "token1_amount": str(a1),
                     "tvl_in_token": str(tvl_approx),
-                    "price": 0.0,
-                    "quote_symbol": "N/A",
+                    "price": round(price, 18),
+                    "quote_symbol": quote_symbol,
+                    "price_usd": round(price_usd, 6),
                 })
 
     return sorted(timeline, key=lambda e: (e["block_number"], e.get("log_index", 0)))
+
+
+def calculate_volume_metrics(
+    events_all: list[dict],
+    verified_pools: list[VerifiedPool],
+    target_token: str,
+    token_decimals: int,
+    bucket_seconds: int = 3600,
+) -> dict[str, Any]:
+    """Aggregate swap volume by pool and by time bucket.
+
+    ``volume_in_token`` is always the absolute target-token side of each swap.
+    ``volume_usd`` is approximate and only populated when the quote token is a
+    known stablecoin; other pools report ``None`` instead of a fake USD number.
+    """
+    target = Web3.to_checksum_address(target_token)
+    pool_meta: dict[str, dict[str, Any]] = {}
+    for pool in verified_pools:
+        if not pool.verified:
+            continue
+        addr = (pool.pool_address or "").lower()
+        if not addr:
+            continue
+        pool_meta[addr] = {
+            "protocol": pool.protocol,
+            "version": pool.version,
+            "token0": Web3.to_checksum_address(pool.token0).lower(),
+            "token1": Web3.to_checksum_address(pool.token1).lower(),
+        }
+
+    volume_by_pool: dict[str, float] = defaultdict(float)
+    usd_by_pool: dict[str, float] = defaultdict(float)
+    quote_by_pool: dict[str, str] = {}
+    buckets: dict[int, dict[str, dict[str, Any]]] = defaultdict(
+        lambda: defaultdict(lambda: {"volume_in_token": 0.0, "volume_usd": 0.0})
+    )
+    ambiguous_events = 0
+
+    for evt in events_all or []:
+        if (evt.get("event_type") or "").upper() != "SWAP":
+            continue
+        meta = None
+        pa = (evt.get("pool_address") or "").lower()
+        evt_has_tokens = bool(evt.get("token0_address") and evt.get("token1_address"))
+        if evt_has_tokens:
+            for candidate_pa, candidate_meta in pool_meta.items():
+                if _event_matches_pool(
+                    evt, candidate_meta["token0"], candidate_meta["token1"]
+                ):
+                    meta = candidate_meta
+                    pa = candidate_pa
+                    break
+        else:
+            meta = pool_meta.get(pa)
+        if not meta:
+            continue
+        try:
+            a0 = abs(int(evt.get("token0_amount", "0") or "0"))
+            a1 = abs(int(evt.get("token1_amount", "0") or "0"))
+        except (TypeError, ValueError):
+            continue
+
+        side_info = _resolve_target_side(
+            evt, meta["token0"], meta["token1"], target_token, token_decimals
+        )
+        if side_info is None:
+            ambiguous_events += 1
+            continue
+        target_side, quote_addr, quote_decimals = side_info
+        if target_side == "0":
+            token_vol = a0 / (10 ** token_decimals)
+            quote_raw = a1
+        else:
+            token_vol = a1 / (10 ** token_decimals)
+            quote_raw = a0
+
+        volume_by_pool[pa] += token_vol
+        quote_by_pool[pa] = _guess_quote_symbol(quote_addr)
+        amount_usd = float(evt.get("amount_usd") or 0)
+        if amount_usd > 0:
+            usd_by_pool[pa] += amount_usd
+        elif quote_addr in _STABLE_QUOTES:
+            usd_by_pool[pa] += quote_raw / (10 ** quote_decimals)
+
+        try:
+            ts = int(evt.get("block_timestamp") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        bucket = (ts // bucket_seconds) * bucket_seconds if ts else 0
+        buckets[bucket][pa]["volume_in_token"] += token_vol
+        if amount_usd > 0:
+            buckets[bucket][pa]["volume_usd"] += amount_usd
+        elif quote_addr in _STABLE_QUOTES:
+            buckets[bucket][pa]["volume_usd"] += quote_raw / (10 ** quote_decimals)
+
+    total_volume = sum(volume_by_pool.values())
+    main_volume_pool = ""
+    main_volume_share = 0.0
+    if volume_by_pool:
+        main_volume_pool = max(volume_by_pool, key=volume_by_pool.get)
+        main_volume_share = volume_by_pool[main_volume_pool] / total_volume if total_volume else 0.0
+
+    volume_by_pool_out = {}
+    for pa, vol in volume_by_pool.items():
+        volume_by_pool_out[pa] = {
+            "protocol": pool_meta[pa]["protocol"],
+            "version": pool_meta[pa]["version"],
+            "volume_in_token": round(vol, 6),
+            "volume_usd": round(usd_by_pool[pa], 2) if usd_by_pool.get(pa) else None,
+            "share": round(vol / total_volume, 6) if total_volume else 0.0,
+            "quote_symbol": quote_by_pool.get(pa, ""),
+        }
+
+    volume_timeline = [
+        {
+            "bucket_ts": bucket,
+            "total_volume_in_token": round(
+                sum(p["volume_in_token"] for p in pools.values()), 6
+            ),
+            "pools": {
+                pa: dict(p) for pa, p in sorted(pools.items(), key=lambda x: -x[1]["volume_in_token"])
+            },
+        }
+        for bucket, pools in sorted(buckets.items())
+    ]
+
+    return {
+        "total_volume_in_token": round(total_volume, 6),
+        "main_volume_pool": main_volume_pool,
+        "main_volume_share": round(main_volume_share, 6),
+        "volume_by_pool": volume_by_pool_out,
+        "volume_timeline": volume_timeline,
+        "bucket_seconds": bucket_seconds,
+        "ambiguous_events": ambiguous_events,
+        "note": (
+            "Legacy Dune events without token addresses are inferred by "
+            "decimal magnitude; same-decimals quote pools are skipped."
+        ),
+    }
 
 
 def calculate_pool_concentration(
@@ -553,10 +807,16 @@ def calculate_all_metrics(
         events_liquidity, pre_event_tvl, incident_block
     )
 
+    volume = calculate_volume_metrics(
+        events_all, verified_pools, target_token, token_decimals
+    )
+    _write_json(out / "volume_timeline.json", volume)
+
     metrics = {
         "pool_concentration": pool_conc,
         "lp_concentration": lp_conc,
         "withdrawal_severity": withdrawal_sev,
+        "volume": volume,
         "tvl_timeline_length": len(timeline),
         "tvl_timeline": timeline,
     }
@@ -568,4 +828,3 @@ def calculate_all_metrics(
 def _write_json(path: Path, data):
     with open(path, "w") as f:
         json.dump(data, f, indent=2, default=str)
-

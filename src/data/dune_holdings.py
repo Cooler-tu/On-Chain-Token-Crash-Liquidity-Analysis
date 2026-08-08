@@ -202,3 +202,131 @@ WHERE token_address = {token}
             except (TypeError, ValueError):
                 out[addr] = str(bal)
     return out
+
+
+def fetch_historical_token_balances_from_dune(
+    token_address: str,
+    addresses: list[str],
+    block_number: int,
+    api_key: Optional[str] = None,
+    limit: int = 500,
+) -> dict[str, str]:
+    """Return each address's latest raw balance at/before ``block_number``.
+
+    Uses ``tokens_ethereum.balances``, a sparse per-address balance ledger:
+    one row per address per block where its balance changed. Addresses with no
+    row at/before the target block are omitted, so callers must decide the
+    default (usually ``"0"`` for a fresh holder).
+    """
+    if not addresses:
+        return {}
+
+    key = (api_key or os.environ.get("DUNE_API_KEY") or "").strip()
+    if not key:
+        return {}
+
+    token = Web3.to_checksum_address(token_address).lower()
+    addrs = [Web3.to_checksum_address(a).lower() for a in addresses[:limit]]
+    addr_list = ", ".join(addrs)
+    sql = f"""
+SELECT address, CAST(balance_raw AS varchar) AS balance_raw, block_number
+FROM (
+  SELECT
+    address,
+    balance_raw,
+    block_number,
+    ROW_NUMBER() OVER (
+      PARTITION BY address ORDER BY block_number DESC
+    ) AS rn
+  FROM tokens_ethereum.balances
+  WHERE token_address = {token}
+    AND block_number <= {int(block_number)}
+    AND address IN ({addr_list})
+) t
+WHERE rn = 1
+"""
+
+    try:
+        rows_raw = _run_sql(sql, key)
+    except Exception:
+        return {}
+
+    out: dict[str, str] = {}
+    for row in rows_raw:
+        addr = _normalize_addr(row.get("address"))
+        if not addr:
+            continue
+        bal = row.get("balance_raw")
+        if bal is None:
+            continue
+        try:
+            out[addr] = str(int(bal))
+        except (TypeError, ValueError):
+            try:
+                out[addr] = str(int(float(bal)))
+            except (TypeError, ValueError):
+                out[addr] = str(bal)
+    return out
+
+
+def fetch_balance_trajectory_from_dune(
+    token_address: str,
+    addresses: list[str],
+    from_block: int,
+    to_block: int,
+    api_key: Optional[str] = None,
+    limit: int = 500,
+) -> dict[str, list[dict[str, Any]]]:
+    """Return per-address balance-change rows inside ``[from_block, to_block]``.
+
+    Each value is a list of ``{"block_number": int, "balance_raw": str}`` rows
+    ordered by block, which is enough to compute peak / moved_in / moved_out
+    without replaying raw Transfer events.
+    """
+    if not addresses:
+        return {}
+
+    key = (api_key or os.environ.get("DUNE_API_KEY") or "").strip()
+    if not key:
+        return {}
+
+    token = Web3.to_checksum_address(token_address).lower()
+    addrs = [Web3.to_checksum_address(a).lower() for a in addresses[:limit]]
+    addr_list = ", ".join(addrs)
+    sql = f"""
+SELECT
+  address,
+  CAST(balance_raw AS varchar) AS balance_raw,
+  block_number
+FROM tokens_ethereum.balances
+WHERE token_address = {token}
+  AND block_number BETWEEN {int(from_block)} AND {int(to_block)}
+  AND address IN ({addr_list})
+ORDER BY address, block_number
+"""
+
+    try:
+        rows_raw = _run_sql(sql, key)
+    except Exception:
+        return {}
+
+    out: dict[str, list[dict[str, Any]]] = {}
+    for row in rows_raw:
+        addr = _normalize_addr(row.get("address"))
+        if not addr:
+            continue
+        bal = row.get("balance_raw")
+        if bal is None:
+            continue
+        try:
+            raw = str(int(bal))
+        except (TypeError, ValueError):
+            try:
+                raw = str(int(float(bal)))
+            except (TypeError, ValueError):
+                raw = str(bal)
+        out.setdefault(addr, []).append({
+            "block_number": int(row.get("block_number") or 0),
+            "balance_raw": raw,
+        })
+    return out

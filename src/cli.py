@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Optional
@@ -10,7 +11,15 @@ import typer
 
 try:
     from dotenv import load_dotenv
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+    _dotenv_path = Path(__file__).resolve().parents[1] / ".env"
+    load_dotenv(_dotenv_path)
+    # Shells often export empty DUNE_API_KEY / ETH_RPC_URL placeholders, which
+    # shadow .env; fill those blanks so the repository config still applies.
+    if _dotenv_path.exists() and any(
+        not (os.environ.get(key) or "").strip()
+        for key in ("DUNE_API_KEY", "ETH_RPC_URL", "RPC_URL")
+    ):
+        load_dotenv(_dotenv_path, override=True)
 except ImportError:
     pass
 

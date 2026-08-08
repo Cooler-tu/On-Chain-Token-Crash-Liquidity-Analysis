@@ -10,7 +10,7 @@
 | 池子列表（按代币） | `dex.trades`（project/version/project_contract_address 聚合） | `dune pools <TOKEN>` | RPC adapters |
 | Swap 事件（单池） | `dex.trades`（按 project_contract_address 过滤） | `dune swaps <POOL>` | RPC indexer |
 | 持仓地址 | `erc20_ethereum.evt_Transfer` | `holdings --holdings-source auto` | RPC Transfer events |
-| 持仓余额 | `tokens_ethereum.balances` | 同上 | RPC `balanceOf` |
+| 持仓余额 / 历史快照 | `tokens_ethereum.balances`（稀疏余额账本，按 `block_number` 取最新行） | `holdings --holdings-source auto` | RPC `balanceOf`（兜底 / 校验） |
 | 池 TVL（USD） | `dex.pool_tvl` | `dune tvl <POOL>` | 链上余额近似 |
 | Balancer 流动性事件 | `balancer_v2_ethereum.Vault_evt_PoolBalanceChanged` | `dune data-map` | RPC Vault 扫描 |
 | Curve 流动性事件 | 每池独立合约，Dune 表不统一 | — | RPC `curve_pool` 事件索引 |
@@ -44,5 +44,8 @@ python3 -m src.cli dune data-map
 
 - 池验证（bytecode / factory / state 检查）
 - Curve 流动性事件（Dune 无统一解码表）
-- 持仓重建（balanceOf / totalSupply 快照）
+- LP 持仓重建（balanceOf / totalSupply 快照；普通 holder 历史余额已可由 Dune 取）
 - 链上余额兜底（Dune balances 缺失时）
+
+> 2026-08-08 验证：`tokens_ethereum.balances` 支持按 `block_number` 取历史快照，
+> uPEG 12 个抽样地址（池 / EOA / 合约）的期初、期末余额与 RPC `balanceOf` 全部精确一致。

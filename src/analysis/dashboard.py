@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -54,6 +55,8 @@ const tokenSymbol = "{symbol}";
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}
   });
+  {price_chart}
+  {volume_chart}
   {tvl_chart}
 })();
 
@@ -227,6 +230,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     </div>
     <div class="card">
       <h2>Pool Concentration</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 8px;line-height:1.5">{pool_conc_summary}</p>
       <div class="chart-box-sm"><canvas id="c2"></canvas></div>
     </div>
     <div class="card">
@@ -236,10 +240,23 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   </div>
 
   <div class="grid">
+    <div class="card">
+      <h2>Price Timeline (USD)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Swap-derived USD price per pool from Dune amount_usd.</p>
+      <div class="chart-box"><canvas id="c5"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Trading Volume by Pool</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Hourly volume in {symbol}; stacked by pool.</p>
+      <div class="chart-box"><canvas id="c6"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid">
     <div class="card fw">
       <h2>All Non-Pool Holders</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.</p>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>Balance ({symbol})</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.{balance_note}</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>End Balance ({symbol})</th><th>Start Balance</th><th>Net Change</th><th>Peak</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
     </div>
   </div>
 
@@ -247,8 +264,15 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>Pool TVL Timeline</h2>
+      <h2>Pool TVL Timeline (Total + Per Pool)</h2>
       <div class="chart-box"><canvas id="c4"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fw">
+      <h2>Liquidity Withdrawals</h2>
+      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor</th><th>Amount0</th><th>Amount1</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
     </div>
   </div>
 
@@ -347,6 +371,7 @@ def generate_dashboard(
     pool_holders = [h for h in holdings_data if h.get("is_pool")]
     tvl_data = metrics.get("tvl_timeline", [])
     pool_conc = metrics.get("pool_concentration", {})
+    volume_metrics = metrics.get("volume", {})
 
     risk_score = risk.get("final_score", 0)
     risk_level = risk.get("risk_level", "N/A")
@@ -373,6 +398,23 @@ def generate_dashboard(
     else:
         block_window = "N/A"
     main_pool_share = pool_conc.get("main_pool_share", 0) * 100
+    main_pool_addr = pool_conc.get("main_pool", "")
+    main_pool_label = _short_pool_label(main_pool_addr)
+    main_volume_addr = volume_metrics.get("main_volume_pool", "")
+    main_volume_share = volume_metrics.get("main_volume_share", 0) * 100
+    main_volume_label = _short_pool_label(main_volume_addr)
+    if main_pool_addr and main_volume_addr:
+        pool_conc_summary = (
+            "Main TVL pool: {} ({:.2f}%) · Main volume pool: {} ({:.2f}%)".format(
+                main_pool_label, main_pool_share, main_volume_label, main_volume_share
+            )
+        )
+    elif main_pool_addr:
+        pool_conc_summary = "Main TVL pool: {} ({:.2f}%)".format(
+            main_pool_label, main_pool_share
+        )
+    else:
+        pool_conc_summary = "No active pool concentration data."
 
     risk_lvl_class = risk_level.lower() if risk_level != "N/A" else "n-a"
     risk_color = _risk_color(risk_score)
@@ -394,7 +436,36 @@ def generate_dashboard(
     # Build tables
     table_top = _table_top_holders(top_holders, symbol)
     table_pool = _table_pool_holders(pool_holders, symbol)
-    table_ident = _table_pool_ident(pool_ident)
+    table_ident = _table_pool_ident(pool_ident, metrics, decimals, symbol)
+    table_movers = _table_wallet_movers(
+        swaps_data, holdings_data, token_addr, decimals, symbol
+    )
+    table_withdrawals = _table_withdrawals(metrics, decimals, symbol)
+
+    balance_note_parts = []
+    balance_start_block = holdings.get("balance_start_block") or from_block
+    balance_end_block = holdings.get("balance_end_block") or to_block
+    if balance_start_block and balance_end_block:
+        balance_note_parts.append(
+            "Snapshot blocks: start {:,} → end {:,}".format(
+                int(balance_start_block), int(balance_end_block)
+            )
+        )
+    dune_count = holdings.get("dune_historical_balance_count")
+    rebuild_count = holdings.get("event_rebuild_count")
+    if dune_count is not None:
+        balance_note_parts.append(
+            "{} addresses via Dune historical snapshot".format(dune_count)
+        )
+    if rebuild_count is not None:
+        balance_note_parts.append(
+            "{} addresses with event-flow peak/trajectory".format(rebuild_count)
+        )
+    if holdings.get("balance_source"):
+        balance_note_parts.append("source: {}".format(holdings["balance_source"]))
+    balance_note = " · ".join(balance_note_parts)
+    if balance_note:
+        balance_note = '<br><span style="opacity:.85">' + balance_note + "</span>"
 
     # Build pool section
     pool_section_parts = []
@@ -409,13 +480,25 @@ def generate_dashboard(
         pool_section_parts.append(f"""<div class="grid">
     <div class="card fw">
       <h2>All Verified Pools</h2>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>TVL ({symbol})</th><th>Volume ({symbol})</th><th>TVL Share</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
+    </div>
+  </div>""")
+    pool_section = "\n".join(pool_section_parts)
+
+    if table_movers:
+        pool_section_parts.append(f"""<div class="grid">
+    <div class="card fw">
+      <h2>Top Movers (Holder Net Change)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Net (Holdings) = end-block balance − start-block balance when a Dune/RPC snapshot exists. Bought/Sold/Swap Net are swap-only context; transfer-only moves can differ.</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Bought ({symbol})</th><th>Sold ({symbol})</th><th>Swap Net ({symbol})</th><th>Holdings Net ({symbol})</th><th>Peak ({symbol})</th><th>Source</th><th>Swap Tx</th></tr></thead><tbody>{table_movers}</tbody></table></div>
     </div>
   </div>""")
     pool_section = "\n".join(pool_section_parts)
 
     # Build TVL chart JS
     tvl_chart = _build_tvl_chart_js(tvl_data, token_decimals=decimals, symbol=symbol)
+    price_chart = _build_price_chart_js(tvl_data, symbol=symbol)
+    volume_chart = _build_volume_chart_js(volume_metrics, symbol=symbol)
 
     # Build JS
     js_vars = {
@@ -429,6 +512,8 @@ def generate_dashboard(
         "holder_count": max(0, holdings_count - len(pool_holders)),
         "pool_share": main_pool_share,
         "pool_other": max(0, 100 - main_pool_share),
+        "price_chart": price_chart,
+        "volume_chart": volume_chart,
         "tvl_chart": tvl_chart,
     }
     
@@ -456,7 +541,11 @@ def generate_dashboard(
         "risk_level": risk_level if risk_level != "N/A" else "N/A",
         "risk_color": risk_color,
         "risk_score": risk_score,
+        "pool_conc_summary": pool_conc_summary,
+        "balance_note": balance_note,
         "table_top": table_top,
+        "table_movers": table_movers or "",
+        "table_withdrawals": table_withdrawals or "",
         "pool_section": pool_section,
         "js_script": js_script,
     }
@@ -486,36 +575,366 @@ def _build_tvl_chart_js(
         )
 
     scale = 10 ** max(0, int(token_decimals or 18))
-    labels_json = json.dumps([t.get("block_number", i) for i, t in enumerate(tvl_data)])
-    # metrics writes tvl_in_token (raw units), not "tvl" / USD
-    values = []
+    by_pool: dict[str, list[dict]] = defaultdict(list)
     for t in tvl_data:
-        raw = t.get("tvl_in_token", t.get("tvl", 0))
-        try:
-            values.append(float(raw) / scale)
-        except (TypeError, ValueError):
-            values.append(0.0)
-    values_json = json.dumps(values)
-    label = "TVL ({})".format(symbol or "token")
+        by_pool[t.get("pool_address") or "unknown"].append(t)
 
+    labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
+    total_values = []
+    for block in labels:
+        total = 0.0
+        for entries in by_pool.values():
+            for t in entries:
+                if t["block_number"] == block:
+                    try:
+                        total += float(t.get("tvl_in_token", t.get("tvl", 0))) / scale
+                    except (TypeError, ValueError):
+                        pass
+        total_values.append(total)
+
+    colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
+    datasets = [{
+        "label": "Total ({})".format(symbol or "token"),
+        "data": total_values,
+        "borderColor": "#3b82f6",
+        "backgroundColor": "rgba(59,130,246,0.08)",
+        "fill": True,
+        "tension": 0.25,
+        "pointRadius": 0,
+    }]
+    for i, (pa, entries) in enumerate(sorted(by_pool.items())):
+        vals_by_block = {
+            t["block_number"]: (
+                float(t.get("tvl_in_token", t.get("tvl", 0))) / scale
+                if t.get("tvl_in_token") is not None else 0.0
+            )
+            for t in entries
+        }
+        color = colors[i % len(colors)]
+        datasets.append({
+            "label": _short_pool_label(pa),
+            "data": [vals_by_block.get(b) for b in labels],
+            "borderColor": color,
+            "backgroundColor": color + "33",
+            "borderWidth": 1.5,
+            "fill": False,
+            "tension": 0.2,
+            "pointRadius": 0,
+            "spanGaps": True,
+        })
+
+    labels_json = json.dumps(labels)
+    datasets_json = json.dumps(datasets, default=str)
     return (
         "const tvlLabels = %s;\n"
-        "const tvlValues = %s;\n"
-        "tc('c4',{type:'line',data:{labels:tvlLabels,datasets:[{label:%s,"
-        "data:tvlValues,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',"
-        "fill:true,tension:0.3,pointRadius:3}]},"
+        "const tvlDatasets = %s;\n"
+        "tc('c4',{type:'line',data:{labels:tvlLabels,datasets:tvlDatasets},"
         "options:{responsive:true,maintainAspectRatio:false,"
+        "interaction:{intersect:false,mode:'index'},"
         "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
         "scales:{y:{beginAtZero:true,ticks:{color:'#64748b',"
         "callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}},"
-        "x:{ticks:{color:'#64748b'},grid:{display:false}}}}})"
-    ) % (labels_json, values_json, json.dumps(label))
+        "x:{ticks:{color:'#64748b',grid:{display:false}}}}}})"
+    ) % (labels_json, datasets_json)
+
+
+def _build_price_chart_js(
+    tvl_data: list,
+    symbol: str = "TOKEN",
+) -> str:
+    by_pool: dict[str, list[dict]] = defaultdict(list)
+    for t in tvl_data:
+        price_usd = t.get("price_usd") or 0
+        if price_usd > 0:
+            by_pool[t.get("pool_address") or "unknown"].append(t)
+
+    if not by_pool:
+        return (
+            "tc('c5',{type:'line',data:{labels:['No Data'],datasets:[{data:[0],"
+            "borderColor:'#3b82f6'}]},"
+            "options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},"
+            "scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},"
+            "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
+        )
+
+    labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
+    colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
+    datasets = []
+    for i, (pa, entries) in enumerate(sorted(by_pool.items())):
+        vals_by_block = {t["block_number"]: t["price_usd"] for t in entries}
+        color = colors[i % len(colors)]
+        datasets.append({
+            "label": _short_pool_label(pa),
+            "data": [vals_by_block.get(b) for b in labels],
+            "borderColor": color,
+            "backgroundColor": color + "33",
+            "borderWidth": 1.5,
+            "pointRadius": 0,
+            "fill": False,
+            "spanGaps": True,
+            "tension": 0.2,
+        })
+
+    labels_json = json.dumps(labels)
+    datasets_json = json.dumps(datasets, default=str)
+    return (
+        "const priceLabels = %s;\n"
+        "const priceDatasets = %s;\n"
+        "tc('c5',{type:'line',data:{labels:priceLabels,datasets:priceDatasets},"
+        "options:{responsive:true,maintainAspectRatio:false,"
+        "interaction:{intersect:false,mode:'index'},"
+        "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
+        "scales:{y:{beginAtZero:true,ticks:{color:'#64748b',"
+        "callback:function(v){return '$'+Number(v).toLocaleString();}},grid:{color:'#1e293b'}},"
+        "x:{ticks:{color:'#64748b',grid:{display:false}}}}}})"
+    ) % (labels_json, datasets_json)
+
+
+def _build_volume_chart_js(
+    volume_metrics: dict,
+    symbol: str = "TOKEN",
+) -> str:
+    timeline = (volume_metrics or {}).get("volume_timeline", [])
+    pool_ids = sorted((volume_metrics or {}).get("volume_by_pool", {}).keys())
+    if not timeline or not pool_ids:
+        return (
+            "tc('c6',{type:'bar',data:{labels:['No Data'],datasets:[{data:[0],"
+            "backgroundColor:'#3b82f6'}]},"
+            "options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},"
+            "scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},"
+            "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
+        )
+
+    labels = []
+    for bucket in timeline:
+        ts = int(bucket.get("bucket_ts") or 0)
+        if ts:
+            labels.append(datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%m-%d %H:%M"))
+        else:
+            labels.append("0")
+
+    colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
+    datasets = []
+    for i, pa in enumerate(pool_ids):
+        color = colors[i % len(colors)]
+        data = []
+        for bucket in timeline:
+            data.append(bucket.get("pools", {}).get(pa, {}).get("volume_in_token", 0))
+        datasets.append({
+            "label": _short_pool_label(pa),
+            "data": data,
+            "backgroundColor": color,
+            "borderColor": color,
+            "borderWidth": 1,
+            "stack": "volume",
+        })
+
+    labels_json = json.dumps(labels)
+    datasets_json = json.dumps(datasets, default=str)
+    return (
+        "const volumeLabels = %s;\n"
+        "const volumeDatasets = %s;\n"
+        "tc('c6',{type:'bar',data:{labels:volumeLabels,datasets:volumeDatasets},"
+        "options:{responsive:true,maintainAspectRatio:false,"
+        "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
+        "scales:{x:{stacked:true,ticks:{color:'#64748b',maxRotation:45},grid:{display:false}},"
+        "y:{stacked:true,beginAtZero:true,ticks:{color:'#64748b',"
+        "callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}}}}})"
+    ) % (labels_json, datasets_json)
+
+
+def _short_pool_label(addr: str) -> str:
+    if not addr:
+        return "N/A"
+    if len(addr) <= 14:
+        return addr
+    return addr[:8] + "..." + addr[-4:]
+
+
+def _short_addr(addr: str) -> str:
+    if not addr:
+        return "-"
+    if len(addr) <= 12:
+        return addr
+    return addr[:8] + "..." + addr[-4:]
+
+
+def _fmt_missing() -> str:
+    return '<span style="color:#64748b">—</span>'
+
+
+def _fmt_net_bal(bal, symbol: str) -> str:
+    if bal is None:
+        return _fmt_missing()
+    color = "#4ade80" if bal >= 0 else "#f87171"
+    return '<span style="color:{}">{}</span>'.format(
+        color, _fmt_bal(bal, symbol)
+    )
+
+
+def _has_snapshot(h: dict) -> bool:
+    return (h.get("balance_source") or "") in ("dune_historical", "rpc")
+
+
+def _table_wallet_movers(
+    swaps: list,
+    holdings: list,
+    target_token: str,
+    token_decimals: int,
+    symbol: str,
+    top_n: int = 20,
+) -> str:
+    target = (target_token or "").lower()
+    if not target:
+        return ""
+    scale = 10 ** max(0, int(token_decimals or 18))
+    stats: dict[str, dict[str, float | int]] = defaultdict(
+        lambda: {"bought": 0.0, "sold": 0.0, "net": 0.0, "tx": 0}
+    )
+
+    for e in swaps:
+        if (e.get("event_type") or "").upper() != "SWAP":
+            continue
+        t0 = (e.get("token0_address") or "").lower()
+        t1 = (e.get("token1_address") or "").lower()
+        try:
+            a0 = abs(int(e.get("token0_amount", "0") or "0"))
+            a1 = abs(int(e.get("token1_amount", "0") or "0"))
+        except (TypeError, ValueError):
+            continue
+        if target == t0:
+            amount = a0 / scale
+            net_delta = -amount
+        elif target == t1:
+            amount = a1 / scale
+            net_delta = amount
+        else:
+            continue
+        addr = (e.get("actor") or e.get("recipient") or "").lower()
+        if not addr:
+            continue
+        s = stats[addr]
+        s["bought"] = float(s["bought"]) + max(net_delta, 0.0)
+        s["sold"] = float(s["sold"]) + max(-net_delta, 0.0)
+        s["net"] = float(s["net"]) + net_delta
+        s["tx"] = int(s["tx"]) + 1
+
+    holdings_by_addr: dict[str, dict] = {}
+    for h in holdings or []:
+        addr = (h.get("address") or "").lower()
+        if addr:
+            holdings_by_addr[addr] = h
+
+    # Seed snapshot-backed holders so transfer-only movers also appear.
+    for addr, h in holdings_by_addr.items():
+        if _has_snapshot(h) and not h.get("is_pool"):
+            stats.setdefault(addr, {"bought": 0.0, "sold": 0.0, "net": 0.0, "tx": 0})
+
+    # Wallet-level view: drop pool addresses that slipped in via swap actors.
+    stats = {
+        addr: s for addr, s in stats.items()
+        if not (holdings_by_addr.get(addr) or {}).get("is_pool")
+    }
+
+    def _num(v):
+        if v is None or v == "":
+            return None
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    def _sort_key(item):
+        addr, s = item
+        h = holdings_by_addr.get(addr) or {}
+        h_net = _num(h.get("net_change_decimal"))
+        activity = float(s["bought"]) + float(s["sold"])
+        if h_net is not None:
+            return (-abs(h_net), -activity)
+        return (-activity, -int(s["tx"]))
+
+    rows = []
+    for i, (addr, s) in enumerate(
+        sorted(stats.items(), key=_sort_key)[:top_n],
+        1,
+    ):
+        h = holdings_by_addr.get(addr) or {}
+        h_net = _num(h.get("net_change_decimal"))
+        peak = (
+            _num(h.get("peak_balance_decimal"))
+            if _has_snapshot(h) else None
+        )
+        source_html = (
+            '<span class="badge-dex-other">snapshot</span>'
+            if h_net is not None
+            else '<span class="dex-muted">swap</span>'
+        )
+        rows.append(
+            "<tr>"
+            "<td>{}</td>"
+            '<td class="addr">{}</td>'
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "</tr>".format(
+                i,
+                _short_addr(addr),
+                _fmt_bal(float(s["bought"]), symbol),
+                _fmt_bal(float(s["sold"]), symbol),
+                _fmt_bal(float(s["net"]), symbol),
+                _fmt_net_bal(h_net, symbol),
+                _fmt_bal(peak, symbol) if peak is not None else _fmt_missing(),
+                source_html,
+                int(s["tx"]),
+            )
+        )
+    return "\n".join(rows)
+
+
+def _table_withdrawals(
+    metrics: dict,
+    token_decimals: int,
+    symbol: str,
+    top_n: int = 20,
+) -> str:
+    events = metrics.get("withdrawal_severity", {}).get("withdrawal_events", []) or []
+    if not events:
+        return (
+            '<tr><td colspan="5" style="text-align:center;padding:24px;color:#64748b">'
+            "No liquidity removal events in this window.</td></tr>"
+        )
+    scale = 10 ** max(0, int(token_decimals or 18))
+    events = sorted(events, key=lambda e: -int(e.get("block_number") or 0))[:top_n]
+    rows = []
+    for e in events:
+        amount0 = abs(int(e.get("token0_amount", e.get("amount0", "0")) or "0")) / scale
+        amount1 = abs(int(e.get("token1_amount", e.get("amount1", "0")) or "0")) / scale
+        rows.append(
+            "<tr>"
+            "<td>{}</td>"
+            '<td class="addr">{}</td>'
+            '<td class="addr">{}</td>'
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "</tr>".format(
+                int(e.get("block_number") or 0),
+                _short_addr(e.get("pool", e.get("pool_address", ""))),
+                _short_addr(e.get("actor", "")),
+                _fmt_bal(amount0, symbol),
+                _fmt_bal(amount1, symbol),
+            )
+        )
+    return "\n".join(rows)
 
 
 def _table_top_holders(holders: list, symbol: str) -> str:
     if not holders:
         return (
-            '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">'
+            '<tr><td colspan="10" style="text-align:center;padding:24px;color:#64748b">'
             "No holder data available</td></tr>"
         )
     rows = []
@@ -530,6 +949,10 @@ def _table_top_holders(holders: list, symbol: str) -> str:
         dex_html = _dex_badges_html(
             h.get("dex_protocols") or [], h.get("dex_roles") or {}
         )
+        start = h.get("balance_start_decimal")
+        net = h.get("net_change_decimal")
+        peak = h.get("peak_balance_decimal")
+        has_snapshot = _has_snapshot(h)
         rows.append(
             f'<tr class="holder-row" onclick="togglePortfolio(\'{addr}\')" data-owner="{addr}">'
             f"<td>{i}</td>"
@@ -537,10 +960,13 @@ def _table_top_holders(holders: list, symbol: str) -> str:
             f'<td><span class="badge-{banner}">{banner}</span></td>'
             f"<td>{dex_html}</td>"
             f"<td>{_fmt_bal(h.get('balance_decimal', 0), symbol)}</td>"
+            f"<td>{_fmt_bal(start, symbol) if has_snapshot and start is not None else _fmt_missing()}</td>"
+            f"<td>{_fmt_net_bal(net if has_snapshot else None, symbol)}</td>"
+            f"<td>{_fmt_bal(peak, symbol) if has_snapshot and peak is not None else _fmt_missing()}</td>"
             f"<td>{h.get('tx_count', 0)}</td>"
             f'<td><span class="expand-icon">+</span></td></tr>'
             f'<tr class="portfolio-row" id="portfolio-{addr}" style="display:none">'
-            f'<td colspan="7"><div class="portfolio-inner">Loading...</div></td></tr>'
+            f'<td colspan="10"><div class="portfolio-inner">Loading...</div></td></tr>'
         )
     return "\n".join(rows)
 
@@ -754,16 +1180,42 @@ def _table_pool_holders(holders: list, symbol: str) -> str:
     return "\n".join(rows)
 
 
-def _table_pool_ident(pools: list) -> str:
+def _table_pool_ident(
+    pools: list,
+    metrics: dict,
+    token_decimals: int = 18,
+    symbol: str = "TOKEN",
+) -> str:
+    pool_conc = metrics.get("pool_concentration", {})
+    per_pool_tvl = pool_conc.get("per_pool_tvl", {}) or {}
+    volume_by_pool = metrics.get("volume", {}).get("volume_by_pool", {}) or {}
+    total_tvl = float(pool_conc.get("total_tvl", 0) or 0)
+    total_volume = float(metrics.get("volume", {}).get("total_volume_in_token", 0) or 0)
+    tvl_lookup = {str(k).lower(): v for k, v in per_pool_tvl.items()}
+    vol_lookup = {str(k).lower(): v for k, v in volume_by_pool.items()}
+    scale = 10 ** max(0, int(token_decimals or 18))
+
     rows = []
     for p in pools:
+        pa = (p.get("pool_address") or "").lower()
         t0 = (p.get("token0") or "")[:10] + "..."
         t1 = (p.get("token1") or "")[:10] + "..."
         in_list = "Yes" if p.get("in_holders_list") else "No"
+        raw_tvl = int(tvl_lookup.get(pa, 0) or 0)
+        vol_info = vol_lookup.get(pa, {}) or {}
+        tvl_decimal = raw_tvl / scale if raw_tvl else 0.0
+        vol_decimal = float(vol_info.get("volume_in_token", 0) or 0)
+        tvl_share = raw_tvl / total_tvl * 100 if total_tvl > 0 and raw_tvl else 0.0
+        vol_share = vol_decimal / total_volume * 100 if total_volume > 0 else 0.0
         rows.append(
             f"<tr><td class=\"addr\">{p.get('pool_address','')}</td>"
             f"<td>{p.get('protocol','')} {p.get('version','')}</td>"
-            f"<td>{t0}/{t1}</td><td>{in_list}</td></tr>"
+            f"<td>{t0}/{t1}</td>"
+            f"<td>{_fmt_bal(tvl_decimal, symbol)}</td>"
+            f"<td>{_fmt_bal(vol_decimal, symbol)}</td>"
+            f"<td>{tvl_share:.2f}%</td>"
+            f"<td>{vol_share:.2f}%</td>"
+            f"<td>{in_list}</td></tr>"
         )
     return "\n".join(rows)
 
