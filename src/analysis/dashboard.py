@@ -32,7 +32,7 @@ const tokenSymbol = "{symbol}";
   tc('c1',{
     type:'doughnut',
     data:{
-      labels:['Pool LP Holders','Regular Holders'],
+      labels:['Pool contracts','Wallets & other contracts'],
       datasets:[{data:[{pool_count},{holder_count}],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
@@ -254,9 +254,15 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
+<<<<<<< HEAD
       <h2>All Non-Pool Holders</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.{balance_note}</p>
       <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>End Balance ({symbol})</th><th>Start Balance</th><th>Net Change</th><th>Peak</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
+=======
+      <h2>Largest token balances (pool contracts excluded)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Ranked by ERC-20 balance. Pool <em>contracts</em> (the addresses that custody AMM reserves) are listed separately below — LP providers and other wallets are still included here. DEX = venue activity in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = no DEX link found.</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>Balance ({symbol})</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
+>>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
     </div>
   </div>
 
@@ -472,7 +478,7 @@ def generate_dashboard(
     if table_pool:
         pool_section_parts.append(f"""<div class="grid">
     <div class="card fw">
-      <h2>Pool-Labeled Addresses</h2>
+      <h2>DEX pool contracts (token reserves)</h2>
       <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody>{table_pool}</tbody></table></div>
     </div>
   </div>""")

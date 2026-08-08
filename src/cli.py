@@ -280,7 +280,7 @@ def analyze(
 
     # Step 5: Position analysis
     typer.echo("[5/12] Analyzing positions ...")
-    typer.echo("  V3 tokenIds via Dune Mint→NPM join (no full PM RPC scan)")
+    typer.echo("  V3/V4 LP snapshot via Dune (RPC only for pool state fallback)")
     timer.begin("[5/12] Positions")
     positions, pos_summary = analyze_positions(
         w3, verified_pools, events_all, target_token,
@@ -292,8 +292,8 @@ def analyze(
     ))
     if not positions:
         typer.echo(
-            "  note: 0 positions can mean no in-window V3 mints, or only V4 "
-            "(V4 LP snapshot not fully wired yet)"
+            "  note: 0 positions usually means no open LP at to_block "
+            "(or Dune/RPC snapshot returned empty)"
         )
     timer.end()
 
@@ -733,18 +733,14 @@ def dune(
       python3 -m src.cli dune tvl 0x...
       python3 -m src.cli dune data-map
     """
-    from .data.dune_client import (
-        DuneQueryError,
-        dune_api_key_configured,
-        get_dune_client,
-    )
+    from .data.dune import DuneError, configured, query
 
     action_norm = action.strip().lower()
     if action_norm == "data-map":
         _echo_dune_data_map()
         return
 
-    if not dune_api_key_configured():
+    if not configured():
         typer.echo(
             "DUNE_API_KEY is not set. Create a key at "
             "https://dune.com/settings/api and export it, then retry.",
@@ -753,11 +749,6 @@ def dune(
         raise typer.Exit(1)
 
     cache_dir = Path(output_dir) / "dune_cache"
-    try:
-        client = get_dune_client(cache_dir=cache_dir)
-    except DuneQueryError as exc:
-        typer.echo("Dune client init failed: {}".format(exc), err=True)
-        raise typer.Exit(1)
 
     if action_norm in ("pools",):
         token_address = _resolve_or_exit(token, 1, pick)
@@ -767,10 +758,14 @@ def dune(
             )
         )
         try:
-            rows = client.fetch_pools_for_token(
-                token_address, from_block, to_block
+            rows = query(
+                "pools",
+                cache_dir=cache_dir,
+                token=token_address,
+                from_block=from_block,
+                to_block=to_block,
             )
-        except DuneQueryError as exc:
+        except DuneError as exc:
             typer.echo("Dune query failed: {}".format(exc), err=True)
             raise typer.Exit(1)
         _write_json(Path(output_dir) / "dune_pools.json", rows)
@@ -778,8 +773,8 @@ def dune(
         for r in rows:
             typer.echo(
                 "  {:<10} {:<10} {}  trades={}".format(
-                    r["project"], r["version"],
-                    r["pool_address"], r["trade_count"],
+                    r.get("project", ""), r.get("version", ""),
+                    r.get("pool_address", ""), r.get("trade_count", 0),
                 )
             )
         typer.echo("Saved to {}/dune_pools.json".format(output_dir))
@@ -793,10 +788,14 @@ def dune(
             "Querying Dune dex.trades for pool {}".format(pool)
         )
         try:
-            rows = client.fetch_swaps_for_pool(
-                pool, from_block, to_block
+            rows = query(
+                "swaps_by_pool",
+                cache_dir=cache_dir,
+                pool=pool,
+                from_block=from_block,
+                to_block=to_block,
             )
-        except DuneQueryError as exc:
+        except DuneError as exc:
             typer.echo("Dune query failed: {}".format(exc), err=True)
             raise typer.Exit(1)
         _write_json(Path(output_dir) / "dune_swaps.json", rows)
@@ -806,8 +805,8 @@ def dune(
                 "  #{} {} {}->{}".format(
                     r.get("block_number", 0),
                     r.get("project", ""),
-                    r.get("token_sold_address", "")[:10],
-                    r.get("token_bought_address", "")[:10],
+                    str(r.get("token_sold_address", ""))[:10],
+                    str(r.get("token_bought_address", ""))[:10],
                 )
             )
         typer.echo("Saved to {}/dune_swaps.json".format(output_dir))
@@ -818,17 +817,23 @@ def dune(
             typer.echo("--pool is required for tvl", err=True)
             raise typer.Exit(1)
         try:
-            tvl = client.fetch_pool_tvl(pool)
-        except DuneQueryError as exc:
+            rows = query(
+                "pool_tvl",
+                cache_dir=cache_dir,
+                pool=pool,
+                block_filter="",
+            )
+        except DuneError as exc:
             typer.echo("Dune query failed: {}".format(exc), err=True)
             raise typer.Exit(1)
-        if tvl is None:
+        if not rows:
             typer.echo("No TVL row found for {}".format(pool))
         else:
-            typer.echo("Pool: {}".format(tvl["pool_address"]))
-            typer.echo("Day:  {}".format(tvl["day"]))
-            typer.echo("TVL:  ${:,.2f}".format(tvl["tvl_usd"]))
-            typer.echo("Tokens: {}".format(tvl["token_count"]))
+            tvl = rows[0]
+            typer.echo("Pool: {}".format(tvl.get("pool_address", pool)))
+            typer.echo("Day:  {}".format(tvl.get("day", "")))
+            typer.echo("TVL:  ${:,.2f}".format(float(tvl.get("tvl_usd") or 0)))
+            typer.echo("Tokens: {}".format(tvl.get("token_count", 0)))
         return
 
     typer.echo(
@@ -843,15 +848,14 @@ def dune(
 def _echo_dune_data_map() -> None:
     """Print the Dune data map (what comes from Dune vs RPC)."""
     typer.echo("=== Dune data map ===")
-    typer.echo("Pool discovery      : Dune dex.trades (analyze step 2)")
-    typer.echo("Event indexing      : Dune swaps + V2/V3 Mint/Burn + ERC20 Transfer")
-    typer.echo("                      (--index-source auto|dune; falls back to RPC)")
-    typer.echo("Holdings addresses : Dune erc20_ethereum.evt_Transfer")
-    typer.echo("Holdings balances  : Dune balances_ethereum.latest (fallback RPC)")
-    typer.echo("Pool TVL           : Dune dex.pool_tvl (CLI) / RPC in metrics snapshots")
-    typer.echo("Balancer / V4 LP   : partial on Dune; swaps covered via dex.trades")
-    typer.echo("Verification       : RPC (bytecode/factory/state checks)")
-    typer.echo("Positions          : RPC (balanceOf/totalSupply snapshots)")
+    typer.echo("API: src.data.dune.configured / query  +  dune_sql/*.sql")
+    typer.echo("Pool discovery      : pools.sql + pools_v4.sql (real V4 poolIds)")
+    typer.echo("Event indexing      : swaps + V2/V3 Mint/Burn + V4 ModifyLiquidity + transfers")
+    typer.echo("V3 LP tokenIds      : liquidity_uniswap_v3_npm_token_ids.sql")
+    typer.echo("Holdings (optional) : transfer_addresses.sql + balances.sql")
+    typer.echo("Holdings (default)  : index Transfers + RPC balanceOf@to_block")
+    typer.echo("Pool TVL (CLI)      : pool_tvl.sql")
+    typer.echo("Verification/pos RPC: bytecode, ownerOf, positions(), slot0")
 
 
 def _write_json(path: Path, data):

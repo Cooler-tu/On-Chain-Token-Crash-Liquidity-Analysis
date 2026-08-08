@@ -16,6 +16,90 @@ from .v3_math import get_amounts_for_liquidity, value_in_token1_raw
 _ZERO = "0x0000000000000000000000000000000000000000"
 
 
+def _parse_uint(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        if isinstance(value, int):
+            return int(value)
+        s = str(value).strip()
+        if not s:
+            return default
+        if "e" in s.lower() or "." in s:
+            return int(float(s))
+        return int(s, 0) if s.startswith("0x") else int(s)
+    except (TypeError, ValueError):
+        return default
+
+
+def _dune_cache(cache_dir: Optional[str | Path]) -> Path:
+    if cache_dir is None:
+        return Path("output") / "dune_cache" / "positions"
+    return Path(cache_dir).parent / "dune_cache" / "positions"
+
+
+def _salt_to_token_id(salt: Any) -> Optional[int]:
+    """V4 PositionManager uses bytes32(tokenId) as ModifyLiquidity.salt."""
+    if salt is None:
+        return None
+    try:
+        if isinstance(salt, (bytes, bytearray)):
+            return int.from_bytes(salt, "big")
+        if isinstance(salt, int):
+            return int(salt)
+        s = str(salt).strip().lower()
+        if s.startswith("\\x"):
+            s = "0x" + s[2:]
+        if s.startswith("0x"):
+            return int(s, 16)
+        return int(s)
+    except (TypeError, ValueError):
+        return None
+
+
+def _chunked(items: list[Any], size: int = 400) -> list[list[Any]]:
+    if size <= 0:
+        return [items]
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+def _v3_pool_state_rpc(
+    w3: Web3,
+    pools_by_addr: dict[str, VerifiedPool],
+    to_block: int,
+    sqrt_from_dune: Optional[dict[str, int]] = None,
+) -> dict[str, dict[str, Any]]:
+    """Per-pool sqrt price + reserve TVL. Prefers Dune sqrt; balances stay RPC."""
+    pool_state: dict[str, dict[str, Any]] = {}
+    for pool in pools_by_addr.values():
+        key = pool.pool_address.lower()
+        sqrt_price_x96 = int((sqrt_from_dune or {}).get(key) or 0)
+        try:
+            if sqrt_price_x96 <= 0:
+                pool_contract = get_contract(w3, pool.pool_address, "uniswap_v3_pool")
+                slot0 = pool_contract.functions.slot0().call(block_identifier=to_block)
+                sqrt_price_x96 = int(slot0[0])
+            t0 = get_contract(w3, pool.token0, "erc20")
+            t1 = get_contract(w3, pool.token1, "erc20")
+            bal0 = int(
+                t0.functions.balanceOf(pool.pool_address).call(
+                    block_identifier=to_block
+                )
+            )
+            bal1 = int(
+                t1.functions.balanceOf(pool.pool_address).call(
+                    block_identifier=to_block
+                )
+            )
+            pool_state[key] = {
+                "sqrt_price_x96": sqrt_price_x96,
+                "tvl_token1": value_in_token1_raw(bal0, bal1, sqrt_price_x96),
+            }
+        except Exception:
+            pool_state[key] = {"sqrt_price_x96": sqrt_price_x96, "tvl_token1": 0.0}
+    return pool_state
+
+
 def reconstruct_v2_holders(
     w3: Web3,
     pools: list[VerifiedPool],
@@ -141,16 +225,227 @@ def reconstruct_v3_position_owners(
     *,
     allow_rpc_scan: bool = False,
 ) -> list[Position]:
-    """Snapshot V3 LP NFTs for verified pools at ``to_block``.
+    """Snapshot V3 LP NFTs at ``to_block``.
 
-    Candidate tokenIds come from the indexer map / in-window PM events.
-    Token amounts and ``share_pct`` use tick-range math at ``to_block``:
-    L + tickLower/tickUpper + sqrtPriceX96 → amount0/amount1 → value share.
-    Only positions with L > 0 at ``to_block`` are kept.
-
-    When ``allow_rpc_scan`` is False (default), never fall back to scanning
-    the global NonfungiblePositionManager logs (very slow on free RPC).
+    Prefer Dune (full snapshot, then staged base+L+owners) over per-NFT RPC.
+    Pool reserves for share% still use a few RPC calls.
     """
+    pools_by_addr: dict[str, VerifiedPool] = {}
+    for p in pools:
+        if p.version == "v3" and p.verified and p.pool_address:
+            pools_by_addr[p.pool_address.lower()] = p
+    if not pools_by_addr:
+        return []
+
+    pm_addr = Web3.to_checksum_address(position_manager_address)
+    try:
+        from ..data.dune import configured, query
+
+        if configured():
+            dune_dir = _dune_cache(cache_dir)
+            rows: list[dict[str, Any]] = []
+            try:
+                rows = query(
+                    "positions_uniswap_v3_snapshot",
+                    cache_dir=dune_dir,
+                    npm=pm_addr,
+                    pool_list=list(pools_by_addr.keys()),
+                    to_block=to_block,
+                    chunk_blocks=0,
+                )
+                print(
+                    "  [positions] Dune V3 snapshot: {} open NFT(s)".format(
+                        len(rows)
+                    )
+                )
+            except Exception as snap_exc:
+                print(
+                    "  [positions] Dune V3 snapshot missed ({}) — "
+                    "staged queries".format(snap_exc)
+                )
+                rows = _dune_v3_staged_snapshot(
+                    query, dune_dir, pm_addr, pools_by_addr, to_block
+                )
+
+            if rows:
+                sqrt_map: dict[str, int] = {}
+                try:
+                    for srow in query(
+                        "pool_sqrt_price_v3",
+                        cache_dir=dune_dir,
+                        pool_list=list(pools_by_addr.keys()),
+                        to_block=to_block,
+                        chunk_blocks=0,
+                    ):
+                        pa = str(srow.get("pool_address") or "").lower()
+                        sqrt_map[pa] = _parse_uint(srow.get("sqrt_price_x96"))
+                except Exception as exc:
+                    print(
+                        "  [positions] Dune V3 sqrt fallback to RPC: {}".format(
+                            exc
+                        )
+                    )
+
+                pool_state = _v3_pool_state_rpc(
+                    w3, pools_by_addr, to_block, sqrt_map
+                )
+                positions = _positions_from_v3_dune_rows(
+                    rows, pools_by_addr, pool_state
+                )
+                if positions:
+                    return positions
+            print("  [positions] Dune V3 empty — falling back to RPC")
+    except Exception as exc:
+        print("  [positions] Dune V3 failed: {} — RPC fallback".format(exc))
+
+    return _reconstruct_v3_rpc(
+        w3,
+        pools,
+        position_manager_address,
+        from_block,
+        to_block,
+        indexed_events=indexed_events,
+        cache_dir=cache_dir,
+        allow_rpc_scan=allow_rpc_scan,
+    )
+
+
+def _dune_v3_staged_snapshot(
+    query,
+    dune_dir: Path,
+    pm_addr: str,
+    pools_by_addr: dict[str, VerifiedPool],
+    to_block: int,
+) -> list[dict[str, Any]]:
+    """base (mint→tokenId) + chunked liquidity, then owners only for open L."""
+    base = query(
+        "positions_uniswap_v3_base",
+        cache_dir=dune_dir,
+        npm=pm_addr,
+        pool_list=list(pools_by_addr.keys()),
+        to_block=to_block,
+        chunk_blocks=0,
+    )
+    if not base:
+        return []
+    by_tid: dict[int, dict[str, Any]] = {}
+    for row in base:
+        tid = _parse_uint(row.get("nft_token_id"))
+        if tid <= 0:
+            continue
+        by_tid[tid] = {
+            "nft_token_id": str(tid),
+            "pool_address": row.get("pool_address"),
+            "tick_lower": row.get("tick_lower"),
+            "tick_upper": row.get("tick_upper"),
+            "liquidity": "0",
+            "owner": None,
+        }
+    token_ids = sorted(by_tid.keys())
+    open_ids: list[int] = []
+    for batch in _chunked(token_ids, 400):
+        for row in query(
+            "positions_uniswap_v3_liquidity",
+            cache_dir=dune_dir,
+            token_id_list=batch,
+            to_block=to_block,
+            chunk_blocks=0,
+        ):
+            tid = _parse_uint(row.get("nft_token_id"))
+            if tid not in by_tid:
+                continue
+            liq = str(row.get("liquidity") or "0")
+            by_tid[tid]["liquidity"] = liq
+            if _parse_uint(liq) > 0:
+                open_ids.append(tid)
+    for batch in _chunked(sorted(set(open_ids)), 400):
+        for row in query(
+            "positions_nft_owners",
+            cache_dir=dune_dir,
+            npm=pm_addr,
+            token_id_list=batch,
+            to_block=to_block,
+            chunk_blocks=0,
+        ):
+            tid = _parse_uint(row.get("nft_token_id"))
+            if tid in by_tid:
+                by_tid[tid]["owner"] = row.get("owner")
+    out = [
+        r
+        for r in by_tid.values()
+        if _parse_uint(r.get("liquidity")) > 0 and r.get("owner")
+    ]
+    print(
+        "  [positions] Dune V3 staged: {} open NFT(s) from {} base".format(
+            len(out), len(base)
+        )
+    )
+    return out
+
+
+def _positions_from_v3_dune_rows(
+    rows: list[dict[str, Any]],
+    pools_by_addr: dict[str, VerifiedPool],
+    pool_state: dict[str, dict[str, Any]],
+) -> list[Position]:
+    positions: list[Position] = []
+    for row in rows:
+        pool_key = str(row.get("pool_address") or "").lower()
+        matched = pools_by_addr.get(pool_key)
+        if not matched:
+            continue
+        token_id = _parse_uint(row.get("nft_token_id"))
+        liquidity = _parse_uint(row.get("liquidity"))
+        tick_lower = _parse_uint(row.get("tick_lower"))
+        tick_upper = _parse_uint(row.get("tick_upper"))
+        if token_id <= 0 or liquidity <= 0:
+            continue
+        try:
+            owner_addr = Web3.to_checksum_address(str(row.get("owner") or ""))
+        except Exception:
+            continue
+        if owner_addr.lower() == _ZERO.lower():
+            continue
+        state = pool_state.get(pool_key, {})
+        sqrt_price_x96 = int(state.get("sqrt_price_x96") or 0)
+        pool_tvl = float(state.get("tvl_token1") or 0.0)
+        if sqrt_price_x96 <= 0:
+            continue
+        amount0, amount1 = get_amounts_for_liquidity(
+            sqrt_price_x96, tick_lower, tick_upper, liquidity
+        )
+        pos_tvl = value_in_token1_raw(amount0, amount1, sqrt_price_x96)
+        share = (pos_tvl / pool_tvl * 100.0) if pool_tvl > 0 else 0.0
+        positions.append(
+            Position(
+                pool_address=matched.pool_address,
+                owner=owner_addr,
+                nft_token_id=token_id,
+                liquidity=str(liquidity),
+                share_pct=round(share, 6),
+                resolution_method="v3_dune_snapshot_at_to_block",
+                confidence=0.95,
+                tick_lower=tick_lower,
+                tick_upper=tick_upper,
+                token0_amount=str(amount0),
+                token1_amount=str(amount1),
+            )
+        )
+    return positions
+
+
+def _reconstruct_v3_rpc(
+    w3: Web3,
+    pools: list[VerifiedPool],
+    position_manager_address: str,
+    from_block: int,
+    to_block: int,
+    indexed_events: Optional[list[dict]] = None,
+    cache_dir: Optional[str | Path] = None,
+    *,
+    allow_rpc_scan: bool = False,
+) -> list[Position]:
+    """RPC fallback: tokenId discovery + per-NFT ``positions`` / ``ownerOf``."""
     positions: list[Position] = []
     pm_addr = Web3.to_checksum_address(position_manager_address)
 
@@ -164,7 +459,6 @@ def reconstruct_v3_position_owners(
     for p in pools:
         if p.version == "v3" and p.verified:
             fee = p.fee
-            # Dune discovery often omits fee; positions() match needs the real tier.
             if fee is None:
                 try:
                     pc = get_contract(w3, p.pool_address, "uniswap_v3_pool")
@@ -201,7 +495,6 @@ def reconstruct_v3_position_owners(
             return True
         return False
 
-    # Fast path: indexer tokenId→pool map.
     if cache_dir is not None:
         map_path = (
             Path(cache_dir)
@@ -232,30 +525,24 @@ def reconstruct_v3_position_owners(
         ) or et in (
             "POSITION_TRANSFER", "LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES"
         ):
-            # Prefer map/pool_address hint before expensive matches.
             pool_hint = (evt.get("pool_address") or "").lower()
             if pool_hint and pool_hint in pools_by_addr:
                 relevant_ids.add(token_id)
             else:
                 _consider(token_id)
 
-    # Dune path: recover tokenIds by joining pool Mint → NPM ERC721 mint Transfer.
-    # Pool Mint/Burn from dex indexing do not carry nft_token_id (owner is often NPM).
     if not relevant_ids:
         try:
-            from ..data.dune_client import dune_api_key_configured
-            from ..data.dune_positions import fetch_v3_npm_token_ids_for_pools
+            from ..data.dune import configured, query
 
-            if dune_api_key_configured():
-                dune_dir = None
-                if cache_dir is not None:
-                    dune_dir = Path(cache_dir).parent / "dune_cache" / "positions"
-                rows = fetch_v3_npm_token_ids_for_pools(
-                    list(pools_by_addr.keys()),
-                    pm_addr,
-                    from_block,
-                    to_block,
-                    cache_dir=dune_dir,
+            if configured():
+                rows = query(
+                    "liquidity_uniswap_v3_npm_token_ids",
+                    cache_dir=_dune_cache(cache_dir),
+                    npm=pm_addr,
+                    pool_list=list(pools_by_addr.keys()),
+                    from_block=from_block,
+                    to_block=to_block,
                 )
                 print(
                     "  [positions] Dune Mint→NPM tokenIds: {} candidate(s)".format(
@@ -263,14 +550,12 @@ def reconstruct_v3_position_owners(
                     )
                 )
                 for row in rows:
-                    tid = int(row["nft_token_id"])
-                    pool_hint = (row.get("pool_address") or "").lower()
+                    tid = _parse_uint(row.get("nft_token_id"))
+                    pool_hint = str(row.get("pool_address") or "").lower()
                     if pool_hint and pool_hint in pools_by_addr:
                         relevant_ids.add(tid)
                     else:
                         _consider(tid)
-            else:
-                print("  [positions] Dune API key missing; cannot recover V3 tokenIds")
         except Exception as exc:
             print("  [positions] Dune tokenId recovery failed: {}".format(exc))
 
@@ -293,34 +578,7 @@ def reconstruct_v3_position_owners(
     if not relevant_ids:
         return positions
 
-    # Pool price + reserves at window end (for tick→amounts and value share).
-    pool_state: dict[str, dict[str, Any]] = {}
-    for pool in pools_by_addr.values():
-        key = pool.pool_address.lower()
-        try:
-            pool_contract = get_contract(w3, pool.pool_address, "uniswap_v3_pool")
-            slot0 = pool_contract.functions.slot0().call(block_identifier=to_block)
-            sqrt_price_x96 = int(slot0[0])
-            t0 = get_contract(w3, pool.token0, "erc20")
-            t1 = get_contract(w3, pool.token1, "erc20")
-            bal0 = int(
-                t0.functions.balanceOf(pool.pool_address).call(
-                    block_identifier=to_block
-                )
-            )
-            bal1 = int(
-                t1.functions.balanceOf(pool.pool_address).call(
-                    block_identifier=to_block
-                )
-            )
-            pool_tvl_token1 = value_in_token1_raw(bal0, bal1, sqrt_price_x96)
-            pool_state[key] = {
-                "sqrt_price_x96": sqrt_price_x96,
-                "tvl_token1": pool_tvl_token1,
-            }
-        except Exception:
-            pool_state[key] = {"sqrt_price_x96": 0, "tvl_token1": 0.0}
-
+    pool_state = _v3_pool_state_rpc(w3, pools_by_addr, to_block)
     snapshot_cache: dict[int, Optional[tuple]] = {}
     for token_id in sorted(relevant_ids):
         matched = _match_v3_pool_at_block(
@@ -492,11 +750,180 @@ def reconstruct_v4_position_owners(
 ) -> list[Position]:
     """Snapshot V4 LP NFTs at ``to_block``.
 
-    Token amounts use the same tick math as V3.
-    ``share_pct`` = position L / pool active liquidity (StateView.getLiquidity)
-    when the position is in-range at ``to_block``; otherwise 0.
-    This is on-chain exact for *active* liquidity share — not “among discovered”.
+    Prefer Dune net-liquidity by (poolId, salt) + batched ERC721 owners.
+    StateView slot0 / active L stay as a few RPC calls per pool.
     """
+    pools_by_id: dict[str, VerifiedPool] = {}
+    for p in pools:
+        if p.version == "v4" and p.verified:
+            pid = (p.pool_id or p.pool_address or "").lower()
+            if pid:
+                pools_by_id[pid] = p
+    if not pools_by_id:
+        return []
+
+    pm_addr = Web3.to_checksum_address(position_manager_address)
+    try:
+        from ..data.dune import configured, query
+
+        if configured():
+            dune_dir = _dune_cache(cache_dir)
+            liq_rows = query(
+                "positions_uniswap_v4_liquidity",
+                cache_dir=dune_dir,
+                pool_id_list=list(pools_by_id.keys()),
+                to_block=to_block,
+                chunk_blocks=0,
+            )
+            # (token_id -> list of position rows) — salt usually == tokenId
+            by_tid: dict[int, list[dict[str, Any]]] = defaultdict(list)
+            for row in liq_rows:
+                tid = _salt_to_token_id(row.get("salt"))
+                if tid is None or tid < 0:
+                    continue
+                liquidity = _parse_uint(row.get("liquidity"))
+                if liquidity <= 0:
+                    continue
+                by_tid[tid].append(row)
+
+            token_ids = sorted(by_tid.keys())
+            owners: dict[int, str] = {}
+            for batch in _chunked(token_ids, 400):
+                if not batch:
+                    continue
+                for orow in query(
+                    "positions_nft_owners",
+                    cache_dir=dune_dir,
+                    npm=pm_addr,
+                    token_id_list=batch,
+                    to_block=to_block,
+                    chunk_blocks=0,
+                ):
+                    tid = _parse_uint(orow.get("nft_token_id"))
+                    try:
+                        owners[tid] = Web3.to_checksum_address(
+                            str(orow.get("owner") or "")
+                        )
+                    except Exception:
+                        continue
+
+            print(
+                "  [positions] Dune V4: {} open salt(s), {} owner(s)".format(
+                    len(token_ids), len(owners)
+                )
+            )
+
+            try:
+                state_view = get_contract(
+                    w3, state_view_address, "uniswap_v4_state_view"
+                )
+            except Exception:
+                state_view = None
+
+            pool_state: dict[str, dict[str, Any]] = {}
+            for pid, pool in pools_by_id.items():
+                pool_id = pool.pool_id or pool.pool_address
+                try:
+                    if state_view is None:
+                        raise RuntimeError("no state_view")
+                    slot0 = state_view.functions.getSlot0(pool_id).call(
+                        block_identifier=to_block
+                    )
+                    active_l = int(
+                        state_view.functions.getLiquidity(pool_id).call(
+                            block_identifier=to_block
+                        )
+                    )
+                    pool_state[pid] = {
+                        "sqrt_price_x96": int(slot0[0]),
+                        "tick": int(slot0[1]),
+                        "active_liquidity": active_l,
+                    }
+                except Exception:
+                    pool_state[pid] = {
+                        "sqrt_price_x96": 0,
+                        "tick": 0,
+                        "active_liquidity": 0,
+                    }
+
+            positions: list[Position] = []
+            for token_id, rows in by_tid.items():
+                owner_addr = owners.get(token_id)
+                if not owner_addr or owner_addr.lower() == _ZERO.lower():
+                    continue
+                for row in rows:
+                    pid = str(row.get("pool_id") or "").lower()
+                    matched = pools_by_id.get(pid)
+                    if not matched:
+                        continue
+                    liquidity = _parse_uint(row.get("liquidity"))
+                    tick_lower = _parse_uint(row.get("tick_lower"))
+                    tick_upper = _parse_uint(row.get("tick_upper"))
+                    if liquidity <= 0:
+                        continue
+                    state = pool_state.get(pid, {})
+                    sqrt_price_x96 = int(state.get("sqrt_price_x96") or 0)
+                    current_tick = int(state.get("tick") or 0)
+                    active_l = int(state.get("active_liquidity") or 0)
+                    if sqrt_price_x96 <= 0:
+                        continue
+                    amount0, amount1 = get_amounts_for_liquidity(
+                        sqrt_price_x96, tick_lower, tick_upper, liquidity
+                    )
+                    in_range = tick_lower <= current_tick < tick_upper
+                    if in_range and active_l > 0:
+                        share = liquidity / active_l * 100.0
+                        method = "v4_dune_active_liquidity_share_at_to_block"
+                    else:
+                        share = 0.0
+                        method = "v4_dune_tick_amounts_out_of_range_at_to_block"
+                    positions.append(
+                        Position(
+                            pool_address=matched.pool_address,
+                            owner=owner_addr,
+                            nft_token_id=token_id,
+                            liquidity=str(liquidity),
+                            share_pct=round(share, 6),
+                            resolution_method=method,
+                            confidence=0.95 if in_range else 0.9,
+                            tick_lower=tick_lower,
+                            tick_upper=tick_upper,
+                            token0_amount=str(amount0),
+                            token1_amount=str(amount1),
+                        )
+                    )
+            if positions:
+                return positions
+            print("  [positions] Dune V4 empty — falling back to RPC")
+    except Exception as exc:
+        print("  [positions] Dune V4 failed: {} — RPC fallback".format(exc))
+
+    return _reconstruct_v4_rpc(
+        w3,
+        pools,
+        position_manager_address,
+        state_view_address,
+        from_block,
+        to_block,
+        indexed_events=indexed_events,
+        cache_dir=cache_dir,
+        allow_rpc_scan=allow_rpc_scan,
+    )
+
+
+def _reconstruct_v4_rpc(
+    w3: Web3,
+    pools: list[VerifiedPool],
+    position_manager_address: str,
+    state_view_address: str,
+    from_block: int,
+    to_block: int,
+    indexed_events: Optional[list[dict]] = None,
+    cache_dir: Optional[str | Path] = None,
+    *,
+    allow_rpc_scan: bool = False,
+) -> list[Position]:
+    """RPC fallback for V4 LP NFT snapshot."""
     positions: list[Position] = []
     pm_addr = Web3.to_checksum_address(position_manager_address)
 
@@ -559,6 +986,8 @@ def reconstruct_v4_position_owners(
             token_id = int(tid)
         except (TypeError, ValueError):
             continue
+        if token_id <= 0:
+            continue
         src = evt.get("source_event", "")
         et = evt.get("event_type", "")
         if src in ("Transfer", "ModifyLiquidity") or et in (
@@ -585,7 +1014,6 @@ def reconstruct_v4_position_owners(
     if not relevant_ids:
         return positions
 
-    # Pool sqrt price + active liquidity at to_block
     pool_state: dict[str, dict[str, Any]] = {}
     for pid, pool in pools_by_id.items():
         pool_id = pool.pool_id or pool.pool_address
@@ -643,7 +1071,6 @@ def reconstruct_v4_position_owners(
             sqrt_price_x96, tick_lower, tick_upper, liquidity
         )
 
-        # Active-liquidity share: only in-range positions contribute to pool L
         in_range = tick_lower <= current_tick < tick_upper
         if in_range and active_l > 0:
             share = liquidity / active_l * 100.0

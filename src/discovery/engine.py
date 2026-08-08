@@ -116,6 +116,9 @@ def _dune_rows_to_pools(
         adapter_name, version = _map_dune_project(norm)
         if adapter_name is None:
             continue
+        # V4: dex.trades only has PoolManager — real poolIds come from pools_v4.sql.
+        if adapter_name == "UniswapV4Adapter" or version == "v4":
+            continue
 
         pool_addr = norm["pool_address"]
         # Balancer Dune pool_id is a bytes32 poolId; pool contract is the
@@ -174,6 +177,76 @@ def _dune_rows_to_pools(
             verification_confidence=0.0,
         ))
         protocol_names.add("{}_{}".format(dep.protocol, version))
+    return all_pools, protocol_names
+
+
+def _dune_v4_rows_to_pools(
+    rows: list[dict],
+    token_address: str,
+    chain_id: int,
+    deployments: list,
+) -> tuple[list, set[str]]:
+    """Map ``pools_v4.sql`` rows (real bytes32 poolId) into VerifiedPool candidates."""
+    all_pools = []
+    protocol_names: set[str] = set()
+    dep = next(
+        (d for d in deployments if d.adapter == "UniswapV4Adapter"),
+        None,
+    )
+    if dep is None:
+        return all_pools, protocol_names
+
+    target = Web3.to_checksum_address(token_address).lower()
+    seen: set[str] = set()
+    for row in rows:
+        raw_id = str(row.get("pool_id") or "").strip().lower()
+        if not raw_id.startswith("0x") or len(raw_id) != 66:
+            continue
+        if raw_id in seen:
+            continue
+        seen.add(raw_id)
+        try:
+            t0 = Web3.to_checksum_address(str(row.get("token0")))
+            t1 = Web3.to_checksum_address(str(row.get("token1")))
+        except Exception:
+            continue
+        # Ensure target token is one of the pair (Initialize can list native 0x0).
+        pair = {t0.lower(), t1.lower()}
+        if target not in pair:
+            continue
+        try:
+            fee = int(row.get("fee") or 0)
+        except (TypeError, ValueError):
+            fee = 0
+        hooks = str(row.get("hooks") or "").strip()
+        try:
+            hooks_cs = Web3.to_checksum_address(hooks) if hooks else None
+        except Exception:
+            hooks_cs = None
+        zero = "0x0000000000000000000000000000000000000000"
+        all_pools.append(VerifiedPool(
+            chain_id=chain_id,
+            protocol=dep.protocol,
+            version="v4",
+            architecture=dep.architecture,
+            factory_address=dep.factory,
+            router_addresses=[dep.router] if dep.router else [],
+            pool_address=raw_id,
+            pool_id=raw_id,
+            custody_address=dep.factory,
+            position_manager_address=dep.position_manager,
+            hooks_address=(
+                hooks_cs
+                if hooks_cs and hooks_cs.lower() != zero
+                else None
+            ),
+            token0=t0,
+            token1=t1,
+            fee=fee,
+            verified=False,
+            verification_confidence=0.0,
+        ))
+        protocol_names.add("uniswap_v4")
     return all_pools, protocol_names
 
 
@@ -275,11 +348,10 @@ def discover_pools(
     dune_row_count = 0
     dune_pool_count = 0
     try:
-        from ..data.dune_client import dune_api_key_configured, get_dune_client
+        from ..data.dune import configured, query
 
-        if dune_api_key_configured():
+        if configured():
             resolved_cache = Path(cache_dir) if cache_dir else Path("dune_cache")
-            client = get_dune_client(cache_dir=resolved_cache)
             _progress("Dune: querying dex.trades for pools (cached under {}) ...".format(
                 resolved_cache
             ))
@@ -290,7 +362,6 @@ def discover_pools(
                 if state == "CACHED":
                     _progress("Dune: cache hit")
                     return
-                # Throttle: print every ~4.5s (every 3rd poll at 1.5s)
                 if poll_i % 3 == 0 or state != last_state["v"]:
                     _progress(
                         "Dune: waiting for query ({}s, {})".format(
@@ -299,12 +370,35 @@ def discover_pools(
                     )
                     last_state["v"] = state
 
-            rows = client.fetch_pools_for_token(
-                Web3.to_checksum_address(token_address),
-                from_block,
-                to_block,
+            raw = query(
+                "pools",
+                cache_dir=resolved_cache,
+                token=Web3.to_checksum_address(token_address),
+                from_block=from_block,
+                to_block=to_block,
                 on_status=_on_status,
             )
+            rows = []
+            for r in raw:
+                hints = []
+                for k in ("token_hint", "token_hint2", "token_bought", "token_sold"):
+                    v = r.get(k)
+                    if v:
+                        hints.append(str(v).lower())
+                rows.append({
+                    "pool_address": r.get("pool_address") or "",
+                    "project": (r.get("project") or "").lower(),
+                    "version": (r.get("version") or "").lower(),
+                    "trade_count": int(r.get("trade_count") or 0),
+                    "first_seen_block": int(
+                        r.get("first_seen_block") or r.get("first_block") or 0
+                    ),
+                    "last_seen_block": int(
+                        r.get("last_seen_block") or r.get("last_block") or 0
+                    ),
+                    "pool_name": r.get("pool_name") or "",
+                    "token_hints": hints,
+                })
             dune_row_count = len(rows)
             dune_pools, dune_protocols = _dune_rows_to_pools(
                 rows, token_address, chain_id, deployments
@@ -315,6 +409,30 @@ def discover_pools(
             _progress(
                 "Dune: {} row(s) → {} mapped pool(s) in {:.1f}s".format(
                     dune_row_count, dune_pool_count, time.time() - t0
+                )
+            )
+
+            # V4: real bytes32 poolIds (Swap ⋈ Initialize), not PoolManager.
+            _progress("Dune: querying V4 poolIds (Swap⋈Initialize) ...")
+            t1 = time.time()
+            raw_v4 = query(
+                "pools_v4",
+                cache_dir=resolved_cache,
+                token=Web3.to_checksum_address(token_address),
+                from_block=from_block,
+                to_block=to_block,
+                on_status=_on_status,
+            )
+            v4_pools, v4_protocols = _dune_v4_rows_to_pools(
+                raw_v4, token_address, chain_id, deployments
+            )
+            all_pools.extend(v4_pools)
+            protocol_names.update(v4_protocols)
+            dune_pool_count += len(v4_pools)
+            dune_row_count += len(raw_v4)
+            _progress(
+                "Dune V4: {} poolId(s) in {:.1f}s".format(
+                    len(v4_pools), time.time() - t1
                 )
             )
         else:

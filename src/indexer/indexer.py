@@ -1483,8 +1483,8 @@ def index_events(
     prefer_dune = mode == "dune"
     if mode == "auto":
         try:
-            from ..data.dune_client import dune_api_key_configured
-            prefer_dune = dune_api_key_configured()
+            from ..data.dune import configured
+            prefer_dune = configured()
         except Exception:
             prefer_dune = False
 
@@ -1506,11 +1506,19 @@ def index_events(
         except Exception as exc:
             if mode == "dune":
                 raise
-            _progress(
-                "Dune indexing failed ({}) — falling back to RPC eth_getLogs".format(
-                    exc
+            from ..data.dune import DuneQuotaError
+
+            if isinstance(exc, DuneQuotaError):
+                _progress(
+                    "Dune still over quota after chunked retries ({}) — "
+                    "falling back to RPC eth_getLogs".format(exc)
                 )
-            )
+            else:
+                _progress(
+                    "Dune indexing failed ({}) — falling back to RPC eth_getLogs".format(
+                        exc
+                    )
+                )
 
     _progress("Indexing via RPC eth_getLogs (source={}) ...".format(mode))
     out = Path(output_dir)
