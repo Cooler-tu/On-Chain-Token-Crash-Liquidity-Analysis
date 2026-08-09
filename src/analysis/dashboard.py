@@ -25,6 +25,52 @@ const poolI = {pool_i_json};
 const tvlD = {tvl_json};
 const portfolioData = {portfolio_json};
 const tokenSymbol = "{symbol}";
+const tvlPointDetails = {tvl_detail_json};
+
+function fmtNum(v, digits){
+  if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
+  return Number(v).toLocaleString(undefined,{maximumFractionDigits:digits});
+}
+function fmtUsd(v, digits){
+  if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
+  return '$' + Number(v).toLocaleString(undefined,{maximumFractionDigits:digits});
+}
+function escTxt(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function renderTvlDetails(index){
+  var panel = document.getElementById('tvl-details');
+  var detail = (tvlPointDetails || [])[index];
+  if (!panel || !detail) return;
+  document.getElementById('tvl-detail-title').innerHTML =
+    'Block ' + fmtNum(detail.block, 0) + ' &middot; ' + escTxt(detail.time_label);
+  var meta = '<div class="detail-summary">Total TVL <strong>' + fmtNum(detail.total_tvl, 4) + ' ' + escTxt(tokenSymbol) + '</strong></div>';
+  if (detail.volume_bucket_label) {
+    meta += '<span style="opacity:.85">Volume bucket: ' + escTxt(detail.volume_bucket_label) + '</span>';
+  }
+  document.getElementById('tvl-detail-meta').innerHTML = meta;
+  var rows = '';
+  for (var i = 0; i < detail.pools.length; i++) {
+    var p = detail.pools[i];
+    var share = (p.share_pct == null) ? '-' : Number(p.share_pct).toFixed(2) + '%';
+    rows += '<tr>'
+      + '<td class="addr" title="' + escTxt(p.address) + '">' + escTxt(p.label) + '</td>'
+      + '<td>' + escTxt(p.protocol) + '</td>'
+      + '<td>' + fmtNum(p.tvl, 4) + '</td>'
+      + '<td>' + share + '</td>'
+      + '<td>' + fmtUsd(p.price_usd, 4) + '</td>'
+      + '<td>' + fmtNum(p.volume_token, 4) + '</td>'
+      + '<td>' + fmtUsd(p.volume_usd, 2) + '</td>'
+      + '</tr>';
+  }
+  document.getElementById('tvl-detail-body').innerHTML = rows;
+  panel.style.display = '';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function closeTvlDetails(){
+  var panel = document.getElementById('tvl-details');
+  if (panel) panel.style.display = 'none';
+}
 
 (function(){
   function tc(id,cfg){ new Chart(document.getElementById(id),cfg); }
@@ -143,6 +189,15 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .fw{grid-column:1/-1}
 .chart-box{position:relative;height:260px;width:100%}
 .chart-box-sm{position:relative;height:200px;width:100%}
+.point-details{margin-top:14px;padding:14px;background:rgba(15,23,42,0.65);border:1px solid var(--border);border-radius:8px}
+.point-details-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.point-details-title{font-size:13px;font-weight:600;color:var(--text)}
+.point-details-meta{font-size:12px;color:var(--text-dim);margin-bottom:10px}
+.detail-summary{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.detail-summary strong{color:var(--text)}
+.close-btn{border:1px solid var(--border);background:transparent;color:var(--text-muted);width:26px;height:26px;border-radius:6px;font-size:16px;line-height:1;cursor:pointer;flex:0 0 auto}
+.close-btn:hover{color:var(--text);border-color:var(--accent)}
+.muted{color:var(--text-dim)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);color:var(--text-dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
 td{padding:6px;border-bottom:1px solid #1e293b;color:#cbd5e1}
@@ -266,6 +321,19 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     <div class="card fw">
       <h2>Pool TVL Timeline (Total + Per Pool)</h2>
       <div class="chart-box"><canvas id="c4"></canvas></div>
+      <div id="tvl-details" class="point-details" style="display:none">
+        <div class="point-details-head">
+          <div id="tvl-detail-title" class="point-details-title"></div>
+          <button type="button" class="close-btn" onclick="closeTvlDetails()" aria-label="Close details">&times;</button>
+        </div>
+        <div id="tvl-detail-meta" class="point-details-meta"></div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Pool</th><th>Protocol / Version</th><th>TVL ({symbol})</th><th>TVL Share</th><th>Price (USD)</th><th>Volume ({symbol})</th><th>Volume (USD)</th></tr></thead>
+            <tbody id="tvl-detail-body"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -273,7 +341,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     <div class="card fw">
       <h2>Liquidity Withdrawals</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Removed amount is normalized to the target-token side of each pool (no token0 + token1 double counting). USD prefers Dune amount_usd, then stablecoin quote, then pool price.</p>
-      {table_withdrawal_summary}
+{table_withdrawal_summary}
       <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor</th><th>Removed ({symbol})</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
     </div>
   </div>
@@ -532,6 +600,9 @@ def generate_dashboard(
 
     # Build TVL chart JS
     tvl_chart = _build_tvl_chart_js(tvl_data, token_decimals=decimals, symbol=symbol)
+    tvl_details = _build_tvl_details_data(
+        tvl_data, volume_metrics, token_decimals=decimals
+    )
     price_chart = _build_price_chart_js(tvl_data, symbol=symbol)
     volume_chart = _build_volume_chart_js(volume_metrics, symbol=symbol)
 
@@ -543,6 +614,7 @@ def generate_dashboard(
         "tvl_json": json.dumps(tvl_data, indent=2),
         "portfolio_json": portfolio_json,
         "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
+        "tvl_detail_json": json.dumps(tvl_details, default=str),
         "pool_count": len(pool_holders),
         "holder_count": max(0, holdings_count - len(pool_holders)),
         "pool_share": main_pool_share,
@@ -596,6 +668,41 @@ def generate_dashboard(
     return str(dashboard_path.resolve())
 
 
+def _tvl_series(
+    tvl_data: list,
+    token_decimals: int = 18,
+):
+    """Return per-block TVL series with one representative value per pool."""
+    scale = 10 ** max(0, int(token_decimals or 18))
+    by_pool: dict[str, list[dict]] = defaultdict(list)
+    for t in tvl_data:
+        by_pool[t.get("pool_address") or "unknown"].append(t)
+
+    labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
+    total_values = []
+    block_pools: dict[int, dict[str, dict]] = {}
+    for block in labels:
+        total = 0.0
+        per_pool: dict[str, dict] = {}
+        for pa, entries in by_pool.items():
+            last = None
+            for t in entries:
+                if t["block_number"] == block:
+                    last = t
+            if last is None:
+                continue
+            raw = last.get("tvl_in_token", last.get("tvl", 0))
+            try:
+                value = float(raw) / scale if raw is not None else 0.0
+            except (TypeError, ValueError):
+                value = 0.0
+            per_pool[pa] = {"value": value, "entry": last}
+            total += value
+        block_pools[block] = per_pool
+        total_values.append(total)
+    return labels, total_values, block_pools
+
+
 def _build_tvl_chart_js(
     tvl_data: list,
     token_decimals: int = 18,
@@ -610,24 +717,7 @@ def _build_tvl_chart_js(
             "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
         )
 
-    scale = 10 ** max(0, int(token_decimals or 18))
-    by_pool: dict[str, list[dict]] = defaultdict(list)
-    for t in tvl_data:
-        by_pool[t.get("pool_address") or "unknown"].append(t)
-
-    labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
-    total_values = []
-    for block in labels:
-        total = 0.0
-        for entries in by_pool.values():
-            for t in entries:
-                if t["block_number"] == block:
-                    try:
-                        total += float(t.get("tvl_in_token", t.get("tvl", 0))) / scale
-                    except (TypeError, ValueError):
-                        pass
-        total_values.append(total)
-
+    labels, total_values, block_pools = _tvl_series(tvl_data, token_decimals)
     colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
     datasets = [{
         "label": "Total ({})".format(symbol or "token"),
@@ -638,18 +728,15 @@ def _build_tvl_chart_js(
         "tension": 0.25,
         "pointRadius": 0,
     }]
-    for i, (pa, entries) in enumerate(sorted(by_pool.items())):
-        vals_by_block = {
-            t["block_number"]: (
-                float(t.get("tvl_in_token", t.get("tvl", 0))) / scale
-                if t.get("tvl_in_token") is not None else 0.0
-            )
-            for t in entries
-        }
+    pool_addresses = sorted({pa for per_pool in block_pools.values() for pa in per_pool})
+    for i, pa in enumerate(pool_addresses):
         color = colors[i % len(colors)]
         datasets.append({
             "label": _short_pool_label(pa),
-            "data": [vals_by_block.get(b) for b in labels],
+            "data": [
+                block_pools.get(block, {}).get(pa, {}).get("value", 0.0)
+                for block in labels
+            ],
             "borderColor": color,
             "backgroundColor": color + "33",
             "borderWidth": 1.5,
@@ -668,10 +755,98 @@ def _build_tvl_chart_js(
         "options:{responsive:true,maintainAspectRatio:false,"
         "interaction:{intersect:false,mode:'index'},"
         "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
+        "onClick:function(evt,els,chart){var active=chart.getElementsAtEventForMode(evt,'index',{intersect:false},true);"
+        "if(active&&active.length){renderTvlDetails(active[0].index);}},"
         "scales:{y:{beginAtZero:true,ticks:{color:'#64748b',"
         "callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}},"
         "x:{ticks:{color:'#64748b',grid:{display:false}}}}}})"
     ) % (labels_json, datasets_json)
+
+
+def _find_volume_bucket(
+    timeline: list,
+    bucket_seconds: int,
+    ts: int,
+) -> Optional[dict]:
+    """Return the volume bucket covering ts, or the nearest earlier bucket."""
+    if not timeline or not ts:
+        return None
+    ts = int(ts)
+    bucket_seconds = max(1, int(bucket_seconds or 3600))
+    exact = None
+    nearest = None
+    for bucket in timeline:
+        start = int(bucket.get("bucket_ts") or 0)
+        if start <= ts < start + bucket_seconds:
+            exact = bucket
+            break
+        if start <= ts and (nearest is None or start > int(nearest.get("bucket_ts") or 0)):
+            nearest = bucket
+    return exact or nearest
+
+
+def _build_tvl_details_data(
+    tvl_data: list,
+    volume_metrics: Optional[dict],
+    token_decimals: int = 18,
+) -> list:
+    """Build per-time-point pool details for the TVL chart click handler."""
+    if not tvl_data:
+        return []
+
+    labels, total_values, block_pools = _tvl_series(tvl_data, token_decimals)
+    timeline = (volume_metrics or {}).get("volume_timeline") or []
+    bucket_seconds = int((volume_metrics or {}).get("bucket_seconds") or 3600)
+    details = []
+
+    for i, block in enumerate(labels):
+        per_pool = block_pools.get(block) or {}
+        total = total_values[i] if i < len(total_values) else 0.0
+        ts = 0
+        if per_pool:
+            ts = next(iter(per_pool.values())).get("entry", {}).get("block_timestamp") or 0
+        bucket = _find_volume_bucket(timeline, bucket_seconds, ts) if ts else None
+        bucket_pools = (bucket or {}).get("pools") or {}
+
+        pools = []
+        for pa, info in sorted(
+            per_pool.items(),
+            key=lambda item: item[1].get("value", 0.0),
+            reverse=True,
+        ):
+            entry = info.get("entry") or {}
+            pool_vol = bucket_pools.get(pa.lower()) or {}
+            price_usd = entry.get("price_usd")
+            pools.append({
+                "address": pa,
+                "label": _short_pool_label(pa),
+                "protocol": "{} {}".format(
+                    entry.get("protocol") or "", entry.get("version") or ""
+                ).strip() or "-",
+                "tvl": info.get("value", 0.0),
+                "share_pct": (info.get("value", 0.0) / total * 100) if total > 0 else None,
+                "price_usd": price_usd if price_usd is not None else None,
+                "volume_token": pool_vol.get("volume_in_token"),
+                "volume_usd": pool_vol.get("volume_usd"),
+            })
+
+        volume_bucket_label = ""
+        if bucket:
+            volume_bucket_label = datetime.fromtimestamp(
+                int(bucket.get("bucket_ts") or 0), tz=timezone.utc
+            ).strftime("%Y-%m-%d %H:%M UTC")
+        time_label = (
+            datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            if ts else ""
+        )
+        details.append({
+            "block": block,
+            "time_label": time_label,
+            "total_tvl": total,
+            "volume_bucket_label": volume_bucket_label,
+            "pools": pools,
+        })
+    return details
 
 
 def _build_price_chart_js(
