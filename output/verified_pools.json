@@ -11,7 +11,6 @@
     "pool_address": "0xac9fbdbe486f8023606b932a747bc476011b5071",
     "custody_address": "0xac9fbdbe486f8023606b932a747bc476011b5071",
     "gauge_addresses": [],
-<<<<<<< HEAD
     "token0": "0x44b28991B167582F18BA0259e0173176ca125505",
     "token1": "0x0000000000000000000000000000000000000000",
     "creation_block": 0,
@@ -34,10 +33,6 @@
     "gauge_addresses": [],
     "token0": "0x44b28991B167582F18BA0259e0173176ca125505",
     "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-=======
-    "token0": "0xaE6e307c3Fe9E922E5674DBD7F830Ed49c014c6B",
-    "token1": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
     "creation_block": 0,
     "creation_transaction": "",
     "verified": true,

@@ -27,7 +27,6 @@
     ]
   },
   {
-<<<<<<< HEAD
     "address": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
     "label": "Factory (uniswap)_v2",
     "category": "protocol_deployment",
@@ -74,9 +73,6 @@
   },
   {
     "address": "0x02eD43292C6be3F49f2B287C499C77560E426E83",
-=======
-    "address": "0x8EF7d63150E027Bd31FD84dfeCe615E1a0bbd48a",
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
     "label": "Deployer",
     "category": "token_creator",
     "confidence": 1.0,

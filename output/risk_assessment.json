@@ -7,7 +7,6 @@
   "migration_note": "",
   "features": {
     "pool_concentration": {
-<<<<<<< HEAD
       "value": 0.9506,
       "weight": 0.15,
       "description": "Main pool holds 95.06% of total DEX liquidity.",
@@ -20,8 +19,6 @@
       "raw_data": 52.488011
     },
     "withdrawal_severity": {
-=======
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
       "value": 1.0,
       "weight": 0.15,
       "description": "Main pool holds 100.00% of total DEX liquidity.",

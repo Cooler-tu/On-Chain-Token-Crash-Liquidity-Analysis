@@ -6,11 +6,7 @@
 - **Chain:** Ethereum (Chain ID: 1)
 - **Analysis Window:** Block 19600035 to 19606648
 - **Incident Block:** Not specified
-<<<<<<< HEAD
 - **Report Generated:** 2026-08-08 07:32:46 UTC
-=======
-- **Report Generated:** 2026-08-05 06:18:52 UTC
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
 
 ### Risk Score
 
@@ -39,7 +35,6 @@
 
 ## Pool Summary
 
-<<<<<<< HEAD
 **5** verified pool(s), **0** unverified candidate(s).
 
 | Pool Address | Protocol | Version | Token0 | Token1 | Fee | Confidence |
@@ -49,20 +44,12 @@
 | [0x21ff5cf7...Bc0078](https://etherscan.io/address/0x21ff5cf76f562c6fb3871b59133a9E214eBc0078) | uniswap | v2 | 0x44b28991... | 0xC02aaA39... | N/A | 100.00% |
 | [0x7059A9f1...77a890](https://etherscan.io/address/0x7059A9f16dd2405AeF3Dd4f70a89127Ce577a890) | uniswap | v3 | 0x44b28991... | 0xA0b86991... | 3000 | 100.00% |
 | [0x84a69fcD...314230](https://etherscan.io/address/0x84a69fcD071D5c36EF9ca3A31b1ff3aEFB314230) | uniswap | v3 | 0x44b28991... | 0xA0b86991... | 10000 | 100.00% |
-=======
-**1** verified pool(s), **0** unverified candidate(s).
-
-| Pool Address | Protocol | Version | Token0 | Token1 | Fee | Confidence |
-|-------------|----------|---------|--------|--------|-----|------------|
-| [0xac9fbdbe...1b5071](https://etherscan.io/address/0xac9fbdbe486f8023606b932a747bc476011b5071) | uniswap | v2 | 0xaE6e307c... | 0xdAC17F95... | N/A | 100.00% |
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
 
 
 ## Related Addresses
 
 | Address | Label | Category | Confidence |
 |---------|-------|----------|------------|
-<<<<<<< HEAD
 | [0x00000000...E08A90](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) | Factory (uniswap)_v4 | protocol_deployment | 100% |
 | [0xbD216513...64ee9e](https://etherscan.io/address/0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e) | PositionManager (uniswap_v4) | position_manager | 100% |
 | [0x66a9893C...Dd6748](https://etherscan.io/address/0x66a9893Cc07d91d95644cfDcE5591279A7Dd6748) | Router (uniswap_v4) | router | 100% |
@@ -102,33 +89,13 @@
 | [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
 | [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
 | [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
-=======
-| [0x5C69bEe7...c5aA6f](https://etherscan.io/address/0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f) | Factory (uniswap)_v2 | protocol_deployment | 100% |
-| [0xAC9fbdbE...1B5071](https://etherscan.io/address/0xAC9fbdbE486F8023606b932a747BC476011B5071) | Uniswap V2 Pool | pool | 100% |
-| [0x7a250d56...F2488D](https://etherscan.io/address/0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D) | Router (uniswap_v2) | router | 100% |
-| [0x8EF7d631...bbd48a](https://etherscan.io/address/0x8EF7d63150E027Bd31FD84dfeCe615E1a0bbd48a) | Deployer | token_creator | 100% |
-| [0xAC9fbdbE...1B5071](https://etherscan.io/address/0xAC9fbdbE486F8023606b932a747BC476011B5071) | Frequent Token Receiver | frequent_interactor | 50% |
-| [0x22F9dCF4...178C18](https://etherscan.io/address/0x22F9dCF4647084d6C31b2765F6910cd85C178C18) | Frequent Token Receiver | frequent_interactor | 50% |
-| [0x382fFCe2...282bA1](https://etherscan.io/address/0x382fFCe2287252F930E1C8DC9328dac5BF282bA1) | Frequent Token Receiver | frequent_interactor | 50% |
-| [0x58edF782...a36A51](https://etherscan.io/address/0x58edF78281334335EfFa23101bBe3371b6a36A51) | Frequent Token Receiver | frequent_interactor | 50% |
-| [0x6b75d8AF...009A80](https://etherscan.io/address/0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80) | Frequent Token Receiver | frequent_interactor | 50% |
-| [0x74de5d4F...016631](https://etherscan.io/address/0x74de5d4FCbf63E00296fd95d33236B9794016631) | Frequent Token Receiver | frequent_interactor | 50% |
-| [0xd6245B36...0a3321](https://etherscan.io/address/0xd6245B36F8d55DC396745319560Cf587d80a3321) | Frequent Token Sender | frequent_interactor | 50% |
-| [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
-| [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
-| [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
 
 
 ## TVL & Price History
 
 | Metric | Value |
 |--------|-------|
-<<<<<<< HEAD
 | Total TVL (in token units) | 1316.5353 |
-=======
-| Total TVL (in token units) | 4335768.8291 |
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
 | Active Pools | 0 |
 | Main Pool | [0xac9fbdbe...1b5071](https://etherscan.io/address/0xac9fbdbe486f8023606b932a747bc476011b5071) |
 | Main Pool Share | 100.00% |
@@ -154,17 +121,10 @@
 
 | Metric | Value |
 |--------|-------|
-<<<<<<< HEAD
 | Pre-Crash Withdrawals | 121 |
 | Total Removed (token0) | 13123.7238 |
 | Pre-Event TVL | 1316.5353 |
 | Withdrawal Severity | 100.00% of pre-event TVL |
-=======
-| Pre-Crash Withdrawals | 0 |
-| Total Removed (token0) | 0 |
-| Pre-Event TVL | 4335768.8291 |
-| Withdrawal Severity | 0.00% of pre-event TVL |
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
 
 
 ## Incident Timeline
