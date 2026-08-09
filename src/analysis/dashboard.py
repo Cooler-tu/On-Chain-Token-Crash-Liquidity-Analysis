@@ -254,15 +254,9 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-<<<<<<< HEAD
       <h2>All Non-Pool Holders</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.{balance_note}</p>
       <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>End Balance ({symbol})</th><th>Start Balance</th><th>Net Change</th><th>Peak</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
-=======
-      <h2>Largest token balances (pool contracts excluded)</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Ranked by ERC-20 balance. Pool <em>contracts</em> (the addresses that custody AMM reserves) are listed separately below — LP providers and other wallets are still included here. DEX = venue activity in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = no DEX link found.</p>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>Balance ({symbol})</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
     </div>
   </div>
 
@@ -278,7 +272,9 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card fw">
       <h2>Liquidity Withdrawals</h2>
-      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor</th><th>Amount0</th><th>Amount1</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Removed amount is normalized to the target-token side of each pool (no token0 + token1 double counting). USD prefers Dune amount_usd, then stablecoin quote, then pool price.</p>
+      {table_withdrawal_summary}
+      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor</th><th>Removed ({symbol})</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
     </div>
   </div>
 
@@ -447,6 +443,8 @@ def generate_dashboard(
         swaps_data, holdings_data, token_addr, decimals, symbol
     )
     table_withdrawals = _table_withdrawals(metrics, decimals, symbol)
+    table_withdrawal_summary = _table_withdrawal_summary(metrics, symbol)
+    table_large = _table_large_wallets(metrics, symbol)
 
     balance_note_parts = []
     balance_start_block = holdings.get("balance_start_block") or from_block
@@ -475,6 +473,29 @@ def generate_dashboard(
 
     # Build pool section
     pool_section_parts = []
+    activity = metrics.get("wallet_activity") or {}
+    large_wallet_note = (
+        "Flags are independent: Trade = largest single swap; Mover = |net USD|; "
+        "Frequent = swap count; Share = cumulative activity share."
+    )
+    if activity:
+        note_parts = []
+        trade_th = activity.get("large_trade_threshold_usd")
+        mover_th = activity.get("mover_net_usd_threshold")
+        activity_th = activity.get("activity_trade_threshold")
+        if trade_th:
+            note_parts.append("Trade ≥ ${:,.0f} single swap".format(trade_th))
+        if mover_th:
+            note_parts.append("Mover ≥ ${:,.0f} |net USD|".format(mover_th))
+        if activity_th:
+            note_parts.append("Frequent ≥ {} swaps".format(int(activity_th)))
+        if activity.get("volume_ratio"):
+            note_parts.append(
+                "Share ≥ {:.1%} of total volume".format(activity["volume_ratio"])
+            )
+        if note_parts:
+            large_wallet_note = "Flags are independent: " + " · ".join(note_parts) + "."
+
     if table_pool:
         pool_section_parts.append(f"""<div class="grid">
     <div class="card fw">
@@ -497,6 +518,14 @@ def generate_dashboard(
       <h2>Top Movers (Holder Net Change)</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Net (Holdings) = end-block balance − start-block balance when a Dune/RPC snapshot exists. Bought/Sold/Swap Net are swap-only context; transfer-only moves can differ.</p>
       <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Bought ({symbol})</th><th>Sold ({symbol})</th><th>Swap Net ({symbol})</th><th>Holdings Net ({symbol})</th><th>Peak ({symbol})</th><th>Source</th><th>Swap Tx</th></tr></thead><tbody>{table_movers}</tbody></table></div>
+    </div>
+  </div>""")
+    if table_large:
+        pool_section_parts.append(f"""<div class="grid">
+    <div class="card fw">
+      <h2>Notable Wallets (USD)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">{large_wallet_note}</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Max Single USD</th><th>Bought USD</th><th>Sold USD</th><th>Net USD</th><th>Total USD</th><th>Swap Tx</th><th>Flags</th></tr></thead><tbody>{table_large}</tbody></table></div>
     </div>
   </div>""")
     pool_section = "\n".join(pool_section_parts)
@@ -552,6 +581,7 @@ def generate_dashboard(
         "table_top": table_top,
         "table_movers": table_movers or "",
         "table_withdrawals": table_withdrawals or "",
+        "table_withdrawal_summary": table_withdrawal_summary or "",
         "pool_section": pool_section,
         "js_script": js_script,
     }
@@ -769,6 +799,30 @@ def _fmt_missing() -> str:
     return '<span style="color:#64748b">—</span>'
 
 
+def _fmt_usd(value) -> str:
+    if value is None or value == "":
+        return _fmt_missing()
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return _fmt_missing()
+    if abs(v) >= 1_000_000:
+        return "$" + format(v / 1_000_000, ".2f") + "M"
+    if abs(v) >= 1_000:
+        return "$" + format(v / 1_000, ".1f") + "k"
+    return "$" + format(v, ",.2f")
+
+
+def _fmt_pct(value) -> str:
+    if value is None or value == "":
+        return _fmt_missing()
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return _fmt_missing()
+    return "{:.2f}%".format(v * 100)
+
+
 def _fmt_net_bal(bal, symbol: str) -> str:
     if bal is None:
         return _fmt_missing()
@@ -901,6 +955,102 @@ def _table_wallet_movers(
     return "\n".join(rows)
 
 
+def _table_large_wallets(
+    metrics: dict,
+    symbol: str,
+    top_n: int = 25,
+) -> str:
+    """Render notable-wallet rows from metrics.wallet_activity."""
+    activity = metrics.get("wallet_activity") or {}
+    wallets = [w for w in activity.get("wallets") or [] if w.get("notable")][:top_n]
+    if not wallets:
+        return ""
+    rows = []
+    for i, w in enumerate(wallets, 1):
+        flags = []
+        trade_th = activity.get("large_trade_threshold_usd")
+        mover_th = activity.get("mover_net_usd_threshold")
+        activity_th = activity.get("activity_trade_threshold")
+        if w.get("large_trade"):
+            flags.append(
+                "Trade ${}k+".format(int(trade_th) // 1000)
+                if trade_th else "Trade"
+            )
+        if w.get("large_mover"):
+            flags.append(
+                "Mover ${}k+".format(int(mover_th) // 1000)
+                if mover_th else "Mover"
+            )
+        if w.get("high_activity"):
+            flags.append(
+                "Frequent {}tx+".format(int(activity_th))
+                if activity_th else "Frequent"
+            )
+        if w.get("market_share"):
+            flags.append("Share")
+        flag_html = '<span class="badge-dex-other">{}</span>'.format(
+            " / ".join(flags)
+        )
+        rows.append(
+            "<tr>"
+            "<td>{}</td>"
+            '<td class="addr">{}</td>'
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "</tr>".format(
+                i,
+                _short_addr(w.get("address", "")),
+                _fmt_usd(w.get("max_single_usd")),
+                _fmt_usd(w.get("bought_usd")),
+                _fmt_usd(w.get("sold_usd")),
+                _fmt_usd(w.get("net_usd")),
+                _fmt_usd(w.get("total_usd")),
+                int(w.get("swap_count") or 0),
+                flag_html,
+            )
+        )
+    return "\n".join(rows)
+
+
+def _table_withdrawal_summary(
+    metrics: dict,
+    symbol: str,
+) -> str:
+    """Render a per-pool withdrawal summary table."""
+    rows = metrics.get("withdrawal_severity", {}).get("per_pool_removals", []) or []
+    if not rows:
+        return ""
+    table_rows = []
+    for r in rows:
+        table_rows.append(
+            "<tr>"
+            '<td class="addr">{}</td>'
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
+            "</tr>".format(
+                _short_addr(r.get("pool_address", "")),
+                int(r.get("num_withdrawals") or 0),
+                _fmt_bal(float(r.get("removed_target_decimal") or 0), symbol),
+                _fmt_usd(r.get("removed_usd")),
+                _fmt_pct(r.get("pool_tvl_share")),
+                ("{} {}".format(r.get("protocol", ""), r.get("version", ""))).strip() or "-",
+            )
+        )
+    return (
+        '<div class="scroll"><table><thead><tr><th>Pool</th><th>Events</th>'
+        "<th>Removed ({})</th><th>Est. USD</th><th>% Pool TVL</th>"
+        "<th>Protocol</th></tr></thead><tbody>{}</tbody></table></div>"
+    ).format(symbol, "\n".join(table_rows))
+
+
 def _table_withdrawals(
     metrics: dict,
     token_decimals: int,
@@ -910,15 +1060,17 @@ def _table_withdrawals(
     events = metrics.get("withdrawal_severity", {}).get("withdrawal_events", []) or []
     if not events:
         return (
-            '<tr><td colspan="5" style="text-align:center;padding:24px;color:#64748b">'
+            '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">'
             "No liquidity removal events in this window.</td></tr>"
         )
+    events = events[:top_n]
     scale = 10 ** max(0, int(token_decimals or 18))
-    events = sorted(events, key=lambda e: -int(e.get("block_number") or 0))[:top_n]
     rows = []
     for e in events:
-        amount0 = abs(int(e.get("token0_amount", e.get("amount0", "0")) or "0")) / scale
-        amount1 = abs(int(e.get("token1_amount", e.get("amount1", "0")) or "0")) / scale
+        removed_decimal = e.get("removed_target_decimal")
+        if removed_decimal is None:
+            amount0 = abs(int(e.get("token0_amount", e.get("amount0", "0")) or "0")) / scale
+            removed_decimal = amount0
         rows.append(
             "<tr>"
             "<td>{}</td>"
@@ -926,12 +1078,16 @@ def _table_withdrawals(
             '<td class="addr">{}</td>'
             "<td>{}</td>"
             "<td>{}</td>"
+            "<td>{}</td>"
+            "<td>{}</td>"
             "</tr>".format(
                 int(e.get("block_number") or 0),
                 _short_addr(e.get("pool", e.get("pool_address", ""))),
                 _short_addr(e.get("actor", "")),
-                _fmt_bal(amount0, symbol),
-                _fmt_bal(amount1, symbol),
+                _fmt_bal(float(removed_decimal or 0), symbol),
+                _fmt_usd(e.get("removed_usd")),
+                _fmt_pct(e.get("pool_tvl_share")),
+                ("{} {}".format(e.get("protocol", ""), e.get("version", ""))).strip() or "-",
             )
         )
     return "\n".join(rows)

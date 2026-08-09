@@ -1,6 +1,7 @@
 """Liquidity metrics — TVL, pool concentration, LP concentration, withdrawal severity, and price estimation."""
 from __future__ import annotations
 
+import bisect
 import json
 import math
 from collections import defaultdict
@@ -163,6 +164,71 @@ def _event_matches_pool(evt: dict, pool_token0: str, pool_token1: str) -> bool:
     pair = {t0.lower(), t1.lower()}
     pool_pair = {(pool_token0 or "").lower(), (pool_token1 or "").lower()}
     return pool_pair == pair
+
+
+def _verified_pool_by_key(
+    verified_pools: Optional[list[VerifiedPool]],
+) -> dict[str, VerifiedPool]:
+    """Map every address that can identify a pool to its VerifiedPool."""
+    by_key: dict[str, VerifiedPool] = {}
+    for pool in verified_pools or []:
+        if not pool.verified:
+            continue
+        for raw in (pool.pool_address, pool.pool_id, pool.custody_address):
+            if raw:
+                by_key.setdefault(str(raw).lower(), pool)
+    return by_key
+
+
+def _swap_pool_meta(
+    verified_pools: Optional[list[VerifiedPool]],
+) -> dict[str, dict[str, str]]:
+    """Build per-pool token metadata for swap event attribution."""
+    meta: dict[str, dict[str, str]] = {}
+    for pool in verified_pools or []:
+        if not pool.verified:
+            continue
+        addr = (pool.pool_address or "").lower()
+        if not addr:
+            continue
+        meta[addr] = {
+            "protocol": pool.protocol,
+            "version": pool.version,
+            "token0": Web3.to_checksum_address(pool.token0).lower(),
+            "token1": Web3.to_checksum_address(pool.token1).lower(),
+        }
+    return meta
+
+
+def _build_pool_price_series(
+    timeline: Optional[list[dict]],
+) -> dict[str, tuple[list[int], list[float]]]:
+    """Build block-sorted ``price_usd`` series per pool for time-aware lookups."""
+    by_pool: dict[str, list[tuple[int, float]]] = defaultdict(list)
+    for entry in timeline or []:
+        pa = (entry.get("pool_address") or "").lower()
+        price = float(entry.get("price_usd") or 0)
+        if pa and price > 0:
+            by_pool[pa].append((int(entry.get("block_number") or 0), price))
+    series: dict[str, tuple[list[int], list[float]]] = {}
+    for pa, points in by_pool.items():
+        points.sort(key=lambda x: x[0])
+        series[pa] = ([p[0] for p in points], [p[1] for p in points])
+    return series
+
+
+def _price_at_or_before(
+    series: dict[str, tuple[list[int], list[float]]],
+    pool: str,
+    block,
+) -> Optional[float]:
+    """Return the last known pool USD price at or before ``block``."""
+    pair = series.get((pool or "").lower())
+    if not pair:
+        return None
+    blocks, prices = pair
+    idx = bisect.bisect_right(blocks, int(block or 0)) - 1
+    return prices[idx] if idx >= 0 else None
 
 
 def calculate_tvl_v2(
@@ -705,6 +771,11 @@ def calculate_withdrawal_severity(
     events_liquidity: list[dict],
     pre_event_tvl: int,
     incident_block: int,
+    verified_pools: Optional[list[VerifiedPool]] = None,
+    target_token: str = "",
+    token_decimals: int = 18,
+    tvl_by_pool: Optional[dict[str, int]] = None,
+    timeline: Optional[list[dict]] = None,
 ) -> dict[str, Any]:
     """Calculate the severity of liquidity withdrawals before/during the crash window.
 
@@ -722,46 +793,408 @@ def calculate_withdrawal_severity(
     else:
         pre_crash_removals = removals
 
-    # Severity ratio only from removals tied to a known pool (PM events often
-    # lack pool_address and use unrelated token amounts).
-    amount_events = [
-        e for e in pre_crash_removals
-        if (e.get("pool_address") or "").strip()
-    ]
-    total_removed_tokens = sum(
-        abs(int(e.get("token0_amount", "0") or "0"))
-        + abs(int(e.get("token1_amount", "0") or "0"))
-        for e in amount_events
+    pool_by_key = _verified_pool_by_key(verified_pools)
+    price_series = _build_pool_price_series(timeline)
+    pool_tvl = {
+        str(k).lower(): int(v)
+        for k, v in (tvl_by_pool or {}).items()
+        if int(v or 0) > 0
+    }
+    target_lower = (target_token or "").lower()
+    scale = 10 ** max(0, int(token_decimals or 18))
+
+    def _find_pool(evt: dict) -> Optional[VerifiedPool]:
+        pa = (evt.get("pool_address") or "").lower()
+        if pa and pa in pool_by_key:
+            return pool_by_key[pa]
+        t0 = (evt.get("token0_address") or "").lower()
+        t1 = (evt.get("token1_address") or "").lower()
+        if not t0 or not t1:
+            return None
+        for pool in verified_pools or []:
+            if pool.verified and _event_matches_pool(evt, pool.token0, pool.token1):
+                return pool
+        return None
+
+    def _normalize_removal(
+        evt: dict, pool: Optional[VerifiedPool]
+    ) -> tuple[int, int, str, int]:
+        """Return (removed_target_raw, quote_raw, quote_addr_lower, quote_decimals)."""
+        try:
+            a0 = abs(int(evt.get("token0_amount", "0") or "0"))
+            a1 = abs(int(evt.get("token1_amount", "0") or "0"))
+        except (TypeError, ValueError):
+            return 0, 0, "", 18
+        if pool is None:
+            return 0, 0, "", 18
+        side_info = _resolve_target_side(
+            evt, pool.token0, pool.token1, target_token, token_decimals
+        )
+        if side_info:
+            side, quote_addr, quote_dec = side_info
+            return (a0 if side == "0" else a1,
+                    a1 if side == "0" else a0,
+                    quote_addr,
+                    quote_dec)
+        pt0 = (pool.token0 or "").lower()
+        pt1 = (pool.token1 or "").lower()
+        if target_lower == pt0:
+            return a0, a1, pt1, _known_decimals(pt1)
+        if target_lower == pt1:
+            return a1, a0, pt0, _known_decimals(pt0)
+        return 0, 0, "", 18
+
+    normalized: list[dict] = []
+    per_pool: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "num_withdrawals": 0,
+            "removed_target_raw": 0,
+            "removed_target_decimal": 0.0,
+            "removed_usd": 0.0,
+            "pool_tvl_raw": 0,
+        }
     )
+    legacy_total = 0
+    total_target_raw = 0
+    total_usd = 0.0
+    attributed_events = 0
+
+    for evt in pre_crash_removals:
+        try:
+            legacy_total += abs(int(evt.get("token0_amount", "0") or "0")) + abs(
+                int(evt.get("token1_amount", "0") or "0")
+            )
+        except (TypeError, ValueError):
+            pass
+        pool = _find_pool(evt)
+        removed_raw, quote_raw, quote_addr, quote_dec = _normalize_removal(evt, pool)
+        if removed_raw <= 0:
+            normalized.append({
+                "block_number": evt.get("block_number", 0),
+                "pool": evt.get("pool_address", ""),
+                "pool_address": evt.get("pool_address", ""),
+                "actor": evt.get("actor", ""),
+                "token0_amount": evt.get("token0_amount", "0"),
+                "token1_amount": evt.get("token1_amount", "0"),
+                "pool_label": "",
+                "protocol": "",
+                "version": "",
+                "removed_target_decimal": None,
+                "removed_usd": None,
+                "pool_tvl_share": None,
+                "usd_source": "",
+            })
+            continue
+
+        attributed_events += 1
+        removed_decimal = removed_raw / scale
+        pool_key = (pool.pool_address or evt.get("pool_address") or "").lower()
+        pool_tvl_raw = pool_tvl.get(pool_key, 0)
+        pool_share = (
+            removed_raw / pool_tvl_raw
+            if pool_tvl_raw > 0 and removed_raw > 0
+            else None
+        )
+        amount_usd = float(evt.get("amount_usd") or 0)
+        usd = None
+        usd_source = ""
+        if amount_usd > 0:
+            usd = amount_usd
+            usd_source = "event_amount_usd"
+        elif quote_addr in _STABLE_QUOTES and quote_raw > 0:
+            usd = quote_raw / (10 ** quote_dec)
+            usd_source = "stable_quote"
+        elif removed_decimal > 0:
+            price = _price_at_or_before(
+                price_series, pool_key, evt.get("block_number") or 0
+            )
+            if price:
+                usd = removed_decimal * price
+                usd_source = "target_x_pool_price"
+
+        total_target_raw += removed_raw
+        if usd is not None:
+            total_usd += usd
+
+        meta = {"protocol": pool.protocol, "version": pool.version}
+        pool_label = "{} {}".format(meta["protocol"], meta["version"]).strip()
+        normalized.append({
+            "block_number": evt.get("block_number", 0),
+            "block": evt.get("block_number", 0),
+            "ts": evt.get("block_timestamp", 0),
+            "pool": pool.pool_address or evt.get("pool_address", ""),
+            "pool_address": pool.pool_address or evt.get("pool_address", ""),
+            "amount0": evt.get("token0_amount", "0"),
+            "amount1": evt.get("token1_amount", "0"),
+            "token0_amount": evt.get("token0_amount", "0"),
+            "token1_amount": evt.get("token1_amount", "0"),
+            "actor": evt.get("actor", ""),
+            "pool_label": pool_label,
+            "protocol": meta.get("protocol", ""),
+            "version": meta.get("version", ""),
+            "removed_target_raw": removed_raw,
+            "removed_target_decimal": round(removed_decimal, 8),
+            "removed_usd": round(usd, 2) if usd is not None else None,
+            "pool_tvl_raw": pool_tvl_raw or None,
+            "pool_tvl_share": round(pool_share, 8) if pool_share is not None else None,
+            "usd_source": usd_source,
+        })
+
+        agg = per_pool[pool_key]
+        agg["num_withdrawals"] += 1
+        agg["removed_target_raw"] += removed_raw
+        agg["removed_target_decimal"] += removed_decimal
+        agg["removed_usd"] += usd or 0.0
+        agg["pool_tvl_raw"] = pool_tvl_raw
+        agg["pool_address"] = pool.pool_address or evt.get("pool_address", "")
+        agg["protocol"] = meta.get("protocol", "")
+        agg["version"] = meta.get("version", "")
 
     severity = (
-        total_removed_tokens / pre_event_tvl
-        if pre_event_tvl > 0 and total_removed_tokens > 0
+        total_target_raw / pre_event_tvl
+        if pre_event_tvl > 0 and total_target_raw > 0
         else 0.0
     )
-    # Cap for scoring stability
     severity = min(severity, 1.0)
+
+    per_pool_rows = []
+    for pa, agg in per_pool.items():
+        share = (
+            agg["removed_target_raw"] / agg["pool_tvl_raw"]
+            if agg["pool_tvl_raw"] > 0 and agg["removed_target_raw"] > 0
+            else None
+        )
+        per_pool_rows.append({
+            "pool_address": agg.get("pool_address", pa),
+            "protocol": agg.get("protocol", ""),
+            "version": agg.get("version", ""),
+            "num_withdrawals": agg["num_withdrawals"],
+            "removed_target_raw": agg["removed_target_raw"],
+            "removed_target_decimal": round(agg["removed_target_decimal"], 8),
+            "removed_usd": round(agg["removed_usd"], 2) if agg["removed_usd"] else None,
+            "pool_tvl_raw": agg["pool_tvl_raw"] or None,
+            "pool_tvl_share": round(share, 8) if share is not None else None,
+        })
+    per_pool_rows.sort(
+        key=lambda r: (
+            float(r.get("removed_usd") or 0),
+            float(r.get("removed_target_decimal") or 0),
+        ),
+        reverse=True,
+    )
 
     return {
         "num_withdrawals": len(pre_crash_removals),
-        "total_removed_token0": total_removed_tokens,
+        "attributed_withdrawals": attributed_events,
+        "total_removed_token0": legacy_total,
+        "legacy_total_removed_token0": legacy_total,
+        "total_removed_target_raw": total_target_raw,
+        "total_removed_target_decimal": round(total_target_raw / scale, 8),
+        "total_removed_usd": round(total_usd, 2) if total_usd else None,
         "pre_event_tvl": pre_event_tvl,
         "withdrawal_severity": round(severity, 6),
-        "withdrawal_events": [
-            {
-                "block_number": e["block_number"],
-                "block": e["block_number"],
-                "ts": e.get("block_timestamp", 0),
-                "pool": e.get("pool_address", ""),
-                "pool_address": e.get("pool_address", ""),
-                "amount0": e.get("token0_amount", "0"),
-                "amount1": e.get("token1_amount", "0"),
-                "token0_amount": e.get("token0_amount", "0"),
-                "token1_amount": e.get("token1_amount", "0"),
-                "actor": e.get("actor", ""),
-            }
-            for e in pre_crash_removals
-        ],
+        "per_pool_removals": per_pool_rows,
+        "normalization_note": (
+            "Removed target-token amount is normalized to the pool side holding "
+            "the target token (no token0 + token1 double counting). USD prefers "
+            "event amount_usd, then stablecoin quote, then target amount x pool "
+            "price_usd at or before the event block."
+        ),
+        "withdrawal_events": sorted(
+            normalized, key=lambda e: -int(e.get("block_number") or 0)
+        ),
+    }
+
+
+def calculate_wallet_activity(
+    events_all: list[dict],
+    verified_pools: list[VerifiedPool],
+    target_token: str,
+    token_decimals: int,
+    timeline: Optional[list[dict]] = None,
+    min_large_trade_usd: float = 10_000.0,
+    mover_net_usd: float = 10_000.0,
+    min_activity_trades: int = 50,
+    volume_ratio: float = 0.001,
+    top_n: int = 200,
+) -> dict[str, Any]:
+    """Aggregate USD-valued swap activity per wallet with independent flags.
+
+    ``large_trade`` means the wallet's largest single swap >=
+    ``min_large_trade_usd``; ``large_mover`` means |net USD| >=
+    ``mover_net_usd``; ``high_activity`` means swap count >=
+    ``min_activity_trades``. ``market_share`` is informational (cumulative
+    activity >= ``volume_ratio`` of total swap USD volume).
+    """
+    target = Web3.to_checksum_address(target_token).lower()
+    pool_meta = _swap_pool_meta(verified_pools)
+    price_series = _build_pool_price_series(timeline)
+    infra_addr_set = set()
+    for p in verified_pools or []:
+        for raw in (
+            p.pool_address,
+            p.pool_id,
+            p.custody_address,
+            p.position_manager_address,
+            p.hooks_address,
+        ):
+            if raw:
+                infra_addr_set.add(str(raw).lower())
+        for raw in list(p.router_addresses or []) + list(p.gauge_addresses or []):
+            if raw:
+                infra_addr_set.add(str(raw).lower())
+    scale = 10 ** max(0, int(token_decimals or 18))
+    stats: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "swap_count": 0,
+            "bought_usd": 0.0,
+            "sold_usd": 0.0,
+            "net_usd": 0.0,
+            "total_usd": 0.0,
+            "max_single_usd": 0.0,
+            "bought_token": 0.0,
+            "sold_token": 0.0,
+        }
+    )
+    total_usd = 0.0
+    no_usd_swaps = 0
+
+    for evt in events_all or []:
+        if (evt.get("event_type") or "").upper() != "SWAP":
+            continue
+        pa = (evt.get("pool_address") or "").lower()
+        evt_has_tokens = bool(evt.get("token0_address") and evt.get("token1_address"))
+        meta = None
+        if evt_has_tokens:
+            for candidate_pa, candidate_meta in pool_meta.items():
+                if _event_matches_pool(
+                    evt, candidate_meta["token0"], candidate_meta["token1"]
+                ):
+                    meta = candidate_meta
+                    pa = candidate_pa
+                    break
+        else:
+            meta = pool_meta.get(pa)
+        if not meta:
+            continue
+        try:
+            a0 = abs(int(evt.get("token0_amount", "0") or "0"))
+            a1 = abs(int(evt.get("token1_amount", "0") or "0"))
+        except (TypeError, ValueError):
+            continue
+        side_info = _resolve_target_side(
+            evt, meta["token0"], meta["token1"], target_token, token_decimals
+        )
+        if side_info is None:
+            continue
+        target_side, quote_addr, quote_dec = side_info
+        target_raw = a0 if target_side == "0" else a1
+        quote_raw = a1 if target_side == "0" else a0
+        target_decimal = target_raw / scale
+        amount_usd = float(evt.get("amount_usd") or 0)
+        usd = 0.0
+        if amount_usd > 0:
+            usd = amount_usd
+        elif quote_addr in _STABLE_QUOTES and quote_raw > 0:
+            usd = quote_raw / (10 ** quote_dec)
+        elif target_decimal > 0:
+            price = _price_at_or_before(
+                price_series, pa, evt.get("block_number") or 0
+            )
+            if price:
+                usd = target_decimal * price
+        if usd <= 0:
+            no_usd_swaps += 1
+            continue
+        total_usd += usd
+
+        addr = (evt.get("actor") or evt.get("recipient") or "").lower()
+        if not addr or addr in infra_addr_set:
+            continue
+        t0 = (evt.get("token0_address") or "").lower()
+        t1 = (evt.get("token1_address") or "").lower()
+        if t0 and t1 and target in (t0, t1):
+            sign = -1.0 if target == t0 else 1.0
+        else:
+            sign = -1.0 if target_side == "0" else 1.0
+
+        s = stats[addr]
+        s["swap_count"] += 1
+        s["total_usd"] += usd
+        s["max_single_usd"] = max(s["max_single_usd"], usd)
+        if sign > 0:
+            s["bought_usd"] += usd
+            s["bought_token"] += target_decimal
+        else:
+            s["sold_usd"] += usd
+            s["sold_token"] += target_decimal
+        s["net_usd"] += sign * usd
+
+    ratio_threshold = total_usd * volume_ratio
+    rows = []
+    for addr, s in stats.items():
+        total = s["total_usd"]
+        large_trade = s["max_single_usd"] >= min_large_trade_usd
+        large_mover = abs(s["net_usd"]) >= mover_net_usd
+        high_activity = s["swap_count"] >= min_activity_trades
+        market_share = (
+            volume_ratio > 0 and total_usd > 0 and total >= ratio_threshold
+        )
+        rows.append({
+            "address": addr,
+            "swap_count": s["swap_count"],
+            "bought_usd": round(s["bought_usd"], 2),
+            "sold_usd": round(s["sold_usd"], 2),
+            "net_usd": round(s["net_usd"], 2),
+            "total_usd": round(total, 2),
+            "max_single_usd": round(s["max_single_usd"], 2),
+            "bought_token": round(s["bought_token"], 6),
+            "sold_token": round(s["sold_token"], 6),
+            "large_trade": bool(large_trade),
+            "large_mover": bool(large_mover),
+            "high_activity": bool(high_activity),
+            "market_share": bool(market_share),
+            "large": bool(large_trade or large_mover),
+            "notable": bool(large_trade or large_mover or high_activity),
+        })
+    rows.sort(
+        key=lambda r: (
+            -float(r["max_single_usd"]),
+            -abs(float(r["net_usd"])),
+            -int(r["swap_count"]),
+        )
+    )
+    notable_rows = [r for r in rows if r["notable"]]
+    top_rows = [r for r in rows if not r["notable"]][:top_n]
+    out_rows = notable_rows + top_rows
+    seen: set[str] = set()
+    out_rows = [
+        r for r in out_rows
+        if not (r["address"] in seen or seen.add(r["address"]))
+    ]
+
+    return {
+        "large_trade_threshold_usd": min_large_trade_usd,
+        "mover_net_usd_threshold": mover_net_usd,
+        "activity_trade_threshold": min_activity_trades,
+        "volume_ratio": volume_ratio,
+        "total_swap_volume_usd": round(total_usd, 2),
+        "ratio_threshold_usd": round(ratio_threshold, 2),
+        "num_large_trade_wallets": sum(1 for r in rows if r["large_trade"]),
+        "num_large_mover_wallets": sum(1 for r in rows if r["large_mover"]),
+        "num_high_activity_wallets": sum(1 for r in rows if r["high_activity"]),
+        "num_notable_wallets": len(notable_rows),
+        "wallets_considered": len(stats),
+        "swaps_without_usd": no_usd_swaps,
+        "wallets": out_rows,
+        "note": (
+            "USD per swap prefers Dune amount_usd, then stablecoin quote, then "
+            "target amount x pool price_usd at or before the swap block. "
+            "large_trade = max single swap >= threshold; large_mover = "
+            "|net USD| >= threshold; high_activity = swap count >= threshold; "
+            "market_share is informational (total activity >= share of total "
+            "USD volume)."
+        ),
     }
 
 
@@ -804,7 +1237,14 @@ def calculate_all_metrics(
 
     pre_event_tvl = int(pool_conc.get("total_tvl", 0) or 0)
     withdrawal_sev = calculate_withdrawal_severity(
-        events_liquidity, pre_event_tvl, incident_block
+        events_liquidity,
+        pre_event_tvl,
+        incident_block,
+        verified_pools=verified_pools,
+        target_token=target_token,
+        token_decimals=token_decimals,
+        tvl_by_pool=pool_conc.get("per_pool_tvl"),
+        timeline=timeline,
     )
 
     volume = calculate_volume_metrics(
@@ -812,11 +1252,20 @@ def calculate_all_metrics(
     )
     _write_json(out / "volume_timeline.json", volume)
 
+    wallet_activity = calculate_wallet_activity(
+        events_all,
+        verified_pools,
+        target_token,
+        token_decimals,
+        timeline=timeline,
+    )
+
     metrics = {
         "pool_concentration": pool_conc,
         "lp_concentration": lp_conc,
         "withdrawal_severity": withdrawal_sev,
         "volume": volume,
+        "wallet_activity": wallet_activity,
         "tvl_timeline_length": len(timeline),
         "tvl_timeline": timeline,
     }

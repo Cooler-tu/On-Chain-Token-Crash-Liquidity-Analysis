@@ -201,11 +201,12 @@ def analyze_holdings(
     token_contract = get_contract(w3, token_address, "erc20")
     query_timestamp = int(datetime.now(timezone.utc).timestamp())
     balance_block = int(to_block) if to_block else "latest"
-<<<<<<< HEAD
-    pool_addrs_l = {
-        Web3.to_checksum_address(p.pool_address).lower()
-        for p in verified_pools if p.pool_address
-    }
+    pool_addrs_l: set[str] = set()
+    for p in verified_pools:
+        for raw in (p.custody_address or "", p.pool_address or ""):
+            addr = _holder_addr(raw)
+            if addr:
+                pool_addrs_l.add(addr.lower())
 
     # Dune historical snapshots at window start/end. tokens_ethereum.balances
     # is a sparse ledger (one row per address per balance-change block), so we
@@ -247,15 +248,6 @@ def analyze_holdings(
         except Exception:
             # Keep Dune latest / RPC balances as fallback.
             pass
-
-=======
-    pool_addrs_l: set[str] = set()
-    for p in verified_pools:
-        for raw in (p.custody_address or "", p.pool_address or ""):
-            addr = _holder_addr(raw)
-            if addr:
-                pool_addrs_l.add(addr.lower())
->>>>>>> ab170e41285e8dd407bec6375d7f1fec9ae1228a
     missing = [a for a in unique_addresses if a not in balances]
     missing.sort(
         key=lambda a: (

@@ -100,7 +100,11 @@ def generate_report(
     lines.append("")
 
     # Withdrawal severity
-    _add_withdrawal_severity(lines, metrics.get("withdrawal_severity", {}))
+    _add_withdrawal_severity(
+        lines,
+        metrics.get("withdrawal_severity", {}),
+        symbol=token_profile.get("symbol", "TOKEN"),
+    )
     lines.append("")
 
     # Incident timeline
@@ -297,21 +301,51 @@ def _add_lp_concentration(lines: list[str], lp_conc: dict, positions: list[dict]
         lines.append("")
 
 
-def _add_withdrawal_severity(lines: list[str], severity: dict):
+def _add_withdrawal_severity(
+    lines: list[str], severity: dict, symbol: str = "TOKEN"
+):
     lines.append("## Withdrawal Analysis")
     lines.append("")
     num_withdrawals = severity.get("num_withdrawals", 0)
     severity_pct = severity.get("withdrawal_severity", 0)
-    total_removed = severity.get("total_removed_token0", 0)
+    total_removed = severity.get("total_removed_target_decimal", 0)
+    total_removed_usd = severity.get("total_removed_usd")
     pre_event_tvl = severity.get("pre_event_tvl", 0)
 
     lines.append("| Metric | Value |")
     lines.append("|--------|-------|")
     lines.append("| Pre-Crash Withdrawals | {} |".format(num_withdrawals))
-    lines.append("| Total Removed (token0) | {} |".format(_format_amount(str(total_removed))))
+    lines.append("| Attributed Withdrawals | {} |".format(
+        severity.get("attributed_withdrawals", num_withdrawals)
+    ))
+    lines.append("| Total Removed ({}) | {} |".format(
+        symbol, _format_amount(str(total_removed))
+    ))
+    if total_removed_usd is not None:
+        lines.append("| Total Removed (USD est.) | ${:,.2f} |".format(total_removed_usd))
     lines.append("| Pre-Event TVL | {} |".format(_format_amount(str(pre_event_tvl))))
     lines.append("| Withdrawal Severity | {:.2%} of pre-event TVL |".format(severity_pct))
     lines.append("")
+
+    per_pool = severity.get("per_pool_removals") or []
+    if per_pool:
+        lines.append("### Removals by Pool")
+        lines.append("")
+        lines.append("| Pool | Events | Removed ({}) | Est. USD | % Pool TVL |".format(symbol))
+        lines.append("|------|--------|--------------|----------|------------|")
+        for row in per_pool:
+            usd = row.get("removed_usd")
+            usd_cell = "${:,.2f}".format(usd) if usd is not None else "-"
+            share = row.get("pool_tvl_share")
+            share_cell = "{:.2f}%".format(share * 100) if share is not None else "-"
+            lines.append("| {} | {} | {} | {} | {} |".format(
+                _addr_link(row.get("pool_address", "")),
+                row.get("num_withdrawals", 0),
+                _format_amount(str(row.get("removed_target_decimal", 0))),
+                usd_cell,
+                share_cell,
+            ))
+        lines.append("")
 
 
 def _add_incident_timeline(lines: list[str], timeline: dict, incident_block: int):
@@ -483,4 +517,3 @@ def _add_data_sources(lines: list[str]):
     lines.append("| `risk_assessment.json` | Explainable risk score |")
     lines.append("| `report.md` | This report |")
     lines.append("")
-
