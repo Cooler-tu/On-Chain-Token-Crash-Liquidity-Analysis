@@ -118,43 +118,111 @@ def analyze_holdings(
                 raise RuntimeError("DUNE_API_KEY is not set")
             if configured():
                 cache = out / "dune_cache" / "holdings"
-                for row in query(
-                    "transfer_addresses",
-                    cache_dir=cache,
-                    token=token_address,
-                    from_block=from_block,
-                    to_block=to_block,
-                ):
-                    addr = Web3.to_checksum_address(str(row["address"]))
-                    unique_addresses.add(addr)
-                    address_tx_count[addr] = int(row.get("tx_count") or 0)
-                    address_first_seen[addr] = int(row.get("first_seen_block") or 0)
-                    address_last_seen[addr] = int(row.get("last_seen_block") or 0)
+                # Primary: balances_ethereum.daily_updates. Fallbacks: transfers.
+                def _ingest_holder_rows(rows, *, with_tx_count: bool = False) -> None:
+                    for row in rows:
+                        try:
+                            addr = Web3.to_checksum_address(str(row["address"]))
+                        except Exception:
+                            continue
+                        unique_addresses.add(addr)
+                        if with_tx_count:
+                            address_tx_count[addr] = int(row.get("tx_count") or 0)
+                            address_first_seen[addr] = int(
+                                row.get("first_seen_block") or from_block
+                            )
+                            address_last_seen[addr] = int(
+                                row.get("last_seen_block") or to_block
+                            )
+                        else:
+                            address_tx_count.setdefault(addr, 0)
+                            address_first_seen.setdefault(addr, from_block)
+                            address_last_seen.setdefault(addr, to_block)
+
+                try:
+                    _ingest_holder_rows(
+                        query(
+                            "holders",
+                            cache_dir=cache,
+                            token=token_address,
+                            from_block=from_block,
+                            to_block=to_block,
+                            chunk_blocks=0,
+                        )
+                    )
+                except Exception as holders_exc:
+                    print(
+                        "  [holdings] holders (daily_updates) skipped ({}); "
+                        "trying holders_from_transfers".format(holders_exc)
+                    )
+                    try:
+                        _ingest_holder_rows(
+                            query(
+                                "holders_from_transfers",
+                                cache_dir=cache,
+                                token=token_address,
+                                from_block=from_block,
+                                to_block=to_block,
+                                chunk_blocks=0,
+                            )
+                        )
+                    except Exception as xfer_exc:
+                        print(
+                            "  [holdings] holders_from_transfers skipped ({}); "
+                            "using transfer_addresses".format(xfer_exc)
+                        )
+                        _ingest_holder_rows(
+                            query(
+                                "transfer_addresses",
+                                cache_dir=cache,
+                                token=token_address,
+                                from_block=from_block,
+                                to_block=to_block,
+                            ),
+                            with_tx_count=True,
+                        )
                 ranked = sorted(
                     unique_addresses,
                     key=lambda a: (-address_tx_count.get(a, 0), a.lower()),
                 )
                 top = ranked[: max(50, max_rpc_balances)]
                 if top:
-                    for row in query(
-                        "balances",
-                        cache_dir=cache,
-                        token=token_address,
-                        address_list=top,
-                    ):
-                        try:
-                            addr = Web3.to_checksum_address(str(row["address"]))
-                            bal = row.get("balance_raw")
-                            if bal is not None:
-                                balances[addr] = str(int(bal))
-                        except Exception:
-                            continue
+                    try:
+                        for row in query(
+                            "balances",
+                            cache_dir=cache,
+                            token=token_address,
+                            address_list=top,
+                            to_block=to_block,
+                            chunk_blocks=0,
+                        ):
+                            try:
+                                addr = Web3.to_checksum_address(str(row["address"]))
+                                bal = row.get("balance_raw")
+                                if bal is not None:
+                                    balances[addr] = str(int(bal))
+                            except Exception:
+                                continue
+                    except Exception as bal_exc:
+                        print(
+                            "  [holdings] Dune balances skipped ({}); "
+                            "will use RPC balanceOf".format(bal_exc)
+                        )
                 used_source = "dune"
         except Exception as exc:
             dune_error = str(exc)
-            if source_norm == "dune":
+            # Addresses already found → keep going with RPC balances.
+            if unique_addresses:
+                print(
+                    "  [holdings] Dune partial failure ({}); "
+                    "continuing with {} address(es) + RPC".format(
+                        dune_error, len(unique_addresses)
+                    )
+                )
+                used_source = used_source or "dune"
+            elif source_norm == "dune":
                 raise
-            if not unique_addresses and transfer_events:
+            elif transfer_events:
                 _ingest_transfer_events(
                     transfer_events,
                     unique_addresses,
@@ -270,6 +338,7 @@ def analyze_holdings(
                         cache_dir=cache,
                         token=token_address,
                         address_list=batch,
+                        to_block=to_block,
                         chunk_blocks=0,
                     ):
                         try:

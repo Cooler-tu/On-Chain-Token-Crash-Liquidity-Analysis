@@ -150,6 +150,14 @@ def analyze(
         "auto",
         help="Event indexing source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
     ),
+    chart_span: str = typer.Option(
+        "auto",
+        help=(
+            "Time-bucket for price/volume/TVL series from window size: "
+            "auto|month|week|day (month→daily points; week/day→hourly points). "
+            "Not a dashboard UI toggle — covers the full --from-block/--to-block range."
+        ),
+    ),
 ):
     """End-to-end analysis: token → liquidity report + dashboard.
 
@@ -243,10 +251,63 @@ def analyze(
         typer.echo("No verified pools found. Cannot proceed with analysis.")
         raise typer.Exit(1)
 
-    # Step 4: Event indexing
-    typer.echo("[4/12] Indexing events (chunk-level resume enabled; Ctrl+C is safe) ...")
+    token_decimals = profile.decimals or 18
+
+    # Step 4: Holdings / leaderboard FIRST (needed before LP).
+    typer.echo("[4/12] Analyzing holdings (leaderboard before LP) ...")
+    timer.begin("[4/12] Holdings")
+    holdings_result = analyze_holdings(
+        w3, target_token, token_decimals, [],
+        verified_pools, from_block, to_block,
+        output_dir=output_dir,
+        source="auto" if holdings_source == "auto" else holdings_source,
+    )
+    typer.echo("  source={}, balances={}".format(
+        holdings_result.get("source", "rpc"),
+        holdings_result.get("balance_source", "rpc"),
+    ))
+    if holdings_result.get("dune_error"):
+        typer.echo("  dune fallback: {}".format(holdings_result["dune_error"]))
+    leaderboard = [
+        h for h in (holdings_result.get("holdings") or [])
+        if not h.get("is_pool")
+    ]
+    # Dashboard table shows top ~20; keep a bit more for LP join.
+    owner_allowlist = [
+        h.get("address") for h in leaderboard[:100] if h.get("address")
+    ]
+    typer.echo(
+        "  {} ranked holders; LP will only check top {}".format(
+            len(leaderboard), len(owner_allowlist)
+        )
+    )
+    timer.end()
+
+    # Step 5: LP only for leaderboard wallets (not every LP in the pool).
+    typer.echo("[5/12] Analyzing positions (leaderboard owners only) ...")
+    typer.echo("  V3/V4 LP snapshot via Dune; filter to ranked holder addresses")
+    timer.begin("[5/12] Positions")
+    positions, pos_summary = analyze_positions(
+        w3, verified_pools, [], target_token,
+        from_block, to_block, output_dir=output_dir,
+        allow_rpc_scan=False,
+        owner_allowlist=owner_allowlist,
+    )
+    typer.echo("  {} position(s), {} unique holder(s)".format(
+        len(positions), pos_summary.get("total_unique_holders", 0)
+    ))
+    if not positions:
+        typer.echo(
+            "  note: none of the ranked holders have open LP at to_block "
+            "(or Dune snapshot empty)"
+        )
+    timer.end()
+
+    # Step 6: Event indexing (withdrawals / movers still need events;
+    # volume/TVL charts prefer SQL aggregates and do not require raw swaps).
+    typer.echo("[6/12] Indexing events (chunk-level resume enabled; Ctrl+C is safe) ...")
     typer.echo("  Progress: {}/indexer_cache + event_indexer_checkpoint.json".format(output_dir))
-    timer.begin("[4/12] Index events")
+    timer.begin("[6/12] Index events")
     indexed = index_events(
         w3,
         verified_pools,
@@ -270,7 +331,6 @@ def analyze(
         )
     )
 
-    # Load events_all for analysis
     events_all_path = out / "events_all.json"
     if events_all_path.exists():
         with open(events_all_path) as f:
@@ -278,28 +338,9 @@ def analyze(
     else:
         events_all = swaps + liquidity_events + transfers
 
-    # Step 5: Position analysis
-    typer.echo("[5/12] Analyzing positions ...")
-    typer.echo("  V3/V4 LP snapshot via Dune (RPC only for pool state fallback)")
-    timer.begin("[5/12] Positions")
-    positions, pos_summary = analyze_positions(
-        w3, verified_pools, events_all, target_token,
-        from_block, to_block, output_dir=output_dir,
-        allow_rpc_scan=False,
-    )
-    typer.echo("  {} position(s), {} unique holder(s)".format(
-        len(positions), pos_summary.get("total_unique_holders", 0)
-    ))
-    if not positions:
-        typer.echo(
-            "  note: 0 positions usually means no open LP at to_block "
-            "(or Dune/RPC snapshot returned empty)"
-        )
-    timer.end()
-
-    # Step 6: Address labeling
-    typer.echo("[6/12] Labeling addresses ...")
-    timer.begin("[6/12] Labels")
+    # Step 7: Address labeling
+    typer.echo("[7/12] Labeling addresses ...")
+    timer.begin("[7/12] Labels")
     deployer = None
     try:
         deployer = find_deployer(w3, target_token, from_block)
@@ -318,24 +359,32 @@ def analyze(
     typer.echo("  {} label(s) assigned".format(len(labels)))
     timer.end()
 
-    # Step 7: Metrics calculation
-    typer.echo("[7/12] Calculating metrics ...")
-    timer.begin("[7/12] Metrics")
-    token_decimals = profile.decimals or 18
+    # Step 8: Metrics calculation
+    typer.echo("[8/12] Calculating metrics ...")
+    timer.begin("[8/12] Metrics")
     metrics = calculate_all_metrics(
         verified_pools, events_all, liquidity_events,
         positions, target_token, token_decimals,
         incident_block=incident_block, output_dir=output_dir, w3=w3,
+        from_block=from_block,
         to_block=to_block,
+        chart_span=chart_span,
     )
-    typer.echo("  TVL timeline: {} points".format(metrics.get("tvl_timeline_length", 0)))
+    typer.echo(
+        "  TVL timeline: {} points ({}); chart_span={} ({})".format(
+            metrics.get("tvl_timeline_length", 0),
+            metrics.get("tvl_timeline_source", "?"),
+            metrics.get("chart_span", "?"),
+            metrics.get("chart_bucket", "?"),
+        )
+    )
     pool_conc = metrics.get("pool_concentration", {})
     typer.echo("  Main pool share: {:.2%}".format(pool_conc.get("main_pool_share", 0)))
     timer.end()
 
-    # Step 8: Timeline analysis
-    typer.echo("[8/12] Building timeline ...")
-    timer.begin("[8/12] Timeline")
+    # Step 9: Timeline analysis
+    typer.echo("[9/12] Building timeline ...")
+    timer.begin("[9/12] Timeline")
     timeline = analyze_timeline(
         events_all, swaps, liquidity_events, transfers,
         verified_pools, target_token,
@@ -345,9 +394,9 @@ def analyze(
     typer.echo("  {} total events in timeline".format(timeline.get("total_events", 0)))
     timer.end()
 
-    # Step 9: Risk assessment
-    typer.echo("[9/12] Computing risk score ...")
-    timer.begin("[9/12] Risk")
+    # Step 10: Risk assessment
+    typer.echo("[10/12] Computing risk score ...")
+    timer.begin("[10/12] Risk")
     risk = compute_risk(
         pool_concentration=metrics.get("pool_concentration", {}),
         lp_concentration=metrics.get("lp_concentration", {}),
@@ -364,9 +413,9 @@ def analyze(
     ))
     timer.end()
 
-    # Step 10: Report generation
-    typer.echo("[10/12] Generating report ...")
-    timer.begin("[10/12] Report")
+    # Step 11: Report generation
+    typer.echo("[11/12] Generating report ...")
+    timer.begin("[11/12] Report")
     report = generate_report(
         token_profile=profile.__dict__,
         verified_pools=[to_dict(p) for p in verified_pools],
@@ -384,64 +433,22 @@ def analyze(
     typer.echo("  report.md written")
     timer.end()
 
-    # Step 11: Holdings
-    typer.echo("[11/12] Analyzing holdings ...")
-    timer.begin("[11/12] Holdings")
-    if fast_mode and not transfers:
-        typer.echo("  Skipping balance queries (--fast-mode with no transfers)")
-        holdings_result = {
-            "holdings": [],
-            "pool_identification": [
-                {
-                    "pool_address": p.pool_address,
-                    "protocol": p.protocol,
-                    "version": p.version,
-                    "token0": p.token0,
-                    "token1": p.token1,
-                    "in_holders_list": False,
-                }
-                for p in verified_pools if p.verified
-            ],
-            "holdings_count": 0,
-            "total_unique_addresses": 0,
-            "real_holder_count": 0,
-            "contract_count": 0,
-            "resolved_contract_count": 0,
-            "unresolved_contract_count": 0,
-            "total_resolved_holders": 0,
-            "query_time_human": "",
-        }
-        eoa = 0
-        _write_json(out / "holdings.json", holdings_result)
-    else:
-        if transfers:
-            typer.echo(
-                "  Reusing {} indexed Transfer(s); capped RPC balanceOf/bytecode".format(
-                    len(transfers)
-                )
-            )
+    # Holdings already computed in step 4 (leaderboard-before-LP).
+    # Optionally refresh with indexed transfers for DEX tags / activity.
+    if transfers and not fast_mode:
+        typer.echo("  Refreshing holdings with indexed transfers ...")
         holdings_result = analyze_holdings(
             w3, target_token, token_decimals, transfers,
             verified_pools, from_block, to_block,
             output_dir=output_dir,
             source=holdings_source,
         )
-        typer.echo("  source={}, balances={}".format(
-            holdings_result.get("source", "rpc"),
-            holdings_result.get("balance_source", "rpc"),
-        ))
-        if holdings_result.get("dune_error"):
-            typer.echo("  dune fallback: {}".format(holdings_result["dune_error"]))
-        eoa = holdings_result.get("real_holder_count", 0)
-    ctr = holdings_result.get("contract_count", 0)
-    resolved = holdings_result.get("resolved_contract_count", 0)
-    unresolved = holdings_result.get("unresolved_contract_count", 0)
-    total_resolved = holdings_result.get("total_resolved_holders", eoa)
-    typer.echo("  {} unique: {} EOA + {} resolved contracts + {} unresolved = {} beneficial holders".format(
-            holdings_result.get("total_unique_addresses", 0),
-            eoa, resolved, unresolved, total_resolved,
-        ))
-    timer.end()
+    eoa = holdings_result.get("real_holder_count", 0)
+    typer.echo(
+        "  Holdings ready: {} unique, {} EOA".format(
+            holdings_result.get("total_unique_addresses", 0), eoa
+        )
+    )
 
     # Step 12: Dashboard
     typer.echo("[12/12] Generating dashboard ...")
@@ -772,9 +779,9 @@ def dune(
         typer.echo("Found {} pool(s)".format(len(rows)))
         for r in rows:
             typer.echo(
-                "  {:<10} {:<10} {}  trades={}".format(
+                "  {:<10} {:<10} {}".format(
                     r.get("project", ""), r.get("version", ""),
-                    r.get("pool_address", ""), r.get("trade_count", 0),
+                    r.get("pool_address", ""),
                 )
             )
         typer.echo("Saved to {}/dune_pools.json".format(output_dir))
@@ -784,16 +791,25 @@ def dune(
         if not pool:
             typer.echo("--pool is required for swaps", err=True)
             raise typer.Exit(1)
+        if not token:
+            typer.echo("--token is required for swaps (same as analyze window token)", err=True)
+            raise typer.Exit(1)
+        token_address = _resolve_or_exit(token, 1, pick)
         typer.echo(
             "Querying Dune dex.trades for pool {}".format(pool)
         )
         try:
+            from web3 import Web3
+            pool_addr = Web3.to_checksum_address(pool)
             rows = query(
-                "swaps_by_pool",
+                "swaps",
                 cache_dir=cache_dir,
-                pool=pool,
+                token=token_address,
                 from_block=from_block,
                 to_block=to_block,
+                pool_filter="AND project_contract_address = {}".format(
+                    pool_addr.lower()
+                ),
             )
         except DuneError as exc:
             typer.echo("Dune query failed: {}".format(exc), err=True)
@@ -804,9 +820,9 @@ def dune(
             typer.echo(
                 "  #{} {} {}->{}".format(
                     r.get("block_number", 0),
-                    r.get("project", ""),
-                    str(r.get("token_sold_address", ""))[:10],
-                    str(r.get("token_bought_address", ""))[:10],
+                    r.get("protocol", ""),
+                    str(r.get("token_sold", ""))[:10],
+                    str(r.get("token_bought", ""))[:10],
                 )
             )
         typer.echo("Saved to {}/dune_swaps.json".format(output_dir))
@@ -833,7 +849,6 @@ def dune(
             typer.echo("Pool: {}".format(tvl.get("pool_address", pool)))
             typer.echo("Day:  {}".format(tvl.get("day", "")))
             typer.echo("TVL:  ${:,.2f}".format(float(tvl.get("tvl_usd") or 0)))
-            typer.echo("Tokens: {}".format(tvl.get("token_count", 0)))
         return
 
     typer.echo(

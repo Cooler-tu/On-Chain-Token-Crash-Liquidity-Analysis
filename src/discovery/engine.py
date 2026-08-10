@@ -348,13 +348,15 @@ def discover_pools(
     dune_row_count = 0
     dune_pool_count = 0
     try:
-        from ..data.dune import configured, query
+        from ..data.dune import configured, query_parallel
 
         if configured():
             resolved_cache = Path(cache_dir) if cache_dir else Path("dune_cache")
-            _progress("Dune: querying dex.trades for pools (cached under {}) ...".format(
-                resolved_cache
-            ))
+            _progress(
+                "Dune: querying pools + pools_v4 in parallel (cached under {}) ...".format(
+                    resolved_cache
+                )
+            )
             t0 = time.time()
             last_state = {"v": ""}
 
@@ -370,13 +372,20 @@ def discover_pools(
                     )
                     last_state["v"] = state
 
-            raw = query(
-                "pools",
+            common = dict(
                 cache_dir=resolved_cache,
                 token=Web3.to_checksum_address(token_address),
                 from_block=from_block,
                 to_block=to_block,
                 on_status=_on_status,
+            )
+            # Independent sections — no shared inputs beyond token/window.
+            raw, raw_v4 = query_parallel(
+                [
+                    ("pools", dict(common)),
+                    ("pools_v4", dict(common)),
+                ],
+                max_workers=2,
             )
             rows = []
             for r in raw:
@@ -407,22 +416,11 @@ def discover_pools(
             all_pools.extend(dune_pools)
             protocol_names.update(dune_protocols)
             _progress(
-                "Dune: {} row(s) → {} mapped pool(s) in {:.1f}s".format(
-                    dune_row_count, dune_pool_count, time.time() - t0
+                "Dune: {} row(s) → {} mapped pool(s)".format(
+                    dune_row_count, dune_pool_count
                 )
             )
 
-            # V4: real bytes32 poolIds (Swap ⋈ Initialize), not PoolManager.
-            _progress("Dune: querying V4 poolIds (Swap⋈Initialize) ...")
-            t1 = time.time()
-            raw_v4 = query(
-                "pools_v4",
-                cache_dir=resolved_cache,
-                token=Web3.to_checksum_address(token_address),
-                from_block=from_block,
-                to_block=to_block,
-                on_status=_on_status,
-            )
             v4_pools, v4_protocols = _dune_v4_rows_to_pools(
                 raw_v4, token_address, chain_id, deployments
             )
@@ -431,8 +429,8 @@ def discover_pools(
             dune_pool_count += len(v4_pools)
             dune_row_count += len(raw_v4)
             _progress(
-                "Dune V4: {} poolId(s) in {:.1f}s".format(
-                    len(v4_pools), time.time() - t1
+                "Dune V4: {} poolId(s); discovery queries done in {:.1f}s".format(
+                    len(v4_pools), time.time() - t0
                 )
             )
         else:

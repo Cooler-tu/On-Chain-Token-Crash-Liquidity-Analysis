@@ -5,6 +5,8 @@ import bisect
 import json
 import math
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -14,6 +16,90 @@ from ..client import get_contract
 from ..models import NormalizedEvent, Position, VerifiedPool
 
 _ZERO_ADDR = "0x0000000000000000000000000000000000000000"
+# structure.md: month → daily 00:00; week/day → hourly.
+# ~7.2k blocks/day; ≥ ~25 days treated as month-scale when chart_span=auto.
+_MONTH_MIN_BLOCKS = 180_000
+_WEEK_MIN_BLOCKS = 45_000  # ~6–7 days
+_SPAN_BUCKET = {"month": "day", "week": "hour", "day": "hour"}
+_SPAN_BUCKET_SECONDS = {"month": 86_400, "week": 3_600, "day": 3_600}
+_SPAN_WINDOW_SECONDS = {
+    "month": 30 * 86_400,
+    "week": 7 * 86_400,
+    "day": 86_400,
+}
+
+
+def resolve_chart_span(
+    from_block: int = 0,
+    to_block: int = 0,
+    chart_span: str = "auto",
+) -> str:
+    """Return ``month`` | ``week`` | ``day`` (structure.md chart intervals)."""
+    raw = (chart_span or "auto").strip().lower()
+    if raw in _SPAN_BUCKET:
+        return raw
+    span = max(0, int(to_block) - int(from_block))
+    if span >= _MONTH_MIN_BLOCKS:
+        return "month"
+    if span >= _WEEK_MIN_BLOCKS:
+        return "week"
+    return "day"
+
+
+def chart_bucket(chart_span: str) -> str:
+    """Dune ``date_trunc`` unit for price_timeline."""
+    return _SPAN_BUCKET.get(chart_span, "hour")
+
+
+def chart_bucket_seconds(chart_span: str) -> int:
+    """Local volume aggregation bucket size matching structure.md."""
+    return int(_SPAN_BUCKET_SECONDS.get(chart_span, 3_600))
+
+
+def _choose_tvl_bucket(
+    from_block: int,
+    to_block: int,
+    chart_span: str = "auto",
+) -> str:
+    return chart_bucket(resolve_chart_span(from_block, to_block, chart_span))
+
+
+def _parse_bucket_ts(value: Any) -> int:
+    """Parse Dune bucket/day timestamp → unix seconds (UTC)."""
+    if value is None or value == "":
+        return 0
+    if isinstance(value, (int, float)):
+        v = int(value)
+        return v // 1000 if v > 10_000_000_000 else v
+    s = str(value).strip()
+    if s.endswith(" UTC"):
+        s = s[:-4]
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    # Normalize "YYYY-MM-DD HH:MM:SS[.fff]" → ISO
+    if "T" not in s and " " in s:
+        s = s.replace(" ", "T", 1)
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp())
+    except ValueError:
+        pass
+    for fmt, n in (("%Y-%m-%d %H:%M:%S.%f", 26), ("%Y-%m-%d %H:%M:%S", 19), ("%Y-%m-%d", 10)):
+        try:
+            dt = datetime.strptime(str(value).strip()[:n], fmt)
+            return int(dt.replace(tzinfo=timezone.utc).timestamp())
+        except ValueError:
+            continue
+    return 0
+
+
+def _day_start_ts(ts: int) -> int:
+    if ts <= 0:
+        return 0
+    dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+    return int(dt.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
 
 
 def estimate_price_v2(
@@ -402,13 +488,221 @@ def snapshot_onchain_pool_tvl(
     return tvl_by_pool
 
 
+def _eth_address(value: Any) -> Optional[str]:
+    """Return lowercase 20-byte address, or None for poolIds / junk."""
+    s = str(value or "").strip()
+    if not s.startswith("0x") or len(s) != 42:
+        return None
+    try:
+        return Web3.to_checksum_address(s).lower()
+    except Exception:
+        return None
+
+
+def _pool_balance_key(pool: VerifiedPool) -> Optional[str]:
+    """Address that holds the target token for this pool (custody for V4)."""
+    for cand in (pool.custody_address, pool.pool_address):
+        addr = _eth_address(cand)
+        if addr:
+            return addr
+    return None
+
+
+def build_tvl_timeline_snapshots(
+    verified_pools: list[VerifiedPool],
+    target_token: str,
+    token_decimals: int,
+    from_block: int,
+    to_block: int,
+    output_dir: str | Path = "output",
+    chart_span: str = "auto",
+) -> list[dict]:
+    """TVL at fixed buckets: direct pool balance × price (no event accumulation).
+
+    - month → daily 00:00 UTC (``price_timeline`` + ``pool_balance_timeline``)
+    - week/day → hourly price; balance still from ledger rows, joined by day
+    """
+    from ..data.dune import configured, query
+
+    if not configured():
+        raise RuntimeError("DUNE_API_KEY is not set")
+
+    pools = [p for p in verified_pools if p.verified and p.pool_address]
+    # Balance ledger is address-keyed — never pass V4 bytes32 poolIds.
+    bal_addrs: list[str] = []
+    bal_key_by_pool: dict[str, str] = {}
+    for p in pools:
+        key = _pool_balance_key(p)
+        if not key:
+            continue
+        bal_key_by_pool[p.pool_address.lower()] = key
+        if key not in bal_addrs:
+            bal_addrs.append(key)
+    if not pools or from_block <= 0 or to_block < from_block:
+        return []
+
+    meta = {p.pool_address.lower(): p for p in pools}
+    span = resolve_chart_span(from_block, to_block, chart_span)
+    bucket = chart_bucket(span)
+    cache = Path(output_dir) / "dune_cache" / "metrics"
+    common = dict(
+        token=target_token,
+        from_block=int(from_block),
+        to_block=int(to_block),
+        cache_dir=cache,
+        chunk_blocks=0,
+    )
+    decimals = max(0, int(token_decimals or 18))
+    scale = 10 ** decimals
+
+    def _balances():
+        if not bal_addrs:
+            return []
+        return query(
+            "pool_balance_timeline",
+            pool_list=bal_addrs,
+            **common,
+        )
+
+    def _prices():
+        return query(
+            "price_timeline",
+            bucket=bucket,
+            pool_filter="",
+            **common,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        fut_b = ex.submit(_balances)
+        fut_p = ex.submit(_prices)
+        bal_rows = fut_b.result()
+        price_rows = fut_p.result()
+
+    # Balance rows: either block-keyed ledger, or constant 'latest' balances.
+    bal_by_block: dict[int, dict[str, int]] = defaultdict(dict)
+    constant_bal: dict[str, int] = {}
+    for row in bal_rows or []:
+        raw_ts = row.get("bucket_ts")
+        pa = _eth_address(row.get("pool_address"))
+        if not pa:
+            continue
+        try:
+            raw_bal = int(row.get("balance_raw") or 0)
+        except (TypeError, ValueError):
+            continue
+        if str(raw_ts).lower() == "latest" or raw_ts in (None, ""):
+            constant_bal[pa] = raw_bal
+            continue
+        try:
+            bn = int(raw_ts)
+        except (TypeError, ValueError):
+            bn = _parse_bucket_ts(raw_ts)
+        if not bn:
+            constant_bal[pa] = raw_bal
+            continue
+        bal_by_block[bn][pa] = raw_bal
+
+    known_blocks = sorted(bal_by_block)
+    last_bal: dict[str, int] = dict(constant_bal)
+    bal_asof_block: dict[int, dict[str, int]] = {}
+    for bn in known_blocks:
+        last_bal = {**last_bal, **bal_by_block[bn]}
+        bal_asof_block[bn] = dict(last_bal)
+
+    price_ts_list = [
+        _parse_bucket_ts(r.get("bucket_ts")) for r in (price_rows or [])
+    ]
+    price_ts_list = [t for t in price_ts_list if t > 0]
+    t_lo = min(price_ts_list) if price_ts_list else 0
+    t_hi = max(price_ts_list) if price_ts_list else 0
+
+    def _block_to_ts(bn: int) -> int:
+        if t_hi > t_lo and to_block > from_block:
+            return int(
+                t_lo
+                + (bn - from_block) / (to_block - from_block) * (t_hi - t_lo)
+            )
+        return bn
+
+    bal_asof_ts: dict[int, dict[str, int]] = {}
+    for bn in known_blocks:
+        bal_asof_ts[_block_to_ts(bn)] = bal_asof_block[bn]
+    known_ts = sorted(bal_asof_ts)
+
+    def _balance_for_addr(ts: int, addr: str) -> int:
+        if not addr:
+            return 0
+        if constant_bal and addr in constant_bal and not known_ts:
+            return int(constant_bal.get(addr, 0) or 0)
+        if not known_ts:
+            return int(constant_bal.get(addr, 0) or 0)
+        earlier = [t for t in known_ts if t <= ts]
+        if not earlier:
+            base = bal_asof_ts[known_ts[0]]
+            return int(base.get(addr, constant_bal.get(addr, 0)) or 0)
+        return int(
+            bal_asof_ts[earlier[-1]].get(addr, constant_bal.get(addr, 0)) or 0
+        )
+
+    timeline: list[dict] = []
+    for row in price_rows or []:
+        ts = _parse_bucket_ts(row.get("bucket_ts"))
+        pa = str(row.get("pool_address") or "").lower()
+        if not ts or not pa:
+            continue
+        pool = meta.get(pa)
+        # dex.trades project_contract may be custody for V4 — match via bal key too
+        if pool is None:
+            for p in pools:
+                if _pool_balance_key(p) == pa:
+                    pool = p
+                    pa = p.pool_address.lower()
+                    break
+        try:
+            price_usd = float(row.get("price_usd") or 0)
+        except (TypeError, ValueError):
+            price_usd = 0.0
+        if price_usd <= 0:
+            continue
+        bal_key = bal_key_by_pool.get(pa) or _eth_address(pa)
+        bal_raw = _balance_for_addr(ts, bal_key) if bal_key else 0
+        if bal_raw <= 0:
+            continue
+        bal_dec = bal_raw / scale
+        tvl_usd = bal_dec * price_usd
+        timeline.append({
+            "block_number": ts,
+            "block_timestamp": ts,
+            "bucket": bucket,
+            "chart_span": span,
+            "pool_address": pool.pool_address if pool else pa,
+            "protocol": (pool.protocol if pool else "") or "",
+            "version": (pool.version if pool else "") or "",
+            "event_type": "SNAPSHOT",
+            "source_event": "balance_x_price",
+            "balance_raw": str(bal_raw),
+            "tvl_in_token": str(bal_raw),
+            "tvl_usd": round(tvl_usd, 6),
+            "price": round(price_usd, 18),
+            "price_usd": round(price_usd, 6),
+            "quote_symbol": "USD",
+        })
+
+    timeline.sort(key=lambda e: (e["block_number"], str(e.get("pool_address") or "")))
+    return timeline
+
+
 def build_tvl_timeline(
     verified_pools: list[VerifiedPool],
     events_all: list[dict],
     target_token: str,
     token_decimals: int,
 ) -> list[dict]:
-    """Build a timeline of TVL and price estimates from events."""
+    """Legacy: TVL/price reconstructed by accumulating swap/LP events.
+
+    Prefer ``build_tvl_timeline_snapshots`` (structure.md §6). Kept only as
+    emergency fallback when Dune snapshots are unavailable.
+    """
     timeline: list[dict] = []
     target = Web3.to_checksum_address(target_token)
 
@@ -541,6 +835,140 @@ def build_tvl_timeline(
     return sorted(timeline, key=lambda e: (e["block_number"], e.get("log_index", 0)))
 
 
+def fetch_volume_timeline_from_dune(
+    verified_pools: list[VerifiedPool],
+    target_token: str,
+    from_block: int,
+    to_block: int,
+    *,
+    chart_span: str = "auto",
+    output_dir: str | Path = "output",
+) -> dict[str, Any]:
+    """Volume charts via SQL aggregate (block → token → GROUP BY bucket/pool)."""
+    from ..data.dune import configured, query
+
+    if not configured():
+        raise RuntimeError("DUNE_API_KEY is not set")
+    if from_block <= 0 or to_block < from_block:
+        return {}
+
+    span = resolve_chart_span(from_block, to_block, chart_span)
+    bucket = chart_bucket(span)
+    bucket_seconds = chart_bucket_seconds(span)
+    cache = Path(output_dir) / "dune_cache" / "metrics"
+    rows = query(
+        "volume_timeline",
+        token=target_token,
+        from_block=int(from_block),
+        to_block=int(to_block),
+        bucket=bucket,
+        pool_filter="",
+        cache_dir=cache,
+        chunk_blocks=0,
+    )
+
+    pool_meta: dict[str, dict[str, Any]] = {}
+    for pool in verified_pools:
+        if not pool.verified or not pool.pool_address:
+            continue
+        pool_meta[pool.pool_address.lower()] = {
+            "protocol": pool.protocol,
+            "version": pool.version,
+        }
+
+    volume_by_pool: dict[str, float] = defaultdict(float)
+    usd_by_pool: dict[str, float] = defaultdict(float)
+    buckets: dict[int, dict[str, dict[str, Any]]] = defaultdict(
+        lambda: defaultdict(lambda: {"volume_in_token": 0.0, "volume_usd": 0.0})
+    )
+    for row in rows or []:
+        pa = str(row.get("pool_address") or "").lower()
+        if not pa:
+            continue
+        ts = _parse_bucket_ts(row.get("bucket_ts"))
+        try:
+            vol = float(row.get("volume_in_token") or 0)
+        except (TypeError, ValueError):
+            vol = 0.0
+        try:
+            usd = float(row.get("volume_usd") or 0)
+        except (TypeError, ValueError):
+            usd = 0.0
+        if vol <= 0 and usd <= 0:
+            continue
+        volume_by_pool[pa] += vol
+        if usd > 0:
+            usd_by_pool[pa] += usd
+        if ts > 0:
+            buckets[ts][pa]["volume_in_token"] += vol
+            if usd > 0:
+                buckets[ts][pa]["volume_usd"] += usd
+        meta = pool_meta.setdefault(
+            pa,
+            {
+                "protocol": str(row.get("protocol") or ""),
+                "version": str(row.get("version") or ""),
+            },
+        )
+        if row.get("protocol"):
+            meta["protocol"] = str(row.get("protocol") or meta["protocol"])
+        if row.get("version"):
+            meta["version"] = str(row.get("version") or meta["version"])
+
+    total_volume = sum(volume_by_pool.values())
+    main_volume_pool = ""
+    main_volume_share = 0.0
+    if volume_by_pool:
+        main_volume_pool = max(volume_by_pool, key=volume_by_pool.get)
+        main_volume_share = (
+            volume_by_pool[main_volume_pool] / total_volume if total_volume else 0.0
+        )
+
+    volume_by_pool_out = {}
+    for pa, vol in volume_by_pool.items():
+        meta = pool_meta.get(pa, {})
+        volume_by_pool_out[pa] = {
+            "protocol": meta.get("protocol", ""),
+            "version": meta.get("version", ""),
+            "volume_in_token": round(vol, 6),
+            "volume_usd": round(usd_by_pool[pa], 2) if usd_by_pool.get(pa) else None,
+            "share": round(vol / total_volume, 6) if total_volume else 0.0,
+            "quote_symbol": "",
+        }
+
+    volume_timeline = [
+        {
+            "bucket_ts": bts,
+            "total_volume_in_token": round(
+                sum(p["volume_in_token"] for p in pools.values()), 6
+            ),
+            "pools": {
+                pa: dict(p)
+                for pa, p in sorted(
+                    pools.items(), key=lambda x: -x[1]["volume_in_token"]
+                )
+            },
+        }
+        for bts, pools in sorted(buckets.items())
+    ]
+
+    return {
+        "total_volume_in_token": round(total_volume, 6),
+        "main_volume_pool": main_volume_pool,
+        "main_volume_share": round(main_volume_share, 6),
+        "volume_by_pool": volume_by_pool_out,
+        "volume_timeline": volume_timeline,
+        "bucket_seconds": bucket_seconds,
+        "chart_span": span,
+        "bucket": bucket,
+        "source": "dune_volume_timeline",
+        "note": (
+            "Aggregated in Dune (date_trunc + sum); raw swaps are not required "
+            "for volume charts."
+        ),
+    }
+
+
 def calculate_volume_metrics(
     events_all: list[dict],
     verified_pools: list[VerifiedPool],
@@ -548,11 +976,9 @@ def calculate_volume_metrics(
     token_decimals: int,
     bucket_seconds: int = 3600,
 ) -> dict[str, Any]:
-    """Aggregate swap volume by pool and by time bucket.
+    """Aggregate swap volume by pool and by time bucket (local fallback).
 
-    ``volume_in_token`` is always the absolute target-token side of each swap.
-    ``volume_usd`` is approximate and only populated when the quote token is a
-    known stablecoin; other pools report ``None`` instead of a fake USD number.
+    Prefer ``fetch_volume_timeline_from_dune`` so charts do not require raw swaps.
     """
     target = Web3.to_checksum_address(target_token)
     pool_meta: dict[str, dict[str, Any]] = {}
@@ -1208,14 +1634,42 @@ def calculate_all_metrics(
     incident_block: int = 0,
     output_dir: str | Path = "output",
     w3: Optional[Web3] = None,
+    from_block: int = 0,
     to_block: int = 0,
+    chart_span: str = "auto",
 ) -> dict[str, Any]:
     """Main entry point: compute all liquidity and risk metrics."""
     out = Path(output_dir)
+    span = resolve_chart_span(from_block, to_block, chart_span)
+    bucket = chart_bucket(span)
+    bucket_seconds = chart_bucket_seconds(span)
 
-    timeline = build_tvl_timeline(
-        verified_pools, events_all, target_token, token_decimals
-    )
+    # structure.md §6: fixed-time balance × price snapshots (not event accumulation)
+    timeline: list[dict] = []
+    tvl_source = "none"
+    if from_block > 0 and to_block >= from_block:
+        try:
+            timeline = build_tvl_timeline_snapshots(
+                verified_pools,
+                target_token,
+                token_decimals,
+                from_block=from_block,
+                to_block=to_block,
+                output_dir=out,
+                chart_span=span,
+            )
+            tvl_source = "dune_snapshot" if timeline else "dune_snapshot_empty"
+        except Exception as exc:
+            print(f"  [metrics] snapshot TVL failed ({exc}); falling back to event timeline")
+            timeline = build_tvl_timeline(
+                verified_pools, events_all, target_token, token_decimals
+            )
+            tvl_source = "event_accumulate_fallback"
+    else:
+        timeline = build_tvl_timeline(
+            verified_pools, events_all, target_token, token_decimals
+        )
+        tvl_source = "event_accumulate"
     _write_json(out / "tvl_timeline.json", timeline)
 
     onchain_tvl = None
@@ -1247,9 +1701,31 @@ def calculate_all_metrics(
         timeline=timeline,
     )
 
-    volume = calculate_volume_metrics(
-        events_all, verified_pools, target_token, token_decimals
-    )
+    volume: dict[str, Any] = {}
+    if from_block > 0 and to_block >= from_block:
+        try:
+            volume = fetch_volume_timeline_from_dune(
+                verified_pools,
+                target_token,
+                from_block=from_block,
+                to_block=to_block,
+                chart_span=span,
+                output_dir=out,
+            )
+        except Exception as exc:
+            print(f"  [metrics] Dune volume aggregate failed ({exc}); using local swaps")
+            volume = {}
+    if not volume.get("volume_timeline"):
+        volume = calculate_volume_metrics(
+            events_all,
+            verified_pools,
+            target_token,
+            token_decimals,
+            bucket_seconds=bucket_seconds,
+        )
+        volume["chart_span"] = span
+        volume["bucket"] = bucket
+        volume["source"] = volume.get("source") or "local_swaps_fallback"
     _write_json(out / "volume_timeline.json", volume)
 
     wallet_activity = calculate_wallet_activity(
@@ -1268,6 +1744,10 @@ def calculate_all_metrics(
         "wallet_activity": wallet_activity,
         "tvl_timeline_length": len(timeline),
         "tvl_timeline": timeline,
+        "tvl_timeline_source": tvl_source,
+        "chart_span": span,
+        "chart_bucket": bucket,
+        "chart_bucket_seconds": bucket_seconds,
     }
     _write_json(out / "metrics.json", metrics)
 

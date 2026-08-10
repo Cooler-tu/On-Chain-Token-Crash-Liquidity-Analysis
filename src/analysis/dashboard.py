@@ -42,8 +42,11 @@ function renderTvlDetails(index){
   var panel = document.getElementById('tvl-details');
   var detail = (tvlPointDetails || [])[index];
   if (!panel || !detail) return;
+  var blockLabel = (typeof detail.block === 'number')
+    ? ('Block ' + fmtNum(detail.block, 0))
+    : escTxt(detail.block);
   document.getElementById('tvl-detail-title').innerHTML =
-    'Block ' + fmtNum(detail.block, 0) + ' &middot; ' + escTxt(detail.time_label);
+    blockLabel + (detail.time_label ? (' &middot; ' + escTxt(detail.time_label)) : '');
   var meta = '<div class="detail-summary">Total TVL <strong>' + fmtNum(detail.total_tvl, 4) + ' ' + escTxt(tokenSymbol) + '</strong></div>';
   if (detail.volume_bucket_label) {
     meta += '<span style="opacity:.85">Volume bucket: ' + escTxt(detail.volume_bucket_label) + '</span>';
@@ -297,12 +300,12 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card">
       <h2>Price Timeline (USD)</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Swap-derived USD price per pool from Dune amount_usd.</p>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Swap-derived USD price per pool. Bucket from analysis window: ~month→daily 00:00 UTC; ~week/day→hourly.</p>
       <div class="chart-box"><canvas id="c5"></canvas></div>
     </div>
     <div class="card">
       <h2>Trading Volume by Pool</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Hourly volume in {symbol}; stacked by pool.</p>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Volume in {symbol}; stacked by pool. Same time bucket as price &amp; TVL ({chart_bucket_label}).</p>
       <div class="chart-box"><canvas id="c6"></canvas></div>
     </div>
   </div>
@@ -320,6 +323,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card fw">
       <h2>Pool TVL Timeline (Total + Per Pool)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Snapshot TVL = pool token balance × price at each bucket (not event-accumulated). Window ~month→daily; ~week/day→hourly ({chart_bucket_label}).</p>
       <div class="chart-box"><canvas id="c4"></canvas></div>
       <div id="tvl-details" class="point-details" style="display:none">
         <div class="point-details-head">
@@ -598,7 +602,19 @@ def generate_dashboard(
   </div>""")
     pool_section = "\n".join(pool_section_parts)
 
-    # Build TVL chart JS
+    # Charts use the full analysis window; bucket size was chosen at metrics time
+    # (~month→daily, ~week/day→hourly) — no UI range toggle.
+    chart_span = str(metrics.get("chart_span") or volume_metrics.get("chart_span") or "")
+    chart_bucket = str(metrics.get("chart_bucket") or volume_metrics.get("bucket") or "")
+    if chart_bucket == "day":
+        chart_bucket_label = "daily buckets"
+    elif chart_bucket == "hour" or int(volume_metrics.get("bucket_seconds") or 0) == 3600:
+        chart_bucket_label = "hourly buckets"
+    else:
+        chart_bucket_label = chart_bucket or "auto buckets"
+    if chart_span:
+        chart_bucket_label = "{} ({})".format(chart_bucket_label, chart_span)
+
     tvl_chart = _build_tvl_chart_js(tvl_data, token_decimals=decimals, symbol=symbol)
     tvl_details = _build_tvl_details_data(
         tvl_data, volume_metrics, token_decimals=decimals
@@ -650,6 +666,7 @@ def generate_dashboard(
         "risk_score": risk_score,
         "pool_conc_summary": pool_conc_summary,
         "balance_note": balance_note,
+        "chart_bucket_label": chart_bucket_label,
         "table_top": table_top,
         "table_movers": table_movers or "",
         "table_withdrawals": table_withdrawals or "",
@@ -668,6 +685,209 @@ def generate_dashboard(
     return str(dashboard_path.resolve())
 
 
+def _config_to_chart_js(canvas_id: str, cfg: dict, *, with_tvl_click: bool = False) -> str:
+    """Serialize a Chart.js config dict into ``tc('id', {...})`` JS."""
+    options = dict(cfg.get("options") or {})
+    # onClick cannot JSON-serialize; splice after dumps when needed.
+    options.pop("onClick", None)
+    payload = {
+        "type": cfg.get("type", "line"),
+        "data": cfg.get("data") or {},
+        "options": options,
+    }
+    raw = json.dumps(payload, default=str)
+    if with_tvl_click:
+        # Insert onClick into options object.
+        raw = raw.replace(
+            '"options": {',
+            (
+                '"options": {'
+                '"onClick":function(evt,els,chart){'
+                "var active=chart.getElementsAtEventForMode("
+                "evt,'index',{intersect:false},true);"
+                "if(active&&active.length){renderTvlDetails(active[0].index);}},"
+            ),
+            1,
+        )
+    return "tc('%s',%s);" % (canvas_id, raw)
+
+
+def _build_tvl_chart_js(
+    tvl_data: list,
+    token_decimals: int = 18,
+    symbol: str = "TOKEN",
+) -> str:
+    return _config_to_chart_js(
+        "c4",
+        _build_tvl_chart_config(tvl_data, token_decimals=token_decimals, symbol=symbol),
+        with_tvl_click=True,
+    )
+
+
+def _build_price_chart_js(tvl_data: list, symbol: str = "TOKEN") -> str:
+    return _config_to_chart_js("c5", _build_price_chart_config(tvl_data, symbol=symbol))
+
+
+def _build_volume_chart_js(volume_metrics: dict, symbol: str = "TOKEN") -> str:
+    return _config_to_chart_js(
+        "c6", _build_volume_chart_config(volume_metrics, symbol=symbol)
+    )
+
+
+def _entry_ts(entry: dict) -> int:
+    """Unix timestamp for a timeline row (snapshot or event)."""
+    for key in ("block_timestamp", "bucket_ts", "block_number"):
+        try:
+            v = int(entry.get(key) or 0)
+        except (TypeError, ValueError):
+            continue
+        # Heuristic: real unix vs block height
+        if v > 1_000_000_000:
+            return v
+        if key == "block_timestamp" and v > 0:
+            return v
+    return 0
+
+
+def _window_bounds(timestamps: list[int], span: str) -> tuple[int, int]:
+    from .metrics import _SPAN_WINDOW_SECONDS
+
+    if not timestamps:
+        return 0, 0
+    hi = max(timestamps)
+    lo = hi - int(_SPAN_WINDOW_SECONDS.get(span, 86_400))
+    return lo, hi
+
+
+def _rebucket_ts(ts: int, bucket_seconds: int) -> int:
+    if ts <= 0 or bucket_seconds <= 0:
+        return ts
+    return (ts // bucket_seconds) * bucket_seconds
+
+
+def _filter_tvl_for_span(tvl_data: list, span: str) -> list:
+    """Keep last month/week/day of points; rebucket month→daily, week/day→hourly."""
+    from .metrics import chart_bucket_seconds
+
+    if not tvl_data:
+        return []
+    stamps = [_entry_ts(t) for t in tvl_data]
+    stamps = [t for t in stamps if t > 0]
+    lo, hi = _window_bounds(stamps, span)
+    bucket = chart_bucket_seconds(span)
+    # (bucket_ts, pool) → last entry
+    last: dict[tuple[int, str], dict] = {}
+    for t in tvl_data:
+        ts = _entry_ts(t)
+        if ts <= 0 or ts < lo or ts > hi:
+            continue
+        bts = _rebucket_ts(ts, bucket)
+        pa = str(t.get("pool_address") or "unknown")
+        key = (bts, pa.lower())
+        row = dict(t)
+        row["block_number"] = bts
+        row["block_timestamp"] = bts
+        last[key] = row
+    return sorted(
+        last.values(),
+        key=lambda e: (int(e.get("block_number") or 0), str(e.get("pool_address") or "")),
+    )
+
+
+def _filter_volume_for_span(volume_metrics: dict, span: str) -> dict:
+    """Slice + re-aggregate volume_timeline for the selected chart span."""
+    from .metrics import chart_bucket_seconds
+
+    src = volume_metrics or {}
+    timeline = list(src.get("volume_timeline") or [])
+    if not timeline:
+        out = dict(src)
+        out["volume_timeline"] = []
+        out["bucket_seconds"] = chart_bucket_seconds(span)
+        out["chart_span"] = span
+        return out
+
+    stamps = []
+    for bucket in timeline:
+        try:
+            stamps.append(int(bucket.get("bucket_ts") or 0))
+        except (TypeError, ValueError):
+            continue
+    stamps = [t for t in stamps if t > 0]
+    lo, hi = _window_bounds(stamps, span)
+    bucket_seconds = chart_bucket_seconds(span)
+
+    merged: dict[int, dict[str, dict[str, float]]] = defaultdict(
+        lambda: defaultdict(lambda: {"volume_in_token": 0.0, "volume_usd": 0.0})
+    )
+    for bucket in timeline:
+        try:
+            ts = int(bucket.get("bucket_ts") or 0)
+        except (TypeError, ValueError):
+            continue
+        if ts <= 0 or ts < lo or ts > hi:
+            continue
+        bts = _rebucket_ts(ts, bucket_seconds)
+        for pa, pdata in (bucket.get("pools") or {}).items():
+            merged[bts][pa]["volume_in_token"] += float(
+                pdata.get("volume_in_token") or 0
+            )
+            usd = pdata.get("volume_usd")
+            if usd is not None:
+                merged[bts][pa]["volume_usd"] += float(usd or 0)
+
+    volume_timeline = []
+    for bts in sorted(merged):
+        pools = {
+            pa: {
+                "volume_in_token": round(vals["volume_in_token"], 6),
+                "volume_usd": round(vals["volume_usd"], 2)
+                if vals["volume_usd"]
+                else None,
+            }
+            for pa, vals in sorted(
+                merged[bts].items(), key=lambda x: -x[1]["volume_in_token"]
+            )
+        }
+        volume_timeline.append({
+            "bucket_ts": bts,
+            "total_volume_in_token": round(
+                sum(p["volume_in_token"] for p in pools.values()), 6
+            ),
+            "pools": pools,
+        })
+
+    out = dict(src)
+    out["volume_timeline"] = volume_timeline
+    out["bucket_seconds"] = bucket_seconds
+    out["chart_span"] = span
+    return out
+
+
+def _build_chart_span_views(
+    tvl_data: list,
+    volume_metrics: dict,
+    token_decimals: int = 18,
+    symbol: str = "TOKEN",
+) -> dict[str, dict]:
+    """Precompute Chart.js configs for month / week / day toggles."""
+    views: dict[str, dict] = {}
+    for span in ("month", "week", "day"):
+        tvl_span = _filter_tvl_for_span(tvl_data, span)
+        vol_span = _filter_volume_for_span(volume_metrics, span)
+        views[span] = {
+            "price": _build_price_chart_config(tvl_span, symbol=symbol),
+            "volume": _build_volume_chart_config(vol_span, symbol=symbol),
+            "tvl": _build_tvl_chart_config(
+                tvl_span, token_decimals=token_decimals, symbol=symbol
+            ),
+            "tvl_details": _build_tvl_details_data(
+                tvl_span, vol_span, token_decimals=token_decimals
+            ),
+        }
+    return views
+
+
 def _tvl_series(
     tvl_data: list,
     token_decimals: int = 18,
@@ -678,6 +898,7 @@ def _tvl_series(
     for t in tvl_data:
         by_pool[t.get("pool_address") or "unknown"].append(t)
 
+    use_usd = any(t.get("tvl_usd") is not None for t in tvl_data)
     labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
     total_values = []
     block_pools: dict[int, dict[str, dict]] = {}
@@ -691,36 +912,57 @@ def _tvl_series(
                     last = t
             if last is None:
                 continue
-            raw = last.get("tvl_in_token", last.get("tvl", 0))
             try:
-                value = float(raw) / scale if raw is not None else 0.0
+                if use_usd and last.get("tvl_usd") is not None:
+                    value = float(last.get("tvl_usd") or 0)
+                else:
+                    raw = last.get("tvl_in_token", last.get("tvl", 0))
+                    value = float(raw) / scale if raw is not None else 0.0
             except (TypeError, ValueError):
                 value = 0.0
             per_pool[pa] = {"value": value, "entry": last}
             total += value
         block_pools[block] = per_pool
         total_values.append(total)
-    return labels, total_values, block_pools
+    return labels, total_values, block_pools, use_usd
 
 
-def _build_tvl_chart_js(
+def _empty_line_config(canvas_hint: str = "No Data") -> dict:
+    return {
+        "type": "line",
+        "data": {
+            "labels": [canvas_hint],
+            "datasets": [{
+                "data": [0],
+                "borderColor": "#3b82f6",
+                "backgroundColor": "#3b82f6",
+            }],
+        },
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+            "plugins": {"legend": {"display": False}},
+            "scales": {
+                "y": {"ticks": {"color": "#64748b"}, "grid": {"color": "#1e293b"}},
+                "x": {"ticks": {"color": "#64748b"}, "grid": {"display": False}},
+            },
+        },
+    }
+
+
+def _build_tvl_chart_config(
     tvl_data: list,
     token_decimals: int = 18,
     symbol: str = "TOKEN",
-) -> str:
+) -> dict:
     if not tvl_data:
-        return (
-            "tc('c4',{type:'line',data:{labels:['No Data'],datasets:[{data:[0],"
-            "backgroundColor:'#3b82f6',borderColor:'#3b82f6'}]},"
-            "options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},"
-            "scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},"
-            "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
-        )
+        return _empty_line_config()
 
-    labels, total_values, block_pools = _tvl_series(tvl_data, token_decimals)
+    labels, total_values, block_pools, use_usd = _tvl_series(tvl_data, token_decimals)
+    unit = "USD" if use_usd else (symbol or "token")
     colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
     datasets = [{
-        "label": "Total ({})".format(symbol or "token"),
+        "label": "Total ({})".format(unit),
         "data": total_values,
         "borderColor": "#3b82f6",
         "backgroundColor": "rgba(59,130,246,0.08)",
@@ -746,21 +988,29 @@ def _build_tvl_chart_js(
             "spanGaps": True,
         })
 
-    labels_json = json.dumps(labels)
-    datasets_json = json.dumps(datasets, default=str)
-    return (
-        "const tvlLabels = %s;\n"
-        "const tvlDatasets = %s;\n"
-        "tc('c4',{type:'line',data:{labels:tvlLabels,datasets:tvlDatasets},"
-        "options:{responsive:true,maintainAspectRatio:false,"
-        "interaction:{intersect:false,mode:'index'},"
-        "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
-        "onClick:function(evt,els,chart){var active=chart.getElementsAtEventForMode(evt,'index',{intersect:false},true);"
-        "if(active&&active.length){renderTvlDetails(active[0].index);}},"
-        "scales:{y:{beginAtZero:true,ticks:{color:'#64748b',"
-        "callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}},"
-        "x:{ticks:{color:'#64748b',grid:{display:false}}}}}})"
-    ) % (labels_json, datasets_json)
+    return {
+        "type": "line",
+        "data": {"labels": labels, "datasets": datasets},
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+            "interaction": {"intersect": False, "mode": "index"},
+            "plugins": {
+                "legend": {"labels": {"color": "#94a3b8"}, "position": "top"}
+            },
+            "scales": {
+                "y": {
+                    "beginAtZero": True,
+                    "ticks": {"color": "#64748b"},
+                    "grid": {"color": "#1e293b"},
+                },
+                "x": {
+                    "ticks": {"color": "#64748b"},
+                    "grid": {"display": False},
+                },
+            },
+        },
+    }
 
 
 def _find_volume_bucket(
@@ -769,20 +1019,22 @@ def _find_volume_bucket(
     ts: int,
 ) -> Optional[dict]:
     """Return the volume bucket covering ts, or the nearest earlier bucket."""
-    if not timeline or not ts:
+    if not timeline or ts <= 0:
         return None
-    ts = int(ts)
-    bucket_seconds = max(1, int(bucket_seconds or 3600))
-    exact = None
-    nearest = None
+    best = None
+    best_ts = -1
     for bucket in timeline:
-        start = int(bucket.get("bucket_ts") or 0)
-        if start <= ts < start + bucket_seconds:
-            exact = bucket
-            break
-        if start <= ts and (nearest is None or start > int(nearest.get("bucket_ts") or 0)):
-            nearest = bucket
-    return exact or nearest
+        try:
+            bts = int(bucket.get("bucket_ts") or 0)
+        except (TypeError, ValueError):
+            continue
+        if bts <= ts and bts >= best_ts:
+            # Prefer covering bucket when bucket_seconds known
+            if bucket_seconds > 0 and ts < bts + bucket_seconds:
+                return bucket
+            best = bucket
+            best_ts = bts
+    return best
 
 
 def _build_tvl_details_data(
@@ -793,66 +1045,76 @@ def _build_tvl_details_data(
     """Build per-time-point pool details for the TVL chart click handler."""
     if not tvl_data:
         return []
-
-    labels, total_values, block_pools = _tvl_series(tvl_data, token_decimals)
+    labels, total_values, block_pools, use_usd = _tvl_series(tvl_data, token_decimals)
     timeline = (volume_metrics or {}).get("volume_timeline") or []
     bucket_seconds = int((volume_metrics or {}).get("bucket_seconds") or 3600)
     details = []
+    scale = 10 ** max(0, int(token_decimals or 18))
 
-    for i, block in enumerate(labels):
+    for idx, block in enumerate(labels):
         per_pool = block_pools.get(block) or {}
-        total = total_values[i] if i < len(total_values) else 0.0
-        ts = 0
-        if per_pool:
-            ts = next(iter(per_pool.values())).get("entry", {}).get("block_timestamp") or 0
+        total = total_values[idx] if idx < len(total_values) else 0.0
+        try:
+            ts = int(block) if int(block) > 1_000_000_000 else 0
+        except (TypeError, ValueError):
+            ts = 0
         bucket = _find_volume_bucket(timeline, bucket_seconds, ts) if ts else None
         bucket_pools = (bucket or {}).get("pools") or {}
 
         pools = []
         for pa, info in sorted(
-            per_pool.items(),
-            key=lambda item: item[1].get("value", 0.0),
-            reverse=True,
+            per_pool.items(), key=lambda x: -float(x[1].get("value") or 0)
         ):
             entry = info.get("entry") or {}
+            value = float(info.get("value") or 0)
             pool_vol = bucket_pools.get(pa.lower()) or {}
             price_usd = entry.get("price_usd")
+            tvl_token = value
+            if use_usd:
+                try:
+                    bal = float(entry.get("balance_raw") or entry.get("tvl_in_token") or 0)
+                    tvl_token = bal / scale
+                except (TypeError, ValueError):
+                    tvl_token = value
             pools.append({
                 "address": pa,
                 "label": _short_pool_label(pa),
                 "protocol": "{} {}".format(
                     entry.get("protocol") or "", entry.get("version") or ""
-                ).strip() or "-",
-                "tvl": info.get("value", 0.0),
-                "share_pct": (info.get("value", 0.0) / total * 100) if total > 0 else None,
+                ).strip(),
+                "tvl": tvl_token if use_usd else value,
+                "share_pct": (value / total * 100) if total else None,
                 "price_usd": price_usd if price_usd is not None else None,
                 "volume_token": pool_vol.get("volume_in_token"),
                 "volume_usd": pool_vol.get("volume_usd"),
             })
 
         volume_bucket_label = ""
-        if bucket:
+        if bucket and bucket.get("bucket_ts"):
             volume_bucket_label = datetime.fromtimestamp(
-                int(bucket.get("bucket_ts") or 0), tz=timezone.utc
+                int(bucket["bucket_ts"]), tz=timezone.utc
             ).strftime("%Y-%m-%d %H:%M UTC")
-        time_label = (
-            datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-            if ts else ""
-        )
+
+        time_label = ""
+        if ts:
+            time_label = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(
+                "%Y-%m-%d %H:%M UTC"
+            )
+
         details.append({
-            "block": block,
+            "block": block if not ts else time_label or block,
             "time_label": time_label,
-            "total_tvl": total,
+            "total_tvl": total if not use_usd else total,
             "volume_bucket_label": volume_bucket_label,
             "pools": pools,
         })
     return details
 
 
-def _build_price_chart_js(
+def _build_price_chart_config(
     tvl_data: list,
     symbol: str = "TOKEN",
-) -> str:
+) -> dict:
     by_pool: dict[str, list[dict]] = defaultdict(list)
     for t in tvl_data:
         price_usd = t.get("price_usd") or 0
@@ -860,13 +1122,7 @@ def _build_price_chart_js(
             by_pool[t.get("pool_address") or "unknown"].append(t)
 
     if not by_pool:
-        return (
-            "tc('c5',{type:'line',data:{labels:['No Data'],datasets:[{data:[0],"
-            "borderColor:'#3b82f6'}]},"
-            "options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},"
-            "scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},"
-            "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
-        )
+        return _empty_line_config()
 
     labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
     colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
@@ -886,41 +1142,65 @@ def _build_price_chart_js(
             "tension": 0.2,
         })
 
-    labels_json = json.dumps(labels)
-    datasets_json = json.dumps(datasets, default=str)
-    return (
-        "const priceLabels = %s;\n"
-        "const priceDatasets = %s;\n"
-        "tc('c5',{type:'line',data:{labels:priceLabels,datasets:priceDatasets},"
-        "options:{responsive:true,maintainAspectRatio:false,"
-        "interaction:{intersect:false,mode:'index'},"
-        "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
-        "scales:{y:{beginAtZero:true,ticks:{color:'#64748b',"
-        "callback:function(v){return '$'+Number(v).toLocaleString();}},grid:{color:'#1e293b'}},"
-        "x:{ticks:{color:'#64748b',grid:{display:false}}}}}})"
-    ) % (labels_json, datasets_json)
+    return {
+        "type": "line",
+        "data": {"labels": labels, "datasets": datasets},
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+            "interaction": {"intersect": False, "mode": "index"},
+            "plugins": {
+                "legend": {"labels": {"color": "#94a3b8"}, "position": "top"}
+            },
+            "scales": {
+                "y": {
+                    "beginAtZero": True,
+                    "ticks": {"color": "#64748b"},
+                    "grid": {"color": "#1e293b"},
+                },
+                "x": {
+                    "ticks": {"color": "#64748b"},
+                    "grid": {"display": False},
+                },
+            },
+        },
+    }
 
 
-def _build_volume_chart_js(
+def _build_volume_chart_config(
     volume_metrics: dict,
     symbol: str = "TOKEN",
-) -> str:
+) -> dict:
     timeline = (volume_metrics or {}).get("volume_timeline", [])
     pool_ids = sorted((volume_metrics or {}).get("volume_by_pool", {}).keys())
     if not timeline or not pool_ids:
-        return (
-            "tc('c6',{type:'bar',data:{labels:['No Data'],datasets:[{data:[0],"
-            "backgroundColor:'#3b82f6'}]},"
-            "options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},"
-            "scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},"
-            "x:{ticks:{color:'#64748b'},grid:{display:false}}}}});"
-        )
+        return {
+            "type": "bar",
+            "data": {
+                "labels": ["No Data"],
+                "datasets": [{
+                    "data": [0],
+                    "backgroundColor": "#3b82f6",
+                }],
+            },
+            "options": {
+                "responsive": True,
+                "maintainAspectRatio": False,
+                "plugins": {"legend": {"display": False}},
+                "scales": {
+                    "y": {"ticks": {"color": "#64748b"}, "grid": {"color": "#1e293b"}},
+                    "x": {"ticks": {"color": "#64748b"}, "grid": {"display": False}},
+                },
+            },
+        }
 
     labels = []
     for bucket in timeline:
         ts = int(bucket.get("bucket_ts") or 0)
         if ts:
-            labels.append(datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%m-%d %H:%M"))
+            labels.append(
+                datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%m-%d %H:%M")
+            )
         else:
             labels.append("0")
 
@@ -930,7 +1210,9 @@ def _build_volume_chart_js(
         color = colors[i % len(colors)]
         data = []
         for bucket in timeline:
-            data.append(bucket.get("pools", {}).get(pa, {}).get("volume_in_token", 0))
+            data.append(
+                bucket.get("pools", {}).get(pa, {}).get("volume_in_token", 0)
+            )
         datasets.append({
             "label": _short_pool_label(pa),
             "data": data,
@@ -940,18 +1222,30 @@ def _build_volume_chart_js(
             "stack": "volume",
         })
 
-    labels_json = json.dumps(labels)
-    datasets_json = json.dumps(datasets, default=str)
-    return (
-        "const volumeLabels = %s;\n"
-        "const volumeDatasets = %s;\n"
-        "tc('c6',{type:'bar',data:{labels:volumeLabels,datasets:volumeDatasets},"
-        "options:{responsive:true,maintainAspectRatio:false,"
-        "plugins:{legend:{labels:{color:'#94a3b8'},position:'top'}},"
-        "scales:{x:{stacked:true,ticks:{color:'#64748b',maxRotation:45},grid:{display:false}},"
-        "y:{stacked:true,beginAtZero:true,ticks:{color:'#64748b',"
-        "callback:function(v){return v.toLocaleString();}},grid:{color:'#1e293b'}}}}})"
-    ) % (labels_json, datasets_json)
+    return {
+        "type": "bar",
+        "data": {"labels": labels, "datasets": datasets},
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+            "plugins": {
+                "legend": {"labels": {"color": "#94a3b8"}, "position": "top"}
+            },
+            "scales": {
+                "x": {
+                    "stacked": True,
+                    "ticks": {"color": "#64748b", "maxRotation": 45},
+                    "grid": {"display": False},
+                },
+                "y": {
+                    "stacked": True,
+                    "beginAtZero": True,
+                    "ticks": {"color": "#64748b"},
+                    "grid": {"color": "#1e293b"},
+                },
+            },
+        },
+    }
 
 
 def _short_pool_label(addr: str) -> str:

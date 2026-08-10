@@ -11,7 +11,9 @@ import hashlib
 import json
 import os
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -19,10 +21,49 @@ import requests
 from web3 import Web3
 
 SQL_DIR = Path(__file__).resolve().parent / "dune_sql"
+_QUERIES_FILE = SQL_DIR / "queries.sql"
+_SECTION_RE = re.compile(
+    r"^-- === name:\s*([A-Za-z0-9_]+)\s*===\s*$",
+    re.MULTILINE,
+)
 _DUNE_API = "https://api.dune.com/api/v1"
 _ZERO = "0x0000000000000000000000000000000000000000"
+_CACHE_LOCK = threading.Lock()
+_PRINT_LOCK = threading.Lock()
 
 StatusFn = Callable[[int, str], None]
+_SECTION_CACHE: dict[str, str] | None = None
+_SECTION_MTIME: float | None = None
+
+
+def _load_sections() -> dict[str, str]:
+    """Parse named sections from ``dune_sql/queries.sql``."""
+    global _SECTION_CACHE, _SECTION_MTIME
+    if not _QUERIES_FILE.exists():
+        _SECTION_CACHE = {}
+        _SECTION_MTIME = None
+        return _SECTION_CACHE
+    mtime = _QUERIES_FILE.stat().st_mtime
+    if _SECTION_CACHE is not None and _SECTION_MTIME == mtime:
+        return _SECTION_CACHE
+    text = _QUERIES_FILE.read_text(encoding="utf-8")
+    matches = list(_SECTION_RE.finditer(text))
+    sections: dict[str, str] = {}
+    for i, m in enumerate(matches):
+        name = m.group(1)
+        start = m.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        body = text[start:end].strip()
+        if body:
+            sections[name] = body
+    _SECTION_CACHE = sections
+    _SECTION_MTIME = mtime
+    return sections
+
+
+def list_sql_sections() -> list[str]:
+    """Return available ``query()`` names from the consolidated SQL file."""
+    return sorted(_load_sections())
 
 
 class DuneError(RuntimeError):
@@ -56,13 +97,35 @@ def _addr(value: Any) -> str:
 
 
 def _addr_list(value: Any) -> str:
+    """Comma-separated EIP-55 addresses for SQL IN (...).
+
+    Skips non-address values (e.g. Uniswap V4 bytes32 poolIds) so callers can
+    pass mixed pool identifiers without breaking checksum normalization.
+    """
     if value is None or value == "":
         return ""
+
+    def one(v: Any) -> str:
+        s = str(v or "").strip()
+        if not s:
+            return ""
+        if s.startswith("\\x"):
+            s = "0x" + s[2:]
+        if not s.startswith("0x"):
+            s = "0x" + s
+        # V4 poolId is 32 bytes (66 chars with 0x) — not an address.
+        if len(s) != 42:
+            return ""
+        try:
+            return Web3.to_checksum_address(s).lower()
+        except Exception:
+            return ""
+
     if isinstance(value, str) and "," in value:
-        return ", ".join(_addr(x.strip()) for x in value.split(",") if x.strip())
+        return ", ".join(p for x in value.split(",") if (p := one(x.strip())))
     if isinstance(value, (list, tuple, set)):
-        return ", ".join(_addr(x) for x in value if x)
-    return _addr(value)
+        return ", ".join(p for x in value if (p := one(x)))
+    return one(value)
 
 
 def _hex32(value: Any) -> str:
@@ -89,15 +152,57 @@ def _hex32_list(value: Any) -> str:
     return _hex32(value)
 
 
+def _tx_hash_list(value: Any) -> str:
+    """Comma-separated 0x tx hashes for SQL IN (...)."""
+    if value is None or value == "":
+        return ""
+
+    def one(v: Any) -> str:
+        s = str(v or "").strip().lower()
+        if not s:
+            return ""
+        if s.startswith("\\x"):
+            s = "0x" + s[2:]
+        if not s.startswith("0x"):
+            s = "0x" + s
+        return s
+
+    if isinstance(value, str) and "," in value:
+        parts = [one(x) for x in value.split(",")]
+        return ", ".join(p for p in parts if p)
+    if isinstance(value, (list, tuple, set)):
+        parts = [one(x) for x in value]
+        return ", ".join(p for p in parts if p)
+    return one(value)
+
+
 def _render(sql_name: str, params: dict[str, Any]) -> str:
-    path = SQL_DIR / f"{sql_name}.sql"
-    if not path.exists():
-        raise DuneError(f"SQL template not found: {path}")
-    text = path.read_text(encoding="utf-8")
-    needed = set(re.findall(r"\{\{(\w+)\}\}", text))
+    """Load SQL by section name from ``queries.sql``, else legacy ``<name>.sql``."""
+    sections = _load_sections()
+    if sql_name in sections:
+        text = sections[sql_name]
+        source = f"queries.sql#{sql_name}"
+    else:
+        path = SQL_DIR / f"{sql_name}.sql"
+        if not path.exists():
+            known = ", ".join(sorted(sections)[:12])
+            more = "…" if len(sections) > 12 else ""
+            raise DuneError(
+                f"SQL template not found: {sql_name} "
+                f"(known: {known}{more})"
+            )
+        text = path.read_text(encoding="utf-8")
+        source = path.name
+
+    # Ignore placeholders inside SQL line comments so commented fallbacks
+    # (e.g. transfer-based holders) do not force unused params.
+    active = "\n".join(
+        ln for ln in text.splitlines() if not ln.lstrip().startswith("--")
+    )
+    needed = set(re.findall(r"\{\{(\w+)\}\}", active))
     missing = needed - set(params)
     if missing:
-        raise DuneError(f"{path.name}: missing placeholders {sorted(missing)}")
+        raise DuneError(f"{source}: missing placeholders {sorted(missing)}")
 
     def repl(m: re.Match[str]) -> str:
         return str(params[m.group(1)])
@@ -112,7 +217,10 @@ def _prep(params: dict[str, Any]) -> dict[str, Any]:
     out.setdefault("zero_address", _addr(_ZERO))
     out.setdefault("pool_filter", "")
     out.setdefault("block_filter", "")
+    out.setdefault("owner_filter", "")
     out.setdefault("limit", 20000)
+    # price_timeline / pool_tvl_timeline: day (month windows) or hour (week/day)
+    out.setdefault("bucket", "day")
 
     for key in ("token", "pool", "npm", "zero_address"):
         if key in out:
@@ -122,6 +230,8 @@ def _prep(params: dict[str, Any]) -> dict[str, Any]:
             out[key] = _addr_list(out[key])
     if "pool_id_list" in out:
         out["pool_id_list"] = _hex32_list(out["pool_id_list"])
+    if "tx_hash_list" in out:
+        out["tx_hash_list"] = _tx_hash_list(out["tx_hash_list"])
     if "token_id_list" in out:
         raw = out["token_id_list"]
         if isinstance(raw, (list, tuple, set)):
@@ -149,13 +259,14 @@ def _cache_path(cache_dir: Path, key: str) -> Path:
 
 def _cache_get(cache_dir: Path, key: str) -> Optional[list[dict[str, Any]]]:
     path = _cache_path(cache_dir, key)
-    if not path.exists():
-        return None
-    try:
-        rows = json.loads(path.read_text(encoding="utf-8")).get("rows")
-        return rows if isinstance(rows, list) else None
-    except Exception:
-        return None
+    with _CACHE_LOCK:
+        if not path.exists():
+            return None
+        try:
+            rows = json.loads(path.read_text(encoding="utf-8")).get("rows")
+            return rows if isinstance(rows, list) else None
+        except Exception:
+            return None
 
 
 def _cache_put(cache_dir: Path, key: str, rows: list[dict[str, Any]]) -> None:
@@ -163,8 +274,9 @@ def _cache_put(cache_dir: Path, key: str, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {"cache_key": key, "row_count": len(rows), "rows": rows}
     tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(path)
+    with _CACHE_LOCK:
+        tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(path)
 
 
 def _is_quota_http(exc: BaseException) -> bool:
@@ -282,7 +394,8 @@ def _query_once(
     if not force_refresh:
         cached = _cache_get(cache_dir, key)
         if cached is not None:
-            print(f"  [cache hit] {sql_name} ({len(cached)} rows)")
+            with _PRINT_LOCK:
+                print(f"  [cache hit] {sql_name} ({len(cached)} rows)")
             if on_status is not None:
                 on_status(-1, "CACHED")
             return cached
@@ -292,12 +405,14 @@ def _query_once(
     span = ""
     if fb is not None and tb is not None:
         span = f" [{fb}-{tb}]"
-    print(f"  [dune] {sql_name}{span} …")
+    with _PRINT_LOCK:
+        print(f"  [dune] {sql_name}{span} …")
     rows = _execute_remote(
         sql, label=f"{sql_name}{span}", api_key=api_key, on_status=on_status
     )
     _cache_put(cache_dir, key, rows)
-    print(f"  [cache save] {sql_name}{span} ({len(rows)} rows)")
+    with _PRINT_LOCK:
+        print(f"  [cache save] {sql_name}{span} ({len(rows)} rows)")
     return rows
 
 
@@ -325,7 +440,7 @@ def query(
     chunk_pause_s: float = 2.0,
     **params: Any,
 ) -> list[dict[str, Any]]:
-    """Load ``dune_sql/<sql_name>.sql``, substitute ``{{params}}``, run, return rows.
+    """Load SQL section ``sql_name`` from ``dune_sql/queries.sql``, run, return rows.
 
     When ``from_block``/``to_block`` span a large window (or a quota/size error
     hits), the range is split into multiple Dune queries and concatenated —
@@ -418,6 +533,45 @@ def query(
 
     print(f"  [dune] {sql_name}: {len(merged)} rows across chunked window")
     return merged
+
+
+def query_parallel(
+    jobs: list[tuple[str, dict[str, Any]]],
+    *,
+    max_workers: int = 4,
+) -> list[list[dict[str, Any]]]:
+    """Run independent ``query(sql_name, **kwargs)`` jobs concurrently.
+
+    ``jobs`` is a list of ``(sql_name, kwargs)``. Results are returned in the
+    same order. Any exception from a job is raised after all workers finish
+    (first failure wins).
+    """
+    if not jobs:
+        return []
+    if len(jobs) == 1:
+        name, kwargs = jobs[0]
+        return [query(name, **kwargs)]
+
+    results: list[Optional[list[dict[str, Any]]]] = [None] * len(jobs)
+    errors: list[BaseException] = []
+
+    def _run(idx: int, name: str, kwargs: dict[str, Any]) -> None:
+        try:
+            results[idx] = query(name, **kwargs)
+        except BaseException as exc:  # noqa: BLE001 — collect then re-raise
+            errors.append(exc)
+
+    workers = max(1, min(int(max_workers), len(jobs)))
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = [
+            ex.submit(_run, i, name, dict(kwargs))
+            for i, (name, kwargs) in enumerate(jobs)
+        ]
+        for fut in as_completed(futs):
+            fut.result()
+    if errors:
+        raise errors[0]
+    return [r or [] for r in results]
 
 
 # Aliases some call sites may prefer

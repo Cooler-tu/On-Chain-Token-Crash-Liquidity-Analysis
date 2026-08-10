@@ -1,29 +1,41 @@
 # Dune SQL templates
 
-Call from Python:
+All query templates live in **one file**: [`queries.sql`](./queries.sql).
+
+Each section is marked as:
+
+```sql
+-- === name: pools ===
+SELECT ...
+```
+
+Call from Python (unchanged API):
 
 ```python
-from src.data.dune import configured, query
+from src.data.dune import configured, query, list_sql_sections
 
 if configured():
     rows = query("pools", token="0x…", from_block=N, to_block=M, cache_dir="output/dune_cache")
+    print(list_sql_sections())
 ```
 
-| Template | Step |
-|----------|------|
-| `pools.sql` | Discovery (non-V4) |
-| `pools_v4.sql` | Discovery — real V4 bytes32 poolIds |
-| `swaps.sql` | Index swaps |
-| `liquidity_uniswap_v2_*.sql` / `v3_*.sql` | Index V2/V3 LP |
-| `liquidity_uniswap_v4_modify.sql` | Index V4 LP by poolId |
-| `liquidity_uniswap_v3_npm_token_ids.sql` | Positions RPC-fallback tokenIds |
-| `positions_uniswap_v3_snapshot.sql` | Positions — V3 owner+L+ticks at to_block |
-| `positions_uniswap_v3_base.sql` | Positions — V3 mint→tokenId (staged) |
-| `positions_uniswap_v3_liquidity.sql` | Positions — V3 net L for tokenId list |
-| `positions_uniswap_v4_liquidity.sql` | Positions — V4 net L by poolId+salt |
-| `positions_nft_owners.sql` | Positions — ERC721 owners for tokenId list |
-| `pool_sqrt_price_v3.sql` | Positions — last V3 sqrtPriceX96 |
-| `transfers.sql` | Index ERC20 transfers |
-| `transfer_addresses.sql` / `balances.sql` | Holdings (optional) |
-| `swaps_by_pool.sql` / `pool_tvl.sql` | CLI helpers |
-| `token_meta.sql` | Optional metadata |
+Design notes: see [`structure.md`](./structure.md).
+
+| Section | Step / use |
+|---------|------------|
+| `pools` / `pools_v4` | Discovery |
+| `holders` | Historical holders via `balances_ethereum.daily_updates` |
+| `holders_from_transfers` | Backup holders (same-day in/out); Python fallback only |
+| `transfer_addresses` / `balances` | Holdings last-resort / balance fill |
+| `swaps` | Index raw trades (charts use aggregates instead) |
+| `volume_timeline` / `price_timeline` | Chart aggregates |
+| `pool_token_balances` / `pool_balance_timeline` | Pool balances (latest + daily history) |
+| `pool_tvl` | CLI helper only |
+| `transfers` | Index transfers (clustering uses filtered cluster_*) |
+| `cluster_transfers` / `cluster_gas_payers` / `cluster_traces` | Wallet clustering |
+| `token_meta` | Symbol / decimals |
+| `liquidity_uniswap_*` | Index LP events |
+| `positions_uniswap_v3_snapshot` | Primary V3 LP |
+| `positions_*_base` / `_liquidity` / `positions_nft_owners` | Staged V3 fallback |
+| `positions_uniswap_v4_liquidity` | V4 LP |
+| `pool_sqrt_price_v3` | V3 LP tick valuation |

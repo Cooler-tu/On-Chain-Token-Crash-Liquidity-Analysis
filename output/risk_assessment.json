@@ -1,45 +1,33 @@
 {
-  "final_score": 0.1971,
+  "final_score": 0.0718,
   "risk_level": "LOW",
-  "raw_score": 0.27,
-  "evidence_confidence": 0.73,
-  "migration_adjusted": false,
-  "migration_note": "",
+  "raw_score": 0.3718,
+  "evidence_confidence": 1.0,
+  "migration_adjusted": true,
+  "migration_note": "Liquidity migration detected \u2014 reducing risk by 0.30.",
   "features": {
     "pool_concentration": {
-      "value": 0.9506,
+      "value": 0.9712,
       "weight": 0.15,
-      "description": "Main pool holds 95.06% of total DEX liquidity.",
-      "raw_data": 0.950595
+      "description": "Main pool holds 97.12% of total DEX liquidity.",
+      "raw_data": 0.971217
     },
     "lp_concentration": {
-      "value": 0.5249,
+      "value": 0.0031,
       "weight": 0.15,
-      "description": "Largest LP holds 52.49% of pool shares.",
-      "raw_data": 52.488011
+      "description": "Largest LP holds 0.31% of pool shares.",
+      "raw_data": 0.310418
     },
     "withdrawal_severity": {
-      "value": 1.0,
-      "weight": 0.15,
-      "description": "Main pool holds 100.00% of total DEX liquidity.",
-      "raw_data": 1.0
-    },
-    "lp_concentration": {
-      "value": 0.0,
-      "weight": 0.15,
-      "description": "Largest LP holds 0.00% of pool shares.",
-      "raw_data": 0.0
-    },
-    "withdrawal_severity": {
-      "value": 0.0,
+      "value": 0.0656,
       "weight": 0.2,
-      "description": "Liquidity removed is 0.00% of reference TVL.",
-      "raw_data": 0.0
+      "description": "Liquidity removed is 6.56% of reference TVL.",
+      "raw_data": 0.065593
     },
     "temporal_proximity": {
-      "value": 0.0,
+      "value": 0.45,
       "weight": 0.15,
-      "description": "No withdrawals to evaluate."
+      "description": "No incident block \u2014 21 liquidity removals in window."
     },
     "role_sensitivity": {
       "value": 0.8,
@@ -52,9 +40,9 @@
       "description": "No incident block \u2014 market impact requires a crash reference."
     },
     "combined_activity": {
-      "value": 0.0,
+      "value": 0.5,
       "weight": 0.05,
-      "description": "Suspicious activity: 0 withdrawals."
+      "description": "Suspicious activity: 21 withdrawals."
     }
   }
 }

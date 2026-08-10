@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -19,6 +20,40 @@ _LIQ_SQL = (
     "liquidity_uniswap_v3_mint",
     "liquidity_uniswap_v3_burn",
 )
+
+# SQL no longer returns these constants — fill locally from the template name.
+_LIQ_META: dict[str, dict[str, str]] = {
+    "liquidity_uniswap_v2_mint": {
+        "protocol": "uniswap",
+        "version": "v2",
+        "event_type": "LIQUIDITY_ADD",
+        "source_event": "Mint",
+    },
+    "liquidity_uniswap_v2_burn": {
+        "protocol": "uniswap",
+        "version": "v2",
+        "event_type": "LIQUIDITY_REMOVE",
+        "source_event": "Burn",
+    },
+    "liquidity_uniswap_v3_mint": {
+        "protocol": "uniswap",
+        "version": "v3",
+        "event_type": "LIQUIDITY_ADD",
+        "source_event": "Mint",
+    },
+    "liquidity_uniswap_v3_burn": {
+        "protocol": "uniswap",
+        "version": "v3",
+        "event_type": "LIQUIDITY_REMOVE",
+        "source_event": "Burn",
+    },
+    "liquidity_uniswap_v4_modify": {
+        "protocol": "uniswap",
+        "version": "v4",
+        "event_type": "",
+        "source_event": "ModifyLiquidity",
+    },
+}
 
 
 def _progress(msg: str, on_progress: Optional[ProgressFn] = None) -> None:
@@ -99,10 +134,14 @@ def _normalize_swap(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _normalize_liquidity(row: dict[str, Any]) -> dict[str, Any]:
-    version = str(row.get("version") or "").lower()
+def _normalize_liquidity(
+    row: dict[str, Any],
+    sql_name: str = "",
+) -> dict[str, Any]:
+    meta = _LIQ_META.get(sql_name, {})
+    version = str(row.get("version") or meta.get("version") or "").lower()
     delta_raw = str(row.get("liquidity_delta") or "0")
-    event_type = str(row.get("event_type") or "")
+    event_type = str(row.get("event_type") or meta.get("event_type") or "")
     if not event_type and version in ("v4", "4"):
         try:
             delta = int(delta_raw)
@@ -122,6 +161,8 @@ def _normalize_liquidity(row: dict[str, Any]) -> dict[str, Any]:
         pool_out = pool_addr.lower()
     else:
         pool_out = _checksum(pool_addr)
+    actor = _checksum(row.get("actor") or "")
+    recipient = _checksum(row.get("recipient") or "") or actor
     return {
         "block_number": int(row.get("block_number") or 0),
         "block_timestamp": _parse_block_timestamp(
@@ -129,18 +170,23 @@ def _normalize_liquidity(row: dict[str, Any]) -> dict[str, Any]:
         ),
         "transaction_hash": str(row.get("transaction_hash") or ""),
         "log_index": int(row.get("log_index") or 0),
-        "protocol": str(row.get("protocol") or "").lower(),
+        "protocol": str(row.get("protocol") or meta.get("protocol") or "").lower(),
         "version": version,
         "pool_address": pool_out,
         "event_type": event_type,
-        "actor": _checksum(row.get("actor") or ""),
-        "recipient": _checksum(row.get("recipient") or ""),
+        "actor": actor,
+        "recipient": recipient,
         "token0_amount": str(row.get("token0_amount") or "0"),
         "token1_amount": str(row.get("token1_amount") or "0"),
         "liquidity_delta": delta_raw,
-        "source_event": str(row.get("source_event") or ""),
-        "verified": True,
+        "source_event": str(
+            row.get("source_event") or meta.get("source_event") or ""
+        ),
+        "tick_lower": row.get("tick_lower"),
+        "tick_upper": row.get("tick_upper"),
+        "salt": row.get("salt"),
         "nft_token_id": nft_id,
+        "verified": True,
     }
 
 
@@ -236,63 +282,103 @@ def index_events_from_dune(
     # force an RPC fallback on wide windows.
     heavy = dict(common, chunk_blocks=2000, min_chunk_blocks=200)
 
-    _progress("Dune: fetching swaps for token ...", on_progress)
-    raw_swaps = query("swaps", pool_filter="", **heavy)
-    swaps = [_normalize_swap(r) for r in raw_swaps]
-    _progress("Dune: {} swap(s)".format(len(swaps)), on_progress)
+    # Wave 1 — independent sections (no cross-deps):
+    #   swaps | V2/V3 mint/burn ×4 | transfers | V4 modify batches
+    jobs: list[tuple[str, Callable[[], Any]]] = []
 
-    _progress(
-        "Dune: fetching V2/V3 liquidity for {} pool(s) ...".format(len(liq_pools)),
-        on_progress,
-    )
-    raw_liq: list[dict] = []
+    def _fetch_swaps() -> list[dict]:
+        return [_normalize_swap(r) for r in query("swaps", pool_filter="", **heavy)]
+
+    jobs.append(("swaps", _fetch_swaps))
+
     if liq_pools:
+        pools_slice = liq_pools[:40]
+
+        def _make_liq(sql_name: str):
+            def _run() -> tuple[str, list[dict]]:
+                rows = query(sql_name, pool_list=pools_slice, **heavy)
+                return sql_name, [_normalize_liquidity(r, sql_name) for r in rows]
+
+            return _run
+
         for sql_name in _LIQ_SQL:
-            try:
-                raw_liq.extend(
-                    query(sql_name, pool_list=liq_pools[:40], **heavy)
-                )
-            except DuneError as exc:
-                _progress("Dune: skip {}: {}".format(sql_name, exc), on_progress)
+            jobs.append((sql_name, _make_liq(sql_name)))
 
     if v4_ids:
-        _progress(
-            "Dune: fetching V4 ModifyLiquidity for {} poolId(s) ...".format(
-                len(v4_ids)
-            ),
-            on_progress,
-        )
-        # Batch poolIds so one IN-list does not explode row counts.
         batch = 8
+        v4_name = "liquidity_uniswap_v4_modify"
         for i in range(0, len(v4_ids[:40]), batch):
             chunk_ids = v4_ids[i : i + batch]
-            try:
-                raw_liq.extend(
-                    query(
-                        "liquidity_uniswap_v4_modify",
-                        pool_id_list=chunk_ids,
-                        **heavy,
+            start = i
+
+            def _make_v4(ids: list[str], idx: int):
+                def _run() -> tuple[str, list[dict]]:
+                    rows = query(v4_name, pool_id_list=ids, **heavy)
+                    return (
+                        "{}[{}]".format(v4_name, idx),
+                        [_normalize_liquidity(r, v4_name) for r in rows],
                     )
-                )
-            except DuneError as exc:
-                _progress(
-                    "Dune: skip V4 liquidity batch {}-{}: {}".format(
-                        i, i + len(chunk_ids), exc
-                    ),
-                    on_progress,
-                )
 
-    liquidity = [_normalize_liquidity(r) for r in raw_liq]
-    _progress("Dune: {} liquidity event(s)".format(len(liquidity)), on_progress)
+                return _run
 
-    transfers: list[dict] = []
+            jobs.append(
+                ("{}[{}]".format(v4_name, start), _make_v4(chunk_ids, start))
+            )
+
     if index_token_transfer:
-        _progress("Dune: fetching ERC20 transfers ...", on_progress)
-        try:
-            raw_xfer = query("transfers", **heavy)
-            transfers = [_normalize_transfer(r) for r in raw_xfer]
-        except DuneError as exc:
-            _progress("Dune: transfers warning: {}".format(exc), on_progress)
+        def _fetch_transfers() -> list[dict]:
+            return [
+                _normalize_transfer(r) for r in query("transfers", **heavy)
+            ]
+
+        jobs.append(("transfers", _fetch_transfers))
+
+    _progress(
+        "Dune: fetching {} independent query job(s) in parallel ...".format(
+            len(jobs)
+        ),
+        on_progress,
+    )
+
+    swaps: list[dict] = []
+    liquidity: list[dict] = []
+    transfers: list[dict] = []
+
+    def _consume(label: str, payload: Any) -> None:
+        nonlocal swaps, liquidity, transfers
+        if label == "swaps":
+            swaps = payload
+            return
+        if label == "transfers":
+            transfers = payload
+            return
+        # liquidity helpers return (name, rows)
+        if isinstance(payload, tuple) and len(payload) == 2:
+            _name, rows = payload
+            liquidity.extend(rows)
+            return
+        if isinstance(payload, list):
+            liquidity.extend(payload)
+
+    max_workers = min(6, max(1, len(jobs)))
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        fut_map = {ex.submit(fn): label for label, fn in jobs}
+        for fut in as_completed(fut_map):
+            label = fut_map[fut]
+            try:
+                _consume(label, fut.result())
+                _progress("Dune: {} done".format(label), on_progress)
+            except DuneError as exc:
+                # Soft-fail liquidity / transfers; swaps failure is fatal.
+                if label == "swaps":
+                    raise
+                _progress(
+                    "Dune: skip {}: {}".format(label, exc), on_progress
+                )
+
+    _progress("Dune: {} swap(s)".format(len(swaps)), on_progress)
+    _progress("Dune: {} liquidity event(s)".format(len(liquidity)), on_progress)
+    if index_token_transfer:
         _progress("Dune: {} transfer(s)".format(len(transfers)), on_progress)
 
     events_all = sorted(
@@ -312,6 +398,7 @@ def index_events_from_dune(
             "to_block": to_block,
             "token": token,
             "dune_cache": str(dune_dir),
+            "parallel_jobs": [label for label, _ in jobs],
             "counts": {
                 "swaps": len(swaps),
                 "liquidity_events": len(liquidity),
@@ -321,6 +408,7 @@ def index_events_from_dune(
                 "Swaps from dex.trades (all DEXes, filtered by token).",
                 "Liquidity from Uniswap V2/V3 Mint/Burn + V4 ModifyLiquidity.",
                 "V4 poolIds from pools_v4.sql (Swap⋈Initialize), not PoolManager.",
+                "Independent Dune sections fetched in parallel.",
             ],
         },
     )

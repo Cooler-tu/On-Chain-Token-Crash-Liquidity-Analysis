@@ -224,11 +224,13 @@ def reconstruct_v3_position_owners(
     cache_dir: Optional[str | Path] = None,
     *,
     allow_rpc_scan: bool = False,
+    owner_filter: str = "",
 ) -> list[Position]:
     """Snapshot V3 LP NFTs at ``to_block``.
 
     Prefer Dune (full snapshot, then staged base+L+owners) over per-NFT RPC.
     Pool reserves for share% still use a few RPC calls.
+    ``owner_filter`` is optional SQL fragment, e.g. ``AND o.owner IN (...)``.
     """
     pools_by_addr: dict[str, VerifiedPool] = {}
     for p in pools:
@@ -251,6 +253,7 @@ def reconstruct_v3_position_owners(
                     npm=pm_addr,
                     pool_list=list(pools_by_addr.keys()),
                     to_block=to_block,
+                    owner_filter=owner_filter or "",
                     chunk_blocks=0,
                 )
                 print(
@@ -1265,15 +1268,39 @@ def analyze_positions(
     output_dir: str | Path = "output",
     *,
     allow_rpc_scan: bool = False,
+    owner_allowlist: Optional[set[str] | list[str]] = None,
 ) -> tuple[list[Position], dict[str, Any]]:
     """Reconstruct LP positions as of ``to_block`` and write summary files.
 
+    When ``owner_allowlist`` is set (leaderboard addresses), only keep positions
+    owned by those wallets — do not treat every LP in the pool as a dashboard row.
     ``allow_rpc_scan=False`` (default) never scans global PM / Pair Transfer
     logs — required for usable speed after Dune indexing.
     """
     out = Path(output_dir)
     cache_dir = out / "indexer_cache"
     positions: list[Position] = []
+    allow = {
+        Web3.to_checksum_address(a).lower()
+        for a in (owner_allowlist or [])
+        if a and str(a).startswith("0x") and len(str(a)) == 42
+    }
+    owner_filter = ""
+    if allow:
+        owner_filter = "AND o.owner IN ({})".format(", ".join(sorted(allow)))
+    elif owner_allowlist is not None:
+        # Explicit empty allowlist → skip expensive LP reconstruction.
+        print("  [positions] empty leaderboard allowlist — skipping LP snapshot")
+        summary = {
+            "total_positions": 0,
+            "total_unique_holders": 0,
+            "snapshot_block": to_block,
+            "owner_allowlist_size": 0,
+            "top_5_holders": [],
+        }
+        _write_json(out / "positions.json", [])
+        _write_json(out / "position_summary.json", summary)
+        return [], summary
 
     events_by_pool: dict[str, list[dict]] = defaultdict(list)
     for evt in events_all:
@@ -1310,6 +1337,7 @@ def analyze_positions(
             indexed_events=events_all,
             cache_dir=cache_dir,
             allow_rpc_scan=allow_rpc_scan,
+            owner_filter=owner_filter,
         ))
 
     # V4 PMs + StateView from registry / pool fields
@@ -1319,7 +1347,7 @@ def analyze_positions(
     for dep in get_enabled_protocols(registry):
         if dep.version == "v4" and dep.state_view:
             state_view_by_factory[dep.factory.lower()] = dep.state_view
-            state_view_by_factory[dep.position_manager.lower()] = dep.state_view  # PM→state_view alias
+            state_view_by_factory[dep.position_manager.lower()] = dep.state_view
 
     v4_pm_addresses = {
         p.position_manager_address
@@ -1327,7 +1355,6 @@ def analyze_positions(
         if p.version == "v4" and p.position_manager_address
     }
     for pm_addr in v4_pm_addresses:
-        # Pick any matching factory's state_view
         state_view = None
         pm_lower = pm_addr.lower()
         for p in verified_pools:
@@ -1339,7 +1366,6 @@ def analyze_positions(
                 state_view = state_view_by_factory.get(p.factory_address.lower())
                 if state_view:
                     break
-        # Fallback: also try looking up by PM address directly
         if not state_view:
             state_view = state_view_by_factory.get(pm_lower)
         if not state_view:
@@ -1356,6 +1382,18 @@ def analyze_positions(
             allow_rpc_scan=allow_rpc_scan,
         ))
 
+    if allow:
+        before = len(positions)
+        positions = [
+            p for p in positions
+            if (p.owner or "").lower() in allow
+        ]
+        print(
+            "  [positions] leaderboard filter: {} → {} ({} allowlisted)".format(
+                before, len(positions), len(allow)
+            )
+        )
+
     pos_dicts = [p.__dict__ for p in positions]
     _write_json(out / "positions.json", pos_dicts)
 
@@ -1365,6 +1403,7 @@ def analyze_positions(
         "total_positions": len(positions),
         "total_unique_holders": total_lp_holders,
         "snapshot_block": to_block,
+        "owner_allowlist_size": len(allow),
         "share_basis": (
             "v3_tick_token_value_over_pool_balances;"
             "v4_in_range_L_over_pool_active_liquidity;"

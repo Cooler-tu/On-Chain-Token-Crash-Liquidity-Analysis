@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "pool_address": "0x94af294207a2c592c08a39c82a7df42a18613d986eeb520b7164fe9ccd66a000",
+    "owner": "0x0B98Fb64b4413A805089BF4DfE3d289a8CCC9131",
+    "lp_token_address": null,
+    "nft_token_id": 248718,
+    "liquidity": "689306392053701792",
+    "share_pct": 0.310418,
+    "beneficial_owner": null,
+    "resolution_method": "v4_dune_active_liquidity_share_at_to_block",
+    "confidence": 0.95,
+    "tick_lower": -887220,
+    "tick_upper": 887220,
+    "token0_amount": "430921304398135402",
+    "token1_amount": "1102621980571883712"
+  },
+  {
+    "pool_address": "0x94af294207a2c592c08a39c82a7df42a18613d986eeb520b7164fe9ccd66a000",
+    "owner": "0x12d66d9A9B01c936A4CD8EB994a7fbA94F1FDcda",
+    "lp_token_address": null,
+    "nft_token_id": 241851,
+    "liquidity": "87880246687018910",
+    "share_pct": 0.0,
+    "beneficial_owner": null,
+    "resolution_method": "v4_dune_tick_amounts_out_of_range_at_to_block",
+    "confidence": 0.9,
+    "tick_lower": -4560,
+    "tick_upper": 9300,
+    "token0_amount": "0",
+    "token1_amount": "69938953190603023"
+  }
+]

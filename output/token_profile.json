@@ -1,15 +1,13 @@
 {
   "chain_id": 1,
-  "address": "0xaE6e307c3Fe9E922E5674DBD7F830Ed49c014c6B",
-  "symbol": "CREDI",
-  "name": "CREDI",
+  "address": "0x44b28991B167582F18BA0259e0173176ca125505",
+  "symbol": "uPEG",
+  "name": "Unipeg",
   "decimals": 18,
   "decimals_source": "onchain",
   "is_contract": true,
   "proxy_address": null,
   "implementation_address": null,
-  "behavior_flags": [
-    "minting"
-  ],
-  "total_supply": 939978336000000000000000000
+  "behavior_flags": [],
+  "total_supply": 10000000000000000000000
 }
