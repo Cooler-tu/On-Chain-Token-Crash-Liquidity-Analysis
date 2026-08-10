@@ -346,7 +346,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
       <h2>Liquidity Withdrawals</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Removed amount is normalized to the target-token side of each pool (no token0 + token1 double counting). USD prefers Dune amount_usd, then stablecoin quote, then pool price.</p>
 {table_withdrawal_summary}
-      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor</th><th>Removed ({symbol})</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor / Scope</th><th>Removed ({symbol})</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
     </div>
   </div>
 
@@ -1540,6 +1540,11 @@ def _table_withdrawals(
         if removed_decimal is None:
             amount0 = abs(int(e.get("token0_amount", e.get("amount0", "0")) or "0")) / scale
             removed_decimal = amount0
+        actor_or_scope = (
+            "Pool/block aggregate"
+            if e.get("aggregation_scope") == "pool_block"
+            else _short_addr(e.get("actor", ""))
+        )
         rows.append(
             "<tr>"
             "<td>{}</td>"
@@ -1552,7 +1557,7 @@ def _table_withdrawals(
             "</tr>".format(
                 int(e.get("block_number") or 0),
                 _short_addr(e.get("pool", e.get("pool_address", ""))),
-                _short_addr(e.get("actor", "")),
+                actor_or_scope,
                 _fmt_bal(float(removed_decimal or 0), symbol),
                 _fmt_usd(e.get("removed_usd")),
                 _fmt_pct(e.get("pool_tvl_share")),

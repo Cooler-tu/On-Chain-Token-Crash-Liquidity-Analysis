@@ -66,6 +66,35 @@ class WithdrawalNormalizationTest(unittest.TestCase):
         self.assertEqual(result["withdrawal_severity"], 0.5)
         self.assertEqual(result["per_pool_removals"][0]["removed_usd"], 4.0)
 
+    def test_pool_block_aggregate_preserves_underlying_event_count(self):
+        pool = _pool()
+        events = [
+            {
+                "event_type": "LIQUIDITY_REMOVE",
+                "block_number": 5,
+                "block_timestamp": 100,
+                "pool_address": pool.pool_address,
+                "token0_amount": "2000000000000000000",
+                "token1_amount": "1000000000000000000",
+                "event_count": 3,
+                "aggregation_scope": "pool_block",
+            }
+        ]
+        result = calculate_withdrawal_severity(
+            events,
+            pre_event_tvl=4000000000000000000,
+            incident_block=0,
+            verified_pools=[pool],
+            target_token=TARGET,
+            token_decimals=18,
+            tvl_by_pool={pool.pool_address: 4000000000000000000},
+            timeline=[],
+        )
+        self.assertEqual(result["num_withdrawals"], 3)
+        self.assertEqual(result["attributed_withdrawals"], 3)
+        self.assertEqual(result["per_pool_removals"][0]["num_withdrawals"], 3)
+        self.assertEqual(result["withdrawal_events"][0]["aggregation_scope"], "pool_block")
+
 
 class WalletActivityTest(unittest.TestCase):
     def test_flags_large_wallet_and_excludes_router(self):

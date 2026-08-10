@@ -41,18 +41,18 @@ def _select_aliases(sql: str) -> list[str]:
 
 
 class ClusterSqlMinimalityTest(unittest.TestCase):
-    """Dune sections for clustering must be exactly two, minimal columns."""
+    """Clustering queries stay candidate/tx-scoped with minimal columns."""
 
     @classmethod
     def setUpClass(cls):
         cls.sections = _load_sections()
 
-    def test_only_two_cluster_sql_sections(self):
+    def test_expected_cluster_sql_sections(self):
         cluster_names = [n for n in self.sections if n.startswith("cluster_")]
         self.assertEqual(
             sorted(cluster_names),
-            ["cluster_gas_payers", "cluster_transfers"],
-            "clustering must use exactly two Dune pulls (transfers + gas)",
+            ["cluster_gas_payers", "cluster_traces", "cluster_transfers"],
+            "clustering uses candidate transfers, gas payers, and tx-scoped traces",
         )
 
     def test_no_traces_or_trades_in_cluster_sql(self):
@@ -222,9 +222,9 @@ class ClusterSignalLogicTest(unittest.TestCase):
         )
         self.assertEqual(
             result["fetch_contract"]["dune_queries"],
-            ["cluster_transfers", "cluster_gas_payers"],
+            ["cluster_transfers", "cluster_gas_payers", "cluster_traces"],
         )
-        self.assertIn("ethereum.traces", result["fetch_contract"]["not_used"])
+        self.assertNotIn("ethereum.traces", result["fetch_contract"]["not_used"])
         self.assertEqual(result["num_clusters"], 1)
 
 

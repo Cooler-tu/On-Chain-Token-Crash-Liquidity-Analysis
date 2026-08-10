@@ -186,6 +186,8 @@ def _normalize_liquidity(
         "tick_upper": row.get("tick_upper"),
         "salt": row.get("salt"),
         "nft_token_id": nft_id,
+        "event_count": max(1, int(row.get("event_count") or 1)),
+        "aggregation_scope": str(row.get("aggregation_scope") or ""),
         "verified": True,
     }
 
@@ -270,7 +272,7 @@ def index_events_from_dune(
     )
 
     _progress(
-        "Dune index: swaps + V2/V3 Mint/Burn + V4 ModifyLiquidity + ERC20 Transfer "
+        "Dune index: swaps + pool/block liquidity aggregates + ERC20 Transfer "
         "(cache {}) ...".format(dune_dir),
         on_progress,
     )
@@ -406,7 +408,11 @@ def index_events_from_dune(
             },
             "notes": [
                 "Swaps from dex.trades (all DEXes, filtered by token).",
-                "Liquidity from Uniswap V2/V3 Mint/Burn + V4 ModifyLiquidity.",
+                (
+                    "Liquidity is aggregated by pool and block on Dune "
+                    "(V2/V3 Mint/Burn + V4 signed ModifyLiquidity); "
+                    "individual LP actors are not downloaded."
+                ),
                 "V4 poolIds from pools_v4.sql (Swap⋈Initialize), not PoolManager.",
                 "Independent Dune sections fetched in parallel.",
             ],

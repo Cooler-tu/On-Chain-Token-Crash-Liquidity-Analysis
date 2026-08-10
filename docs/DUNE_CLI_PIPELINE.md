@@ -709,6 +709,14 @@ position_summary.json
 
 ## 9. Step 6 — Event Indexing
 
+Step 6 仍索引 raw swaps 和（非 fast mode）raw token transfers，但 LP 流动性事件已经改为：
+
+```text
+按 pool + block 聚合
+```
+
+它不再下载每个 LP actor、recipient、tx hash、tick 或 NFT salt。Step 5 负责排行榜地址的 LP position；Step 6 只保留池级流动性流入/流出，供撤池风险和时间线使用。
+
 入口：
 
 ```python
@@ -795,7 +803,7 @@ raw amounts
 amount_usd
 ```
 
-### 9.3 V2/V3 Liquidity
+### 9.3 V2/V3 Liquidity（pool/block aggregate）
 
 调用：
 
@@ -806,16 +814,41 @@ liquidity_uniswap_v3_mint
 liquidity_uniswap_v3_burn
 ```
 
-只查询前 40 个普通 pool addresses。
+只查询前 40 个普通 pool addresses。Dune SQL 现在按：
 
-结果在 Python 中统一 normalize 成：
+```text
+evt_block_number
+contract_address
+```
+
+分组，然后计算：
+
+```text
+SUM(amount0)
+SUM(amount1)
+COUNT(*) AS event_count
+aggregation_scope = pool_block
+```
+
+不再返回：
+
+```text
+sender / owner
+recipient
+transaction_hash
+单笔 log_index
+```
+
+Python 根据 SQL section 将聚合行 normalize 成：
 
 ```text
 LIQUIDITY_ADD
 LIQUIDITY_REMOVE
 ```
 
-### 9.4 V4 Liquidity
+其中 `event_count` 保存该 pool/block 聚合行代表的原始事件数量，因此 withdrawal count 不会因为聚合而变小。
+
+### 9.4 V4 Liquidity（pool/block/sign aggregate）
 
 调用：
 
@@ -825,7 +858,34 @@ liquidity_uniswap_v4_modify
 
 只处理前 40 个 V4 poolIds，每 8 个 poolId 一批。
 
-通过 `liquidityDelta` 正负判断添加或移除。
+Dune SQL 按：
+
+```text
+evt_block_number
+poolId
+liquidityDelta 正负
+```
+
+分组。正负必须分开，避免同一个 block 内 add 与 remove 互相抵消：
+
+```text
+SUM(liquidityDelta)
+COUNT(*) AS event_count
+aggregation_scope = pool_block
+```
+
+通过聚合后 `liquidityDelta` 的正负判断添加或移除。
+
+不再下载每个 V4 LP 的：
+
+```text
+sender
+tickLower / tickUpper
+salt
+transaction_hash
+```
+
+这些 position-level 信息属于 Step 5，不属于 Step 6。
 
 ### 9.5 Transfers
 
@@ -890,10 +950,10 @@ labels = analyze_labels(
 
 - LP owners
 - swaps
-- liquidity events
+- pool/block liquidity aggregates
 - token transfers
 
-Deployer lookup 使用 RPC。
+Deployer lookup 使用 RPC。由于 Step 6 聚合行不包含 LP actor，labels 不再从这些聚合行给每个 LP 地址添加协议标签；LP owner 标签来自 Step 5 positions。
 
 ---
 
@@ -984,9 +1044,11 @@ balance_raw / 10^decimals × price_usd
 
 ```text
 events_all
-→ 本地逐事件累加 swaps/Mint/Burn
+→ 本地累加 swaps 与 pool/block Mint/Burn aggregates
 → event_accumulate_fallback
 ```
+
+聚合后的 amount 总和仍可用于 fallback，但无法恢复单个 LP 的身份或单笔交易。
 
 ### 11.3 Volume
 
@@ -1193,11 +1255,11 @@ CLI analyze
 │
 ├─ Step 6 Event Index ───────── up to 6 workers
 │    ├─ query("swaps")
-│    ├─ query("liquidity_uniswap_v2_mint")
-│    ├─ query("liquidity_uniswap_v2_burn")
-│    ├─ query("liquidity_uniswap_v3_mint")
-│    ├─ query("liquidity_uniswap_v3_burn")
-│    ├─ query("liquidity_uniswap_v4_modify")
+│    ├─ query("liquidity_uniswap_v2_mint")  ┐
+│    ├─ query("liquidity_uniswap_v2_burn")  │ pool + block aggregate
+│    ├─ query("liquidity_uniswap_v3_mint")  │ no individual LP actor
+│    ├─ query("liquidity_uniswap_v3_burn")  ┘
+│    ├─ query("liquidity_uniswap_v4_modify")  pool + block + delta sign
 │    └─ query("transfers")
 │
 ├─ Step 7 Labels ────────────── reuse positions/events
@@ -1325,19 +1387,55 @@ MAX_BY(price, block_time)
 
 默认 `discovery_rpc=off` 时，也不会额外通过 RPC 补齐静默池。
 
-### 19.4 Raw swaps/transfers 仍然很大
+### 19.4 Liquidity 已聚合，但 raw swaps/transfers 仍然很大
 
-图表已经优先使用聚合 SQL，但 Step 6 仍为以下功能拉 raw events：
+Step 6 的 V2/V3/V4 liquidity 已经在 Dune 按 pool/block 聚合，不再下载每个 LP actor。图表也优先使用聚合 SQL。
+
+目前仍可能产生大量数据的是：
 
 - movers
 - labels
-- withdrawals
 - timeline
 - local metrics fallback
 
+对应的 raw 数据源是：
+
+```text
+swaps
+transfers
+```
+
 其中主 index 的 `swaps` 没有限制 verified pools。
 
-### 19.5 Wallet clustering 不在 `analyze`
+### 19.5 聚合后不再做 LP actor migration attribution
+
+旧的 liquidity migration 逻辑通过同一 actor 在相邻区块中：
+
+```text
+pool A remove
+→ pool B add
+```
+
+判断可能的迁移。
+
+现在 Step 6 不下载个人 LP actor，因此该 attribution 无法执行。Timeline 会返回：
+
+```text
+actor_attribution_available = false
+migration_detected = false
+note = not evaluated from pool/block aggregates
+```
+
+这不会影响按池统计的：
+
+```text
+removed amount
+withdrawal count
+withdrawal severity
+TVL fallback
+```
+
+### 19.6 Wallet clustering 不在 `analyze`
 
 以下 SQL 不属于完整 analyze pipeline：
 
@@ -1351,7 +1449,7 @@ cluster_traces
 
 目前 `cluster_traces` 虽然会被抓取，但尚未进入 edge/signals 计算。
 
-### 19.6 部分 SQL 已定义但未接入
+### 19.7 部分 SQL 已定义但未接入
 
 当前没有主调用者：
 
@@ -1362,7 +1460,7 @@ token_meta
 
 `pool_tvl` 只用于 `cli dune tvl`。
 
-### 19.7 Dune 权限
+### 19.8 Dune 权限
 
 以下表可能受 Dune plan 权限影响：
 

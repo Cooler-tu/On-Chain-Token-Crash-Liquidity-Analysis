@@ -21,6 +21,7 @@
 - **Dashboard holder snapshot columns** (2026-08-08) — Top Holders 增加期初/期末/净变动/峰值列并标注快照块与来源；Top Movers 切换为持仓净变动优先、排除池地址、swap 仅作上下文
 - **Withdrawal USD normalization** (2026-08-08) — 撤回事件按池、按目标 token 侧归一，输出 `per_pool_removals`、USD 估算和占池 TVL 比例；不再 token0 + token1 直接相加
 - **Wallet activity flags** (2026-08-08) — `wallet_activity` 按钱包聚合 USD 买卖并输出 Trade / Mover / Frequent 独立标签，dashboard 新增 Notable Wallets 表
+- **Pool-level liquidity event aggregation** (2026-08-11) — Dune V2/V3 Mint/Burn 按 pool+block 聚合，V4 ModifyLiquidity 按 pool+block+delta sign 聚合；保留 withdrawal 数量/金额并停止下载每个 LP actor
 
 ---
 

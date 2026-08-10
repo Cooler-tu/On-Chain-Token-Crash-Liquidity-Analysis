@@ -1,33 +1,33 @@
 {
-  "final_score": 0.0718,
+  "final_score": 0.3621,
   "risk_level": "LOW",
-  "raw_score": 0.3718,
+  "raw_score": 0.3621,
   "evidence_confidence": 1.0,
-  "migration_adjusted": true,
-  "migration_note": "Liquidity migration detected \u2014 reducing risk by 0.30.",
+  "migration_adjusted": false,
+  "migration_note": "",
   "features": {
     "pool_concentration": {
-      "value": 0.9712,
+      "value": 0.9941,
       "weight": 0.15,
-      "description": "Main pool holds 97.12% of total DEX liquidity.",
-      "raw_data": 0.971217
+      "description": "Main pool holds 99.41% of total DEX liquidity.",
+      "raw_data": 0.994146
     },
     "lp_concentration": {
       "value": 0.0031,
       "weight": 0.15,
       "description": "Largest LP holds 0.31% of pool shares.",
-      "raw_data": 0.310418
+      "raw_data": 0.309795
     },
     "withdrawal_severity": {
-      "value": 0.0656,
+      "value": 0.0,
       "weight": 0.2,
-      "description": "Liquidity removed is 6.56% of reference TVL.",
-      "raw_data": 0.065593
+      "description": "Liquidity removed is 0.00% of reference TVL.",
+      "raw_data": 0.0
     },
     "temporal_proximity": {
       "value": 0.45,
       "weight": 0.15,
-      "description": "No incident block \u2014 21 liquidity removals in window."
+      "description": "No incident block \u2014 74 liquidity removals in window."
     },
     "role_sensitivity": {
       "value": 0.8,
@@ -42,7 +42,7 @@
     "combined_activity": {
       "value": 0.5,
       "weight": 0.05,
-      "description": "Suspicious activity: 21 withdrawals."
+      "description": "Suspicious activity: 114 withdrawals."
     }
   }
 }

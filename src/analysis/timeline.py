@@ -72,7 +72,10 @@ def build_incident_timeline(
 
     # Build summary statistics
     total_swaps = len(events_swaps)
-    total_liq_events = len(events_liquidity)
+    total_liq_events = sum(
+        max(1, int(e.get("event_count") or 1))
+        for e in events_liquidity
+    )
     total_transfers = len(events_transfers)
 
     first_event = all_events_sorted[0] if all_events_sorted else None
@@ -93,7 +96,10 @@ def build_incident_timeline(
         "num_pre_incident_events": len(pre_incident),
         "num_post_incident_events": len(post_incident),
         "large_swaps": len(large_sells),
-        "large_liquidity_removals": len(large_removals),
+        "large_liquidity_removals": sum(
+            max(1, int(e.get("event_count") or 1))
+            for e in large_removals
+        ),
         "liquidity_migration": migration,
         "alternative_causes": alt_causes,
         "sorted_events": [e for e in all_events_sorted],
@@ -121,7 +127,14 @@ def check_liquidity_migration(
         if e.get("event_type") == "LIQUIDITY_REMOVE"
     ]
 
-    # Check for remove followed by add by same actor within 5 blocks
+    # Migration attribution requires actor-level evidence. Dune's main index
+    # intentionally aggregates liquidity by pool/block and omits LP identities.
+    actor_attribution_available = any(
+        e.get("actor") or e.get("recipient")
+        for e in liquidity_adds + liquidity_removes
+    )
+
+    # Check for remove followed by add by same actor within 5 blocks.
     migration_candidates = []
     for rm in liquidity_removes:
         rm_actor = rm.get("actor", "")
@@ -148,6 +161,15 @@ def check_liquidity_migration(
         "migration_detected": len(migration_candidates) > 0,
         "migration_candidates": migration_candidates[:5],  # top 5
         "num_pools": len(verified_pools),
+        "actor_attribution_available": actor_attribution_available,
+        "note": (
+            ""
+            if actor_attribution_available
+            else (
+                "Not evaluated from the Dune pool/block aggregates because "
+                "individual LP actors are intentionally not downloaded."
+            )
+        ),
     }
 
 

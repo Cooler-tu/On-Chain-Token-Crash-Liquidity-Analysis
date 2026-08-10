@@ -343,83 +343,94 @@ LIMIT 1
 
 
 -- === name: liquidity_uniswap_v2_mint ===
+-- Pool/block aggregate: preserve liquidity flow without downloading each LP actor.
 -- Constants (protocol/version/event_type/source) filled in dune_index normalizer.
 SELECT
   evt_block_number AS block_number,
-  CAST(evt_block_time AS varchar) AS block_time,
-  CAST(evt_tx_hash AS varchar) AS transaction_hash,
-  evt_index AS log_index,
+  CAST(MAX(evt_block_time) AS varchar) AS block_time,
+  '' AS transaction_hash,
+  0 AS log_index,
   CAST(contract_address AS varchar) AS pool_address,
-  CAST(sender AS varchar) AS actor,
-  CAST(amount0 AS varchar) AS token0_amount,
-  CAST(amount1 AS varchar) AS token1_amount
+  CAST(SUM(CAST(amount0 AS DECIMAL(38, 0))) AS varchar) AS token0_amount,
+  CAST(SUM(CAST(amount1 AS DECIMAL(38, 0))) AS varchar) AS token1_amount,
+  COUNT(*) AS event_count,
+  'pool_block' AS aggregation_scope
 FROM uniswap_v2_ethereum.Pair_evt_Mint
 WHERE evt_block_number BETWEEN {{from_block}} AND {{to_block}}
   AND contract_address IN ({{pool_list}})
+GROUP BY evt_block_number, contract_address
 
 
 -- === name: liquidity_uniswap_v2_burn ===
 SELECT
   evt_block_number AS block_number,
-  CAST(evt_block_time AS varchar) AS block_time,
-  CAST(evt_tx_hash AS varchar) AS transaction_hash,
-  evt_index AS log_index,
+  CAST(MAX(evt_block_time) AS varchar) AS block_time,
+  '' AS transaction_hash,
+  0 AS log_index,
   CAST(contract_address AS varchar) AS pool_address,
-  CAST(sender AS varchar) AS actor,
-  CAST("to" AS varchar) AS recipient,
-  CAST(amount0 AS varchar) AS token0_amount,
-  CAST(amount1 AS varchar) AS token1_amount
+  CAST(SUM(CAST(amount0 AS DECIMAL(38, 0))) AS varchar) AS token0_amount,
+  CAST(SUM(CAST(amount1 AS DECIMAL(38, 0))) AS varchar) AS token1_amount,
+  COUNT(*) AS event_count,
+  'pool_block' AS aggregation_scope
 FROM uniswap_v2_ethereum.Pair_evt_Burn
 WHERE evt_block_number BETWEEN {{from_block}} AND {{to_block}}
   AND contract_address IN ({{pool_list}})
+GROUP BY evt_block_number, contract_address
 
 
 -- === name: liquidity_uniswap_v3_mint ===
 SELECT
   evt_block_number AS block_number,
-  CAST(evt_block_time AS varchar) AS block_time,
-  CAST(evt_tx_hash AS varchar) AS transaction_hash,
-  evt_index AS log_index,
+  CAST(MAX(evt_block_time) AS varchar) AS block_time,
+  '' AS transaction_hash,
+  0 AS log_index,
   CAST(contract_address AS varchar) AS pool_address,
-  CAST(owner AS varchar) AS actor,
-  CAST(amount0 AS varchar) AS token0_amount,
-  CAST(amount1 AS varchar) AS token1_amount
+  CAST(SUM(CAST(amount0 AS DECIMAL(38, 0))) AS varchar) AS token0_amount,
+  CAST(SUM(CAST(amount1 AS DECIMAL(38, 0))) AS varchar) AS token1_amount,
+  COUNT(*) AS event_count,
+  'pool_block' AS aggregation_scope
 FROM uniswap_v3_ethereum.Pair_evt_Mint
 WHERE evt_block_number BETWEEN {{from_block}} AND {{to_block}}
   AND contract_address IN ({{pool_list}})
+GROUP BY evt_block_number, contract_address
 
 
 -- === name: liquidity_uniswap_v3_burn ===
 SELECT
   evt_block_number AS block_number,
-  CAST(evt_block_time AS varchar) AS block_time,
-  CAST(evt_tx_hash AS varchar) AS transaction_hash,
-  evt_index AS log_index,
+  CAST(MAX(evt_block_time) AS varchar) AS block_time,
+  '' AS transaction_hash,
+  0 AS log_index,
   CAST(contract_address AS varchar) AS pool_address,
-  CAST(owner AS varchar) AS actor,
-  CAST(amount0 AS varchar) AS token0_amount,
-  CAST(amount1 AS varchar) AS token1_amount
+  CAST(SUM(CAST(amount0 AS DECIMAL(38, 0))) AS varchar) AS token0_amount,
+  CAST(SUM(CAST(amount1 AS DECIMAL(38, 0))) AS varchar) AS token1_amount,
+  COUNT(*) AS event_count,
+  'pool_block' AS aggregation_scope
 FROM uniswap_v3_ethereum.Pair_evt_Burn
 WHERE evt_block_number BETWEEN {{from_block}} AND {{to_block}}
   AND contract_address IN ({{pool_list}})
+GROUP BY evt_block_number, contract_address
 
 
 -- === name: liquidity_uniswap_v4_modify ===
+-- Pool/block/sign aggregate: positive and negative deltas stay separate.
 SELECT
   evt_block_number AS block_number,
-  CAST(evt_block_time AS varchar) AS block_time,
-  CAST(evt_tx_hash AS varchar) AS transaction_hash,
-  evt_index AS log_index,
+  CAST(MAX(evt_block_time) AS varchar) AS block_time,
+  '' AS transaction_hash,
+  0 AS log_index,
   CAST(id AS varchar) AS pool_id,
-  CAST(sender AS varchar) AS actor,
-  CAST(liquidityDelta AS varchar) AS liquidity_delta,
-  CAST(tickLower AS varchar) AS tick_lower,
-  CAST(tickUpper AS varchar) AS tick_upper,
-  CAST(salt AS varchar) AS salt
+  CAST(SUM(CAST(liquidityDelta AS DECIMAL(38, 0))) AS varchar) AS liquidity_delta,
+  COUNT(*) AS event_count,
+  'pool_block' AS aggregation_scope
 FROM uniswap_v4_ethereum.PoolManager_evt_ModifyLiquidity
 WHERE evt_block_number BETWEEN {{from_block}} AND {{to_block}}
   AND id IN ({{pool_id_list}})
-ORDER BY evt_block_number, evt_index
+GROUP BY
+  evt_block_number,
+  id,
+  CASE WHEN liquidityDelta < 0 THEN -1 ELSE 1 END
+ORDER BY evt_block_number, id
 
 
 -- === name: liquidity_uniswap_v3_npm_token_ids ===

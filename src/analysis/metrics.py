@@ -1284,8 +1284,11 @@ def calculate_withdrawal_severity(
     total_target_raw = 0
     total_usd = 0.0
     attributed_events = 0
+    withdrawal_event_count = 0
 
     for evt in pre_crash_removals:
+        event_count = max(1, int(evt.get("event_count") or 1))
+        withdrawal_event_count += event_count
         try:
             legacy_total += abs(int(evt.get("token0_amount", "0") or "0")) + abs(
                 int(evt.get("token1_amount", "0") or "0")
@@ -1309,10 +1312,12 @@ def calculate_withdrawal_severity(
                 "removed_usd": None,
                 "pool_tvl_share": None,
                 "usd_source": "",
+                "event_count": event_count,
+                "aggregation_scope": evt.get("aggregation_scope", ""),
             })
             continue
 
-        attributed_events += 1
+        attributed_events += event_count
         removed_decimal = removed_raw / scale
         pool_key = (pool.pool_address or evt.get("pool_address") or "").lower()
         pool_tvl_raw = pool_tvl.get(pool_key, 0)
@@ -1364,10 +1369,12 @@ def calculate_withdrawal_severity(
             "pool_tvl_raw": pool_tvl_raw or None,
             "pool_tvl_share": round(pool_share, 8) if pool_share is not None else None,
             "usd_source": usd_source,
+            "event_count": event_count,
+            "aggregation_scope": evt.get("aggregation_scope", ""),
         })
 
         agg = per_pool[pool_key]
-        agg["num_withdrawals"] += 1
+        agg["num_withdrawals"] += event_count
         agg["removed_target_raw"] += removed_raw
         agg["removed_target_decimal"] += removed_decimal
         agg["removed_usd"] += usd or 0.0
@@ -1410,7 +1417,7 @@ def calculate_withdrawal_severity(
     )
 
     return {
-        "num_withdrawals": len(pre_crash_removals),
+        "num_withdrawals": withdrawal_event_count,
         "attributed_withdrawals": attributed_events,
         "total_removed_token0": legacy_total,
         "legacy_total_removed_token0": legacy_total,
