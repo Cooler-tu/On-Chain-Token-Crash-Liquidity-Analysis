@@ -516,11 +516,15 @@ def build_tvl_timeline_snapshots(
     to_block: int,
     output_dir: str | Path = "output",
     chart_span: str = "auto",
+    price_rows: Optional[list[dict]] = None,
 ) -> list[dict]:
     """TVL at fixed buckets: direct pool balance × price (no event accumulation).
 
     - month → daily 00:00 UTC (``price_timeline`` + ``pool_balance_timeline``)
     - week/day → hourly price; balance still from ledger rows, joined by day
+
+    When ``price_rows`` is already computed from indexed swaps, skip the extra
+    ``dex.trades`` ``price_timeline`` query.
     """
     from ..data.dune import configured, query
 
@@ -572,11 +576,16 @@ def build_tvl_timeline_snapshots(
             **common,
         )
 
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        fut_b = ex.submit(_balances)
-        fut_p = ex.submit(_prices)
-        bal_rows = fut_b.result()
-        price_rows = fut_p.result()
+    local_prices = list(price_rows or [])
+    if local_prices:
+        bal_rows = _balances()
+        price_rows = local_prices
+    else:
+        with ThreadPoolExecutor(max_workers=2) as ex:
+            fut_b = ex.submit(_balances)
+            fut_p = ex.submit(_prices)
+            bal_rows = fut_b.result()
+            price_rows = fut_p.result()
 
     # Balance rows: either block-keyed ledger, or constant 'latest' balances.
     bal_by_block: dict[int, dict[str, int]] = defaultdict(dict)
@@ -835,6 +844,117 @@ def build_tvl_timeline(
     return sorted(timeline, key=lambda e: (e["block_number"], e.get("log_index", 0)))
 
 
+def calculate_price_timeline_from_swaps(
+    events_all: list[dict],
+    verified_pools: list[VerifiedPool],
+    target_token: str,
+    token_decimals: int,
+    bucket_seconds: int = 3600,
+) -> list[dict[str, Any]]:
+    """Last swap-implied USD price per pool per bucket (same as ``price_timeline`` SQL).
+
+    ``price_usd = amount_usd / target_token_amount``; bucket value is the last
+    swap in that bucket (``MAX_BY`` equivalent).
+    """
+    pool_meta: dict[str, dict[str, Any]] = {}
+    for pool in verified_pools:
+        if not pool.verified:
+            continue
+        addr = (pool.pool_address or "").lower()
+        if not addr:
+            continue
+        pool_meta[addr] = {
+            "protocol": pool.protocol,
+            "version": pool.version,
+            "token0": Web3.to_checksum_address(pool.token0).lower(),
+            "token1": Web3.to_checksum_address(pool.token1).lower(),
+        }
+
+    last: dict[tuple[int, str], dict[str, Any]] = {}
+    for evt in events_all or []:
+        if (evt.get("event_type") or "").upper() != "SWAP":
+            continue
+        pa = (evt.get("pool_address") or "").lower()
+        evt_has_tokens = bool(evt.get("token0_address") and evt.get("token1_address"))
+        meta = None
+        if evt_has_tokens:
+            for candidate_pa, candidate_meta in pool_meta.items():
+                if _event_matches_pool(
+                    evt, candidate_meta["token0"], candidate_meta["token1"]
+                ):
+                    meta = candidate_meta
+                    pa = candidate_pa
+                    break
+        else:
+            meta = pool_meta.get(pa)
+        if not meta or not pa:
+            continue
+        amount_usd = float(evt.get("amount_usd") or 0)
+        if amount_usd <= 0:
+            continue
+        side_info = _resolve_target_side(
+            evt, meta["token0"], meta["token1"], target_token, token_decimals
+        )
+        if side_info is None:
+            continue
+        try:
+            a0 = abs(int(evt.get("token0_amount", "0") or "0"))
+            a1 = abs(int(evt.get("token1_amount", "0") or "0"))
+        except (TypeError, ValueError):
+            continue
+        target_raw = a0 if side_info[0] == "0" else a1
+        if target_raw <= 0:
+            continue
+        token_amount = target_raw / (10 ** max(0, int(token_decimals or 18)))
+        if token_amount <= 0:
+            continue
+        try:
+            ts = int(evt.get("block_timestamp") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        if ts <= 0:
+            continue
+        bucket_ts = (ts // bucket_seconds) * bucket_seconds
+        price_usd = amount_usd / token_amount
+        try:
+            bn = int(evt.get("block_number") or 0)
+        except (TypeError, ValueError):
+            bn = 0
+        try:
+            log_index = int(evt.get("log_index") or 0)
+        except (TypeError, ValueError):
+            log_index = 0
+        key = (bucket_ts, pa)
+        prev = last.get(key)
+        if prev and (bn, log_index, ts) < (
+            int(prev.get("_bn") or 0),
+            int(prev.get("_log") or 0),
+            int(prev.get("_ts") or 0),
+        ):
+            continue
+        last[key] = {
+            "bucket_ts": bucket_ts,
+            "pool_address": pa,
+            "protocol": meta.get("protocol") or evt.get("protocol") or "",
+            "version": meta.get("version") or evt.get("version") or "",
+            "price_usd": price_usd,
+            "_bn": bn,
+            "_log": log_index,
+            "_ts": ts,
+        }
+
+    out = []
+    for row in sorted(last.values(), key=lambda r: (r["bucket_ts"], r["pool_address"])):
+        out.append({
+            "bucket_ts": row["bucket_ts"],
+            "pool_address": row["pool_address"],
+            "protocol": row["protocol"],
+            "version": row["version"],
+            "price_usd": row["price_usd"],
+        })
+    return out
+
+
 def fetch_volume_timeline_from_dune(
     verified_pools: list[VerifiedPool],
     target_token: str,
@@ -844,7 +964,7 @@ def fetch_volume_timeline_from_dune(
     chart_span: str = "auto",
     output_dir: str | Path = "output",
 ) -> dict[str, Any]:
-    """Volume charts via SQL aggregate (block → token → GROUP BY bucket/pool)."""
+    """Volume charts via SQL aggregate. Used only when raw swaps were not indexed."""
     from ..data.dune import configured, query
 
     if not configured():
@@ -969,6 +1089,12 @@ def fetch_volume_timeline_from_dune(
     }
 
 
+def _has_swap_events(events_all: list[dict] | None) -> bool:
+    return any(
+        (evt.get("event_type") or "").upper() == "SWAP" for evt in (events_all or [])
+    )
+
+
 def calculate_volume_metrics(
     events_all: list[dict],
     verified_pools: list[VerifiedPool],
@@ -976,9 +1102,11 @@ def calculate_volume_metrics(
     token_decimals: int,
     bucket_seconds: int = 3600,
 ) -> dict[str, Any]:
-    """Aggregate swap volume by pool and by time bucket (local fallback).
+    """Aggregate swap volume by pool and by time bucket from indexed swaps.
 
-    Prefer ``fetch_volume_timeline_from_dune`` so charts do not require raw swaps.
+    Primary path when ``swaps.json`` / ``events_all`` already exists so
+    ``dex.trades`` is not queried again for charts. Dune ``volume_timeline``
+    remains the fallback when raw swaps were not indexed.
     """
     target = Web3.to_checksum_address(target_token)
     pool_meta: dict[str, dict[str, Any]] = {}
@@ -1651,7 +1779,15 @@ def calculate_all_metrics(
     bucket = chart_bucket(span)
     bucket_seconds = chart_bucket_seconds(span)
 
-    # structure.md §6: fixed-time balance × price snapshots (not event accumulation)
+    # structure.md §6: fixed-time balance × price snapshots (not event accumulation).
+    # Price/volume reuse indexed swaps so dex.trades is not scanned again.
+    local_prices = calculate_price_timeline_from_swaps(
+        events_all,
+        verified_pools,
+        target_token,
+        token_decimals,
+        bucket_seconds=bucket_seconds,
+    )
     timeline: list[dict] = []
     tvl_source = "none"
     if from_block > 0 and to_block >= from_block:
@@ -1664,8 +1800,14 @@ def calculate_all_metrics(
                 to_block=to_block,
                 output_dir=out,
                 chart_span=span,
+                price_rows=local_prices or None,
             )
-            tvl_source = "dune_snapshot" if timeline else "dune_snapshot_empty"
+            if local_prices and timeline:
+                tvl_source = "dune_balance_local_price"
+            elif timeline:
+                tvl_source = "dune_snapshot"
+            else:
+                tvl_source = "dune_snapshot_empty"
         except Exception as exc:
             print(f"  [metrics] snapshot TVL failed ({exc}); falling back to event timeline")
             timeline = build_tvl_timeline(
@@ -1709,7 +1851,27 @@ def calculate_all_metrics(
     )
 
     volume: dict[str, Any] = {}
-    if from_block > 0 and to_block >= from_block:
+    if _has_swap_events(events_all):
+        volume = calculate_volume_metrics(
+            events_all,
+            verified_pools,
+            target_token,
+            token_decimals,
+            bucket_seconds=bucket_seconds,
+        )
+        volume["chart_span"] = span
+        volume["bucket"] = bucket
+        volume["source"] = "local_swaps"
+        if volume.get("volume_timeline") and local_prices:
+            print(
+                "  [metrics] volume + price from indexed swaps "
+                "(skip extra dex.trades queries)"
+            )
+    if (
+        not volume.get("volume_timeline")
+        and from_block > 0
+        and to_block >= from_block
+    ):
         try:
             volume = fetch_volume_timeline_from_dune(
                 verified_pools,

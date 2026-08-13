@@ -5,6 +5,8 @@ import unittest
 
 from src.models import VerifiedPool
 from src.analysis.metrics import (
+    calculate_price_timeline_from_swaps,
+    calculate_volume_metrics,
     calculate_wallet_activity,
     calculate_withdrawal_severity,
 )
@@ -149,6 +151,78 @@ class WalletActivityTest(unittest.TestCase):
         self.assertEqual(result["num_large_mover_wallets"], 1)
         self.assertEqual(result["num_notable_wallets"], 1)
         self.assertEqual(result["total_swap_volume_usd"], 100000.0)
+
+
+class LocalSwapAggregatesTest(unittest.TestCase):
+    def test_volume_sums_target_token_absolute_amounts(self):
+        pool = _pool()
+        events = [
+            {
+                "event_type": "SWAP",
+                "block_number": 10,
+                "block_timestamp": 1_700_000_000,
+                "pool_address": pool.pool_address,
+                "token0_address": TARGET,
+                "token1_address": WETH,
+                "token0_amount": "1000000000000000000",
+                "token1_amount": "2000000000000000000",
+                "amount_usd": 10.0,
+            },
+            {
+                "event_type": "SWAP",
+                "block_number": 11,
+                "block_timestamp": 1_700_000_100,
+                "pool_address": pool.pool_address,
+                "token0_address": WETH,
+                "token1_address": TARGET,
+                "token0_amount": "500000000000000000",
+                "token1_amount": "3000000000000000000",
+                "amount_usd": 30.0,
+            },
+        ]
+        result = calculate_volume_metrics(
+            events, [pool], TARGET, 18, bucket_seconds=3600
+        )
+        self.assertEqual(result["total_volume_in_token"], 4.0)
+        self.assertEqual(len(result["volume_timeline"]), 1)
+        bucket = result["volume_timeline"][0]
+        self.assertEqual(bucket["total_volume_in_token"], 4.0)
+        self.assertEqual(bucket["pools"][pool.pool_address.lower()]["volume_usd"], 40.0)
+
+    def test_price_uses_last_swap_in_bucket(self):
+        pool = _pool()
+        events = [
+            {
+                "event_type": "SWAP",
+                "block_number": 10,
+                "log_index": 1,
+                "block_timestamp": 1_700_000_000,
+                "pool_address": pool.pool_address,
+                "token0_address": TARGET,
+                "token1_address": WETH,
+                "token0_amount": "1000000000000000000",
+                "token1_amount": "1",
+                "amount_usd": 2.0,
+            },
+            {
+                "event_type": "SWAP",
+                "block_number": 11,
+                "log_index": 2,
+                "block_timestamp": 1_700_000_100,
+                "pool_address": pool.pool_address,
+                "token0_address": TARGET,
+                "token1_address": WETH,
+                "token0_amount": "2000000000000000000",
+                "token1_amount": "1",
+                "amount_usd": 8.0,
+            },
+        ]
+        rows = calculate_price_timeline_from_swaps(
+            events, [pool], TARGET, 18, bucket_seconds=3600
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["pool_address"], pool.pool_address.lower())
+        self.assertEqual(rows[0]["price_usd"], 4.0)
 
 
 if __name__ == "__main__":

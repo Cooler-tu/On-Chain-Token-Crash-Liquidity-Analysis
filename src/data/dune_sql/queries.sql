@@ -155,7 +155,8 @@ ORDER BY block_number, evt_index
 
 
 -- === name: volume_timeline ===
--- Chart volume: block window → token → aggregate (do NOT pull raw swaps).
+-- Fallback chart volume when raw swaps were not indexed.
+-- Primary path: calculate_volume_metrics() on already-fetched swaps.
 SELECT
   CAST(date_trunc('{{bucket}}', block_time) AS varchar) AS bucket_ts,
   CAST(project_contract_address AS varchar) AS pool_address,
@@ -182,7 +183,8 @@ ORDER BY 1, 2
 
 
 -- === name: price_timeline ===
--- Swap-implied USD price per pool per bucket (month→day, week/day→hour).
+-- Fallback swap-implied USD price per pool per bucket (month→day, week/day→hour).
+-- Primary path: calculate_price_timeline_from_swaps() on already-fetched swaps.
 -- Current semantics: last trade in bucket (MAX_BY). Target later: as-of 00:00 / hour.
 SELECT
   CAST(date_trunc('{{bucket}}', block_time) AS varchar) AS bucket_ts,

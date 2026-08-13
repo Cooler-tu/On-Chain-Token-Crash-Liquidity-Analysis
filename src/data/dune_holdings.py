@@ -269,6 +269,151 @@ WHERE rn = 1
     return out
 
 
+def _parse_balance_raw(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    try:
+        return str(int(value))
+    except (TypeError, ValueError):
+        try:
+            return str(int(float(value)))
+        except (TypeError, ValueError):
+            return str(value)
+
+
+def summarize_balance_trajectory(
+    rows: list[dict[str, Any]],
+    from_block: int,
+    to_block: int,
+) -> dict[str, str]:
+    """Derive start / end / peak / moved from sparse ledger rows.
+
+    ``rows`` may include the last snapshot at/before ``from_block`` plus every
+    later change up to ``to_block``. A change exactly at ``from_block`` is the
+    start snapshot, not an in-window move.
+    """
+    start = 0
+    for row in rows or []:
+        try:
+            bn = int(row.get("block_number") or 0)
+            raw = int(row.get("balance_raw") or 0)
+        except (TypeError, ValueError):
+            continue
+        if bn <= from_block:
+            start = raw
+        elif bn <= to_block:
+            break
+    prev = start
+    peak = start
+    moved_in = 0
+    moved_out = 0
+    end = start
+    had_window_moves = False
+    for row in rows or []:
+        try:
+            bn = int(row.get("block_number") or 0)
+            cur = int(row.get("balance_raw") or 0)
+        except (TypeError, ValueError):
+            continue
+        if bn <= from_block or bn > to_block:
+            continue
+        had_window_moves = True
+        if cur > peak:
+            peak = cur
+        delta = cur - prev
+        if delta > 0:
+            moved_in += delta
+        elif delta < 0:
+            moved_out += -delta
+        prev = cur
+        end = cur
+    return {
+        "start": str(start),
+        "end": str(end),
+        "peak": str(peak),
+        "moved_in": str(moved_in),
+        "moved_out": str(moved_out),
+        "source": "event_rebuild" if had_window_moves else "two_point_snapshot",
+    }
+
+
+def fetch_balance_window_from_dune(
+    token_address: str,
+    addresses: list[str],
+    from_block: int,
+    to_block: int,
+    api_key: Optional[str] = None,
+    limit: int = 500,
+) -> dict[str, list[dict[str, Any]]]:
+    """One Dune round-trip: start snapshot + in-window balance changes.
+
+    Returns ``{address: [{block_number, balance_raw}, ...]}`` ordered by block.
+    Start is the last row with ``block_number <= from_block``; later rows are
+    ``from_block < block_number <= to_block``.
+    """
+    if not addresses:
+        return {}
+
+    key = (api_key or os.environ.get("DUNE_API_KEY") or "").strip()
+    if not key:
+        return {}
+
+    token = Web3.to_checksum_address(token_address).lower()
+    addrs = [Web3.to_checksum_address(a).lower() for a in addresses[:limit]]
+    addr_list = ", ".join(addrs)
+    sql = f"""
+SELECT address, CAST(balance_raw AS varchar) AS balance_raw, block_number
+FROM (
+  SELECT
+    address,
+    balance_raw,
+    block_number,
+    ROW_NUMBER() OVER (
+      PARTITION BY address ORDER BY block_number DESC
+    ) AS rn
+  FROM tokens_ethereum.balances
+  WHERE token_address = {token}
+    AND block_number <= {int(from_block)}
+    AND address IN ({addr_list})
+) t
+WHERE rn = 1
+
+UNION ALL
+
+SELECT
+  address,
+  CAST(balance_raw AS varchar) AS balance_raw,
+  block_number
+FROM tokens_ethereum.balances
+WHERE token_address = {token}
+  AND block_number > {int(from_block)}
+  AND block_number <= {int(to_block)}
+  AND address IN ({addr_list})
+"""
+
+    try:
+        rows_raw = _run_sql(sql, key)
+    except Exception:
+        return {}
+
+    out: dict[str, list[dict[str, Any]]] = {}
+    for row in rows_raw:
+        addr = _normalize_addr(row.get("address"))
+        if not addr:
+            continue
+        raw = _parse_balance_raw(row.get("balance_raw"))
+        if raw is None:
+            continue
+        out.setdefault(addr, []).append({
+            "block_number": int(row.get("block_number") or 0),
+            "balance_raw": raw,
+        })
+    for addr, rows in out.items():
+        rows.sort(key=lambda r: int(r.get("block_number") or 0))
+        out[addr] = rows
+    return out
+
+
 def fetch_balance_trajectory_from_dune(
     token_address: str,
     addresses: list[str],
@@ -315,16 +460,9 @@ ORDER BY address, block_number
         addr = _normalize_addr(row.get("address"))
         if not addr:
             continue
-        bal = row.get("balance_raw")
-        if bal is None:
+        raw = _parse_balance_raw(row.get("balance_raw"))
+        if raw is None:
             continue
-        try:
-            raw = str(int(bal))
-        except (TypeError, ValueError):
-            try:
-                raw = str(int(float(bal)))
-            except (TypeError, ValueError):
-                raw = str(bal)
         out.setdefault(addr, []).append({
             "block_number": int(row.get("block_number") or 0),
             "balance_raw": raw,

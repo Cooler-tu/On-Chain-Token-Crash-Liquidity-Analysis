@@ -276,46 +276,75 @@ def analyze_holdings(
             if addr:
                 pool_addrs_l.add(addr.lower())
 
-    # Dune historical snapshots at window start/end. tokens_ethereum.balances
-    # is a sparse ledger (one row per address per balance-change block), so we
-    # take the latest row at/before each boundary instead of replaying events.
+    # One Dune round-trip per chunk: start snapshot + in-window changes.
+    # Locally derive end / peak / moved_in / moved_out so tokens_ethereum.balances
+    # is not queried separately for start, end, and trajectory.
     dune_historical_ok = False
     if source_norm in ("auto", "dune"):
         try:
             from ..data.dune_holdings import (
                 dune_api_key_configured as _dune_configured,
+                fetch_balance_window_from_dune,
                 fetch_historical_token_balances_from_dune,
+                summarize_balance_trajectory,
             )
             dune_historical_ok = _dune_configured()
         except Exception:
             dune_historical_ok = False
-    if dune_historical_ok:
-        snapshot_budget = max(100, int(max_rpc_balances) * 2)
-        ranked = sorted(
-            unique_addresses,
-            key=lambda a: (
-                0 if a.lower() in pool_addrs_l else 1,
-                -address_tx_count.get(a, 0),
-                a.lower(),
-            ),
-        )[:snapshot_budget]
+    snapshot_budget = max(100, int(max_rpc_balances) * 2)
+    ranked = sorted(
+        unique_addresses,
+        key=lambda a: (
+            0 if a.lower() in pool_addrs_l else 1,
+            -address_tx_count.get(a, 0),
+            a.lower(),
+        ),
+    )[:snapshot_budget]
+    if dune_historical_ok and ranked:
+        window_ok = False
         try:
             for chunk in _chunks(ranked, 500):
-                end_map = fetch_historical_token_balances_from_dune(
-                    token_address, chunk, int(to_block)
+                window_map = fetch_balance_window_from_dune(
+                    token_address, chunk, int(from_block), int(to_block)
                 )
-                start_map = fetch_historical_token_balances_from_dune(
-                    token_address, chunk, int(from_block)
-                )
+                if window_map:
+                    window_ok = True
                 for addr in chunk:
-                    if addr in end_map:
-                        balances[addr] = end_map[addr]
-                        row_balance_source[addr] = "dune_historical"
-                        balances_start[addr] = start_map.get(addr, "0")
-                        row_trajectory_source.setdefault(addr, "two_point_snapshot")
+                    rows = window_map.get(addr)
+                    if not rows:
+                        continue
+                    summary = summarize_balance_trajectory(
+                        rows, int(from_block), int(to_block)
+                    )
+                    balances[addr] = summary["end"]
+                    balances_start[addr] = summary["start"]
+                    peak_balances[addr] = summary["peak"]
+                    row_balance_source[addr] = "dune_historical"
+                    row_trajectory_source[addr] = summary["source"]
+                    if summary["source"] == "event_rebuild":
+                        moved_in[addr] = summary["moved_in"]
+                        moved_out[addr] = summary["moved_out"]
         except Exception:
-            # Keep Dune latest / RPC balances as fallback.
-            pass
+            window_ok = False
+        if not window_ok:
+            try:
+                for chunk in _chunks(ranked, 500):
+                    end_map = fetch_historical_token_balances_from_dune(
+                        token_address, chunk, int(to_block)
+                    )
+                    start_map = fetch_historical_token_balances_from_dune(
+                        token_address, chunk, int(from_block)
+                    )
+                    for addr in chunk:
+                        if addr in end_map:
+                            balances[addr] = end_map[addr]
+                            row_balance_source[addr] = "dune_historical"
+                            balances_start[addr] = start_map.get(addr, "0")
+                            row_trajectory_source.setdefault(
+                                addr, "two_point_snapshot"
+                            )
+            except Exception:
+                pass
     missing = [a for a in unique_addresses if a not in balances]
     missing.sort(
         key=lambda a: (
@@ -443,7 +472,8 @@ def analyze_holdings(
             pool_addresses.add(p.custody_address.lower())
             pool_by_addr[p.custody_address.lower()] = p
 
-    # Event-flow reconstruction for pools + top end-balance addresses.
+    # Fallback trajectory only for addresses the window query did not cover
+    # (e.g. high end-balance whales outside the snapshot budget).
     pool_checksum = [a for a in unique_addresses if a.lower() in pool_addresses]
     non_pool_ranked = sorted(
         [a for a in unique_addresses if a.lower() not in pool_addresses],
@@ -458,38 +488,40 @@ def analyze_holdings(
     _seen: set[str] = set()
     trajectory_targets = [
         a for a in trajectory_targets
-        if not (a.lower() in _seen or _seen.add(a.lower()))
+        if a not in peak_balances
+        and not (a.lower() in _seen or _seen.add(a.lower()))
     ]
-    try:
-        from ..data.dune_holdings import fetch_balance_trajectory_from_dune
-        for chunk in _chunks(trajectory_targets, 500):
-            traj_map = fetch_balance_trajectory_from_dune(
-                token_address, chunk, int(from_block), int(to_block)
-            )
-            for addr in chunk:
-                rows = traj_map.get(addr)
-                if not rows:
-                    continue
-                prev = int(balances_start.get(addr, "0") or "0")
-                peak = prev
-                _in = 0
-                _out = 0
-                for row in rows:
-                    cur = int(row["balance_raw"])
-                    if cur > peak:
-                        peak = cur
-                    delta = cur - prev
-                    if delta > 0:
-                        _in += delta
-                    elif delta < 0:
-                        _out += -delta
-                    prev = cur
-                peak_balances[addr] = str(peak)
-                moved_in[addr] = str(_in)
-                moved_out[addr] = str(_out)
-                row_trajectory_source[addr] = "event_rebuild"
-    except Exception:
-        pass
+    if trajectory_targets:
+        try:
+            from ..data.dune_holdings import fetch_balance_trajectory_from_dune
+            for chunk in _chunks(trajectory_targets, 500):
+                traj_map = fetch_balance_trajectory_from_dune(
+                    token_address, chunk, int(from_block), int(to_block)
+                )
+                for addr in chunk:
+                    rows = traj_map.get(addr)
+                    if not rows:
+                        continue
+                    prev = int(balances_start.get(addr, "0") or "0")
+                    peak = prev
+                    _in = 0
+                    _out = 0
+                    for row in rows:
+                        cur = int(row["balance_raw"])
+                        if cur > peak:
+                            peak = cur
+                        delta = cur - prev
+                        if delta > 0:
+                            _in += delta
+                        elif delta < 0:
+                            _out += -delta
+                        prev = cur
+                    peak_balances[addr] = str(peak)
+                    moved_in[addr] = str(_in)
+                    moved_out[addr] = str(_out)
+                    row_trajectory_source[addr] = "event_rebuild"
+        except Exception:
+            pass
 
     # Two-point peak lower bound when no event-flow rows were fetched.
     for addr in unique_addresses:

@@ -1,5 +1,11 @@
 # On-Chain Token Crash Analysis — 数据口径文档
 
+> **⚠️ 历史文档（已过时）**：本文保留的是早期 RPC / V2–V3 口径，已与当前
+> Dune-first、Uniswap V1–V4、Curve、Balancer 实现发生明显漂移。不要将本文用于
+> 当前答辩或解释最新 dashboard。当前真实口径见
+> [`docs/METHODOLOGY_DEFENSE.md`](docs/METHODOLOGY_DEFENSE.md)，高频追问见
+> [`docs/ADVISOR_QA.md`](docs/ADVISOR_QA.md)。
+
 本文档定义了系统所有产出数据的来源、计算方式、假设条件和已知限制。
 
 ---

@@ -22,12 +22,14 @@
 - **Withdrawal USD normalization** (2026-08-08) — 撤回事件按池、按目标 token 侧归一，输出 `per_pool_removals`、USD 估算和占池 TVL 比例；不再 token0 + token1 直接相加
 - **Wallet activity flags** (2026-08-08) — `wallet_activity` 按钱包聚合 USD 买卖并输出 Trade / Mover / Frequent 独立标签，dashboard 新增 Notable Wallets 表
 - **Pool-level liquidity event aggregation** (2026-08-11) — Dune V2/V3 Mint/Burn 按 pool+block 聚合，V4 ModifyLiquidity 按 pool+block+delta sign 聚合；保留 withdrawal 数量/金额并停止下载每个 LP actor
+- **Data-lineage defense audit** (2026-08-12) — 审计 `structure.md → queries.sql → Python → dashboard`，新增 `docs/METHODOLOGY_DEFENSE.md`、`docs/ADVISOR_QA.md` 与可视化 Canvas；标记 holdings 时间混用、TVL 单边/2×、Risk 时间字段等答辩风险
+- **Reuse indexed swaps for volume/price** (2026-08-13) — charts no longer re-query `dex.trades`; Dune `volume_timeline` / `price_timeline` are fallbacks only. Holdings start/end/peak/moved from one `tokens_ethereum.balances` window query.
 
 ---
 
 ## 🎯 Current
 
-- **Dune SQL → pipeline wiring (dashboard features)** — parallel discovery (`pools`+`pools_v4`), parallel index (swaps/liq/transfers), snapshot TVL via `pool_balance_timeline`×`price_timeline`; dashboard Month/Week/Day chart toggles (`--chart-span`)
+- **Dune SQL → pipeline wiring (dashboard features)** — parallel discovery (`pools`+`pools_v4`), parallel index (swaps/liq/transfers), snapshot TVL via `pool_balance_timeline` × local swap prices; dashboard Month/Week/Day chart toggles (`--chart-span`)
 - Still **not** on dashboard path: `holders` primary discovery, wallet clustering UI, Sim balance timeline
 
 ---

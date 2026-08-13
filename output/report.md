@@ -6,7 +6,7 @@
 - **Chain:** Ethereum (Chain ID: 1)
 - **Analysis Window:** Block 25077010 to 25083999
 - **Incident Block:** Not specified
-- **Report Generated:** 2026-08-10 16:48:23 UTC
+- **Report Generated:** 2026-08-13 16:37:12 UTC
 
 ### Risk Score
 
@@ -95,9 +95,9 @@
 | [0x4c3ccC98...d1A6e3](https://etherscan.io/address/0x4c3ccC98C01103bE72bcfd29e1D2454c98d1A6e3) | Frequent Token Sender | frequent_interactor | 50% |
 | [0xF24be340...1F57F0](https://etherscan.io/address/0xF24be3404B723e35d9EbC60977B646d2581F57F0) | Frequent Token Sender | frequent_interactor | 50% |
 | [0xa462d9Ac...8c27A1](https://etherscan.io/address/0xa462d9AcaCcb141Ce7F17213b95198fE248c27A1) | Frequent Token Sender | frequent_interactor | 50% |
-| [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
 | [0x00000000...00dead](https://etherscan.io/address/0x000000000000000000000000000000000000dead) | Burn Address | burn | 100% |
 | [0x00000000...000000](https://etherscan.io/address/0x0000000000000000000000000000000000000000) | Burn Address | burn | 100% |
+| [0x00000000...00dEaD](https://etherscan.io/address/0x000000000000000000000000000000000000dEaD) | Burn Address | burn | 100% |
 
 
 ## TVL & Price History

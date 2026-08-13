@@ -27,8 +27,8 @@ Design notes: see [`structure.md`](./structure.md).
 | `holders` | Historical holders via `balances_ethereum.daily_updates` |
 | `holders_from_transfers` | Backup holders (same-day in/out); Python fallback only |
 | `transfer_addresses` / `balances` | Holdings last-resort / balance fill |
-| `swaps` | Index raw trades (charts use aggregates instead) |
-| `volume_timeline` / `price_timeline` | Chart aggregates |
+| `swaps` | Index raw trades; volume/price charts reuse these rows locally |
+| `volume_timeline` / `price_timeline` | Chart aggregates (fallback only if swaps were not indexed) |
 | `pool_token_balances` / `pool_balance_timeline` | Pool balances (latest + daily history) |
 | `pool_tvl` | CLI helper only |
 | `transfers` | Index transfers (clustering uses filtered cluster_*) |
