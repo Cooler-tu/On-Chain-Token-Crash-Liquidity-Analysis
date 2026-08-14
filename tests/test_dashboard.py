@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import unittest
 
+import src.analysis.dashboard as dashboard
 from src.analysis.dashboard import (
     _build_tvl_chart_js,
     _build_tvl_details_data,
     _find_volume_bucket,
+    _identifier_html,
 )
 
 
@@ -95,6 +97,39 @@ class TvlClickDetailsTest(unittest.TestCase):
         js = _build_tvl_chart_js(self.tvl, token_decimals=18, symbol="TST")
         self.assertIn("getElementsAtEventForMode", js)
         self.assertIn("renderTvlDetails(active[0].index)", js)
+
+
+class IdentifierUxTest(unittest.TestCase):
+    def test_ethereum_address_is_copyable_and_links_to_etherscan(self):
+        address = "0x44b28991B167582F18BA0259e0173176ca125505"
+        rendered = _identifier_html(address, chain_id=1)
+
+        self.assertIn('data-identifier="{}"'.format(address), rendered)
+        self.assertIn("0x44b289...5505", rendered)
+        self.assertIn("https://etherscan.io/address/{}".format(address), rendered)
+        self.assertIn("copyIdentifier(event,this)", rendered)
+
+    def test_bytes32_pool_id_is_copyable_without_address_link(self):
+        pool_id = "0x" + "ab" * 32
+        rendered = _identifier_html(pool_id, chain_id=1)
+
+        self.assertIn('data-identifier="{}"'.format(pool_id), rendered)
+        self.assertIn("0xababab...abab", rendered)
+        self.assertNotIn("etherscan.io/address", rendered)
+
+    def test_non_mainnet_address_does_not_get_mainnet_link(self):
+        address = "0x44b28991B167582F18BA0259e0173176ca125505"
+        rendered = _identifier_html(address, chain_id=8453)
+        self.assertNotIn("etherscan.io/address", rendered)
+
+    def test_dashboard_script_contains_tooltip_copy_and_fallback(self):
+        dashboard._load_templates()
+        script = dashboard._JS_TEMPLATE or ""
+
+        self.assertIn("function showIdentifierTooltip", script)
+        self.assertIn("async function copyIdentifier", script)
+        self.assertIn("fallbackCopyIdentifier", script)
+        self.assertIn("identifierHtml(p.address)", script)
 
 
 if __name__ == "__main__":

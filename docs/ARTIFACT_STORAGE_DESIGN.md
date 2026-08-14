@@ -1,6 +1,6 @@
 # Artifact Storage Design
 
-> Status: Phase 2 implemented (2026-08-13)
+> Status: Phase 3 reader migration in progress (2026-08-13)
 > Scope: local analysis artifacts produced by `python3 -m src.cli analyze`
 > Non-goal: this document does not change metric definitions, risk logic, or dashboard presentation.
 
@@ -483,7 +483,15 @@ access layer.
 
 ### Phase 3 — readers and combined-event removal
 
-- Move metrics, timeline, labels, clustering, and dashboard to the artifact access layer.
+- [x] Move dashboard holdings, positions, event, TVL, and volume rows to Parquet-first
+  artifact reads with JSON-only compatibility fallback.
+- [x] Remove duplicate TVL and volume chart arrays from `metrics.json` in `both` mode while
+  keeping full in-memory metrics for risk/report generation.
+- [x] Move the LP correlation prototype's TVL, volume, liquidity, and transfer inputs to
+  Parquet-first reads so compact `metrics.json` runs remain analyzable.
+- [x] Resolve TVL click-detail volume matching from each point's real `block_timestamp`
+  instead of treating a block number as a Unix timestamp.
+- [ ] Move metrics, timeline, labels, and clustering readers to the artifact access layer.
 - Replace `events_all.json` with a logical query/view.
 - Keep legacy JSON fallback for old committed demos.
 

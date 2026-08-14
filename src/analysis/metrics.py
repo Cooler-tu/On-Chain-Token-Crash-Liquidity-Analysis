@@ -1940,7 +1940,14 @@ def calculate_all_metrics(
             "volume_timeline": volume_artifact,
         },
     }
-    _write_json(out / "metrics.json", metrics)
+    metrics_document = metrics
+    if artifact_mode == "both":
+        metrics_document = dict(metrics)
+        metrics_document["tvl_timeline"] = []
+        volume_document = dict(volume)
+        volume_document["volume_timeline"] = []
+        metrics_document["volume"] = volume_document
+    _write_json(out / "metrics.json", metrics_document)
 
     return metrics
 

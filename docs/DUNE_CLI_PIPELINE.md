@@ -1093,6 +1093,11 @@ tables/tvl_timeline.parquet       # --artifact-format both
 tables/volume_timeline.parquet    # --artifact-format both; one bucket/pool per row
 ```
 
+在 `both` 模式下，`metrics.json` 只保留 concentration、withdrawal、wallet activity 和
+timeline 元数据；完整 TVL/volume 图表行从 Parquet 读取。独立运行 `dashboard` 时优先
+读取 Parquet，旧输出则回退到原有 JSON。Volume 行会重新组合为前端现有的 bucket→pool
+结构，因此图表接口不变。
+
 ---
 
 ## 12. Step 9 — Timeline

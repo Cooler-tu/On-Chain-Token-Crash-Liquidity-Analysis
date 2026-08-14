@@ -36,6 +36,7 @@ End-to-end **Ethereum mainnet** tool for token liquidity / crash analysis: disco
 - Holdings via Dune address discovery + RPC `balanceOf`; dashboard tags **EOA / contract / pool**.
 - Dashboard **DEX column**: Uniswap / Curve / Balancer from LP, swaps, pool transfers, or same-tx linkage. Expand row → **LP portfolio only** (not the same as the DEX tag).
 - Hover DEX badge for `LP` vs `Swap`. `—` = no DEX link in this window (e.g. P2P only).
+- Dashboard identifiers stay compact in tables; hover or keyboard focus reveals the full value, click copies it, and valid mainnet addresses include an Etherscan link. V4 bytes32 pool IDs remain copyable without a misleading address link.
 
 ```bash
 set -a && source .env && set +a
@@ -104,6 +105,11 @@ liquidity events, holdings, positions, TVL, and volume rows under `tables/`. Par
 enabled after the remaining readers migrate. Parquet and DuckDB files are local artifacts and are not
 committed by default. See
 [`docs/ARTIFACT_STORAGE_DESIGN.md`](docs/ARTIFACT_STORAGE_DESIGN.md).
+
+The standalone dashboard reader is Parquet-first for holdings, positions, event rows, TVL,
+and volume, with automatic compatibility fallback to old JSON-only outputs. In `both` mode,
+`metrics.json` keeps compact metric summaries while its duplicated chart arrays are loaded
+from the timeline tables.
 
 ### Dune (optional primary data path)
 
@@ -242,6 +248,7 @@ See `SUPPORTED_PROTOCOLS.md` for contract addresses and notes.
 - 持仓：Dune 发现地址 + RPC `balanceOf`；看板区分 **EOA / 合约 / 池账户**。
 - **DEX 列**：按本窗口证据标 Uniswap / Curve / Balancer（LP、swap、与池转账、或同笔 tx 关联）。
 - **点开一行**只看 LP 仓位，不等于 DEX 标签；悬停标签可见 `LP` / `Swap`。`—` = 本窗口无 DEX 关联（如纯转账）。
+- 看板中的地址和 Pool ID 保持短格式；悬浮或键盘聚焦可查看全文，点击即可复制。合法主网地址提供 Etherscan 跳转，V4 bytes32 poolId 只提供查看与复制，避免错误跳转。
 
 ```bash
 set -a && source .env && set +a
@@ -288,6 +295,9 @@ tables/volume_timeline.parquet
 ```
 
 独立运行 `holdings` 命令时，`both` 模式只额外生成 `tables/holdings.parquet`。
+
+独立重建 dashboard 时会优先读取这些 Parquet 表；旧的 JSON-only 输出仍可直接使用。
+在 `both` 模式下，`metrics.json` 不再重复保存完整 TVL/volume 图表数组。
 
 这些 Parquet/DuckDB 文件只作为本地分析数据，默认不提交到 Git。
 

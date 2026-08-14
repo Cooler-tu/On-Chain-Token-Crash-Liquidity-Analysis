@@ -8,6 +8,7 @@ from unittest.mock import patch
 from src.data.artifacts import (
     ArtifactDependencyError,
     flatten_volume_timeline,
+    inflate_volume_timeline,
     normalize_artifact_format,
     query_tables,
     read_table,
@@ -22,6 +23,8 @@ from src.analysis.metrics import (
 )
 from src.analysis.holdings import _write_holdings_artifacts
 from src.analysis.positions import analyze_positions, _write_position_artifacts
+from src.analysis.dashboard import _load_dashboard_inputs
+from scripts.lp_correlation import _load_analysis_inputs
 from src.indexer.dune_index import index_events_from_dune
 from src.models import VerifiedPool
 
@@ -451,6 +454,12 @@ class ParquetArtifactTest(unittest.TestCase):
             )
             self.assertEqual(legacy_rows[0]["bucket_timestamp"], 1_778_000_000)
 
+            inflated = inflate_volume_timeline(legacy_rows, saved)
+            self.assertEqual(
+                inflated["volume_timeline"][0]["pools"]["0xaabb"],
+                {"volume_in_token": 10.0, "volume_usd": 25.0},
+            )
+
     def test_empty_timeline_tables_keep_schemas(self):
         import pyarrow.parquet as pq
 
@@ -485,6 +494,99 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertTrue(
                 (Path(tmp) / "tables" / "volume_timeline.parquet").exists()
             )
+
+    def test_metrics_both_keeps_runtime_timelines_but_trims_metrics_json(self):
+        tvl_row = _tvl_timeline_row()
+        volume = _volume_timeline_document()
+        with tempfile.TemporaryDirectory() as tmp, patch(
+            "src.analysis.metrics.build_tvl_timeline", return_value=[tvl_row]
+        ), patch(
+            "src.analysis.metrics.calculate_volume_metrics", return_value=volume
+        ):
+            metrics = calculate_all_metrics(
+                [],
+                [],
+                [],
+                [],
+                TARGET,
+                18,
+                output_dir=tmp,
+                artifact_format="both",
+            )
+            self.assertEqual(metrics["tvl_timeline"], [tvl_row])
+            self.assertEqual(len(metrics["volume"]["volume_timeline"]), 1)
+
+            saved = json.loads((Path(tmp) / "metrics.json").read_text())
+            self.assertEqual(saved["tvl_timeline"], [])
+            self.assertEqual(saved["volume"]["volume_timeline"], [])
+            self.assertEqual(saved["artifacts"]["tvl_timeline"]["rows"], 1)
+            self.assertEqual(saved["artifacts"]["volume_timeline"]["rows"], 2)
+
+    def test_dashboard_inputs_prefer_parquet_and_rebuild_volume_buckets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            (out / "holdings.json").write_text(json.dumps({
+                "holdings": [{"address": "0xSTALE"}],
+                "holdings_count": 1,
+            }))
+            (out / "positions.json").write_text(json.dumps([
+                {**_position_row(), "owner": "0xSTALE"}
+            ]))
+            (out / "swaps.json").write_text("[]")
+            (out / "liquidity_events.json").write_text("[]")
+            (out / "transfers.json").write_text("[]")
+            (out / "metrics.json").write_text(json.dumps({
+                "tvl_timeline": [],
+                "volume": {
+                    **_volume_timeline_document(),
+                    "volume_timeline": [],
+                },
+            }))
+            (out / "volume_timeline.json").write_text(json.dumps({
+                **_volume_timeline_document(),
+                "volume_timeline": [],
+            }))
+
+            write_table("holdings", [_holding_row()], out, "parquet")
+            write_table("positions", [_position_row()], out, "parquet")
+            write_table("swaps", [_swap_row()], out, "parquet")
+            write_table("tvl_timeline", [_tvl_timeline_row()], out, "parquet")
+            write_table(
+                "volume_timeline",
+                flatten_volume_timeline(_volume_timeline_document()),
+                out,
+                "parquet",
+            )
+
+            inputs = _load_dashboard_inputs(out)
+            self.assertEqual(inputs["holdings"]["holdings"][0]["address"], "0xaabb")
+            self.assertEqual(inputs["positions"][0]["owner"], "0xddeeff")
+            self.assertEqual(len(inputs["events_all"]), 1)
+            self.assertEqual(
+                inputs["metrics"]["tvl_timeline"][0]["price"],
+                _tvl_timeline_row()["price"],
+            )
+            volume_timeline = inputs["metrics"]["volume"]["volume_timeline"]
+            self.assertEqual(len(volume_timeline), 1)
+            self.assertEqual(
+                volume_timeline[0]["pools"]["0xaabb"]["volume_in_token"],
+                10.0,
+            )
+
+            correlation_metrics, liquidity_rows, transfer_rows = (
+                _load_analysis_inputs(out)
+            )
+            self.assertEqual(
+                correlation_metrics["tvl_timeline"][0]["tvl_in_token"],
+                _tvl_timeline_row()["tvl_in_token"],
+            )
+            self.assertEqual(
+                correlation_metrics["volume"]["volume_timeline"][0]
+                ["pools"]["0xaabb"]["volume_in_token"],
+                10.0,
+            )
+            self.assertEqual(liquidity_rows, [])
+            self.assertEqual(transfer_rows, [])
 
     def test_existing_price_and_volume_metrics_match_parquet_rows(self):
         pool = VerifiedPool(

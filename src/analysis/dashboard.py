@@ -4,11 +4,16 @@ Reads analysis output files and renders an interactive dashboard using Chart.js.
 """
 from __future__ import annotations
 
+import html
 import json
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
+
+from web3 import Web3
+
+from ..data.artifacts import ArtifactError, inflate_volume_timeline, read_table
 
 _HTML_TEMPLATE: str | None = None
 _JS_TEMPLATE: str | None = None
@@ -25,6 +30,7 @@ const poolI = {pool_i_json};
 const tvlD = {tvl_json};
 const portfolioData = {portfolio_json};
 const tokenSymbol = "{symbol}";
+const chainId = {chain_id};
 const tvlPointDetails = {tvl_detail_json};
 
 function fmtNum(v, digits){
@@ -37,6 +43,88 @@ function fmtUsd(v, digits){
 }
 function escTxt(s){
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function shortIdentifier(value){
+  var text = String(value == null ? '' : value);
+  return text.length > 14 ? text.slice(0, 8) + '...' + text.slice(-4) : (text || '-');
+}
+function isEthereumAddress(value){
+  return /^0x[0-9a-fA-F]{40}$/.test(String(value || ''));
+}
+function identifierHtml(value){
+  var full = String(value == null ? '' : value);
+  if (!full) return '<span class="muted">-</span>';
+  var safe = escTxt(full);
+  var result = '<span class="identifier-wrap">'
+    + '<button type="button" class="identifier-copy addr" data-identifier="' + safe + '"'
+    + ' aria-label="Copy full identifier ' + safe + '"'
+    + ' onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()"'
+    + ' onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()"'
+    + ' onclick="copyIdentifier(event,this)">' + escTxt(shortIdentifier(full)) + '</button>';
+  if (chainId === 1 && isEthereumAddress(full)) {
+    result += '<a class="identifier-link" href="https://etherscan.io/address/' + safe + '"'
+      + ' target="_blank" rel="noopener noreferrer" title="Open in Etherscan"'
+      + ' aria-label="Open ' + safe + ' in Etherscan" onclick="event.stopPropagation()">&#8599;</a>';
+  }
+  return result + '</span>';
+}
+function showIdentifierTooltip(button){
+  var tooltip = document.getElementById('identifier-tooltip');
+  if (!tooltip || !button) return;
+  tooltip.textContent = button.getAttribute('data-identifier') || '';
+  tooltip.hidden = false;
+  var rect = button.getBoundingClientRect();
+  var left = Math.max(12, Math.min(rect.left, window.innerWidth - tooltip.offsetWidth - 12));
+  var top = rect.top - tooltip.offsetHeight - 8;
+  if (top < 8) top = rect.bottom + 8;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+function hideIdentifierTooltip(){
+  var tooltip = document.getElementById('identifier-tooltip');
+  if (tooltip) tooltip.hidden = true;
+}
+function fallbackCopyIdentifier(value){
+  var textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  var copied = document.execCommand('copy');
+  document.body.removeChild(textarea);
+  return copied;
+}
+var copyToastTimer = null;
+function showCopyToast(message, failed){
+  var toast = document.getElementById('copy-toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.toggle('copy-toast-error', !!failed);
+  toast.classList.add('copy-toast-visible');
+  if (copyToastTimer) window.clearTimeout(copyToastTimer);
+  copyToastTimer = window.setTimeout(function(){
+    toast.classList.remove('copy-toast-visible');
+  }, 1800);
+}
+async function copyIdentifier(event, button){
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  var value = button ? (button.getAttribute('data-identifier') || '') : '';
+  if (!value) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+    } else if (!fallbackCopyIdentifier(value)) {
+      throw new Error('copy unavailable');
+    }
+    showCopyToast('Copied: ' + shortIdentifier(value), false);
+  } catch (err) {
+    showCopyToast('Copy failed — full value is shown on hover', true);
+  }
 }
 function renderTvlDetails(index){
   var panel = document.getElementById('tvl-details');
@@ -57,7 +145,7 @@ function renderTvlDetails(index){
     var p = detail.pools[i];
     var share = (p.share_pct == null) ? '-' : Number(p.share_pct).toFixed(2) + '%';
     rows += '<tr>'
-      + '<td class="addr" title="' + escTxt(p.address) + '">' + escTxt(p.label) + '</td>'
+      + '<td>' + identifierHtml(p.address) + '</td>'
       + '<td>' + escTxt(p.protocol) + '</td>'
       + '<td>' + fmtNum(p.tvl, 4) + '</td>'
       + '<td>' + share + '</td>'
@@ -136,13 +224,12 @@ function togglePortfolio(addr) {
   for (var i = 0; i < positions.length; i++) {
     var p = positions[i];
     var pool = (p.pool || '');
-    var poolShort = pool.length > 14 ? pool.slice(0, 8) + '...' + pool.slice(-4) : pool;
     var ticks = (p.tick_lower != null && p.tick_upper != null)
       ? (p.tick_lower + ' / ' + p.tick_upper) : '-';
     var proto = ((p.protocol || '') + ' ' + (p.version || '')).trim() || '-';
     html += '<tr>'
       + '<td>' + proto + '</td>'
-      + '<td class="addr" title="' + pool + '">' + poolShort + '</td>'
+      + '<td>' + identifierHtml(pool) + '</td>'
       + '<td>' + (p.share_pct != null ? p.share_pct : '-') + '</td>'
       + '<td>' + (p.liquidity || '-') + '</td>'
       + '<td>' + (p.token0_amount || '-') + '</td>'
@@ -206,6 +293,16 @@ th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);color:v
 td{padding:6px;border-bottom:1px solid #1e293b;color:#cbd5e1}
 tr:hover td{background:rgba(59,130,246,0.04)}
 .addr{font-family:'SF Mono','Fira Code','Cascadia Code','Courier New',monospace;font-size:11px;color:var(--accent-light);word-break:break-all}
+.identifier-wrap{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.identifier-copy{appearance:none;border:0;background:transparent;padding:2px 3px;border-radius:4px;cursor:pointer;white-space:nowrap;line-height:1.35}
+.identifier-copy:hover,.identifier-copy:focus-visible{background:rgba(96,165,250,.12);outline:none;color:#93c5fd}
+.identifier-copy:focus-visible{box-shadow:0 0 0 2px rgba(96,165,250,.45)}
+.identifier-link{display:inline-flex;align-items:center;justify-content:center;color:var(--text-dim);text-decoration:none;font-size:12px;width:18px;height:18px;border-radius:4px}
+.identifier-link:hover,.identifier-link:focus-visible{color:var(--accent-light);background:rgba(96,165,250,.12);outline:none}
+.identifier-tooltip{position:fixed;z-index:1000;max-width:min(620px,calc(100vw - 24px));padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:#020617;color:var(--text);box-shadow:var(--shadow);font:11px/1.4 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace;overflow-wrap:anywhere;pointer-events:none}
+.copy-toast{position:fixed;right:20px;bottom:20px;z-index:1100;padding:10px 14px;border:1px solid rgba(74,222,128,.35);border-radius:8px;background:#052e16;color:#bbf7d0;box-shadow:var(--shadow);font-size:12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .16s,transform .16s}
+.copy-toast.copy-toast-visible{opacity:1;transform:translateY(0)}
+.copy-toast.copy-toast-error{border-color:rgba(248,113,113,.35);background:#450a0a;color:#fecaca}
 .plabel{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(96,165,250,0.12);color:var(--accent-light)}
 .scroll{max-height:360px;overflow-y:auto}
 .scroll::-webkit-scrollbar{width:5px}
@@ -251,7 +348,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   </nav>
 
   <h1>{symbol} <span class="symbol-muted">Holdings &amp; Liquidity</span></h1>
-  <p class="subtitle">Chain ID: {chain_id} &middot; Token: <span class="addr">{token_address}</span></p>
+  <p class="subtitle">Chain ID: {chain_id} &middot; Token: {token_identifier}</p>
   {empty_note}
 
   <div class="info-bar">
@@ -355,6 +452,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     &middot; Data sourced from Ethereum mainnet
   </div>
 </div>
+<div id="identifier-tooltip" class="identifier-tooltip" role="tooltip" hidden></div>
+<div id="copy-toast" class="copy-toast" role="status" aria-live="polite"></div>
 <script>
 {js_script}
 </script>
@@ -368,20 +467,17 @@ def generate_dashboard(
     out = Path(output_dir)
     _load_templates()
 
-    holdings = _load_json(out / "holdings.json", {})
-    token_profile = _load_json(out / "token_profile.json", {})
-    verified_pools = _load_json(out / "verified_pools.json", [])
-    metrics = _load_json(out / "metrics.json", {})
-    risk = _load_json(out / "risk_assessment.json", {})
-    positions_data = _load_json(out / "positions.json", [])
-    swaps_data = _load_json(out / "swaps.json", [])
-    liq_data = _load_json(out / "liquidity_events.json", [])
-    transfers_data = _load_json(out / "transfers.json", [])
-    events_all = _load_json(out / "events_all.json", [])
-    if not isinstance(events_all, list) or not events_all:
-        events_all = list(swaps_data or []) + list(liq_data or []) + list(
-            transfers_data or []
-        )
+    inputs = _load_dashboard_inputs(out)
+    holdings = inputs["holdings"]
+    token_profile = inputs["token_profile"]
+    verified_pools = inputs["verified_pools"]
+    metrics = inputs["metrics"]
+    risk = inputs["risk"]
+    positions_data = inputs["positions"]
+    swaps_data = inputs["swaps"]
+    liq_data = inputs["liquidity_events"]
+    transfers_data = inputs["transfers"]
+    events_all = inputs["events_all"]
 
     holdings_data = holdings.get("holdings", [])
     pool_ident = holdings.get("pool_identification", [])
@@ -473,10 +569,10 @@ def generate_dashboard(
         block_window = "N/A"
     main_pool_share = pool_conc.get("main_pool_share", 0) * 100
     main_pool_addr = pool_conc.get("main_pool", "")
-    main_pool_label = _short_pool_label(main_pool_addr)
+    main_pool_label = _identifier_html(main_pool_addr, chain_id=chain_id)
     main_volume_addr = volume_metrics.get("main_volume_pool", "")
     main_volume_share = volume_metrics.get("main_volume_share", 0) * 100
-    main_volume_label = _short_pool_label(main_volume_addr)
+    main_volume_label = _identifier_html(main_volume_addr, chain_id=chain_id)
     if main_pool_addr and main_volume_addr:
         pool_conc_summary = (
             "Main TVL pool: {} ({:.2f}%) · Main volume pool: {} ({:.2f}%)".format(
@@ -508,15 +604,21 @@ def generate_dashboard(
     )
 
     # Build tables
-    table_top = _table_top_holders(top_holders, symbol)
-    table_pool = _table_pool_holders(pool_holders, symbol)
-    table_ident = _table_pool_ident(pool_ident, metrics, decimals, symbol)
-    table_movers = _table_wallet_movers(
-        swaps_data, holdings_data, token_addr, decimals, symbol
+    table_top = _table_top_holders(top_holders, symbol, chain_id=chain_id)
+    table_pool = _table_pool_holders(pool_holders, symbol, chain_id=chain_id)
+    table_ident = _table_pool_ident(
+        pool_ident, metrics, decimals, symbol, chain_id=chain_id
     )
-    table_withdrawals = _table_withdrawals(metrics, decimals, symbol)
-    table_withdrawal_summary = _table_withdrawal_summary(metrics, symbol)
-    table_large = _table_large_wallets(metrics, symbol)
+    table_movers = _table_wallet_movers(
+        swaps_data, holdings_data, token_addr, decimals, symbol, chain_id=chain_id
+    )
+    table_withdrawals = _table_withdrawals(
+        metrics, decimals, symbol, chain_id=chain_id
+    )
+    table_withdrawal_summary = _table_withdrawal_summary(
+        metrics, symbol, chain_id=chain_id
+    )
+    table_large = _table_large_wallets(metrics, symbol, chain_id=chain_id)
 
     balance_note_parts = []
     balance_start_block = holdings.get("balance_start_block") or from_block
@@ -630,6 +732,7 @@ def generate_dashboard(
         "tvl_json": json.dumps(tvl_data, indent=2),
         "portfolio_json": portfolio_json,
         "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
+        "chain_id": int(chain_id or 0),
         "tvl_detail_json": json.dumps(tvl_details, default=str),
         "pool_count": len(pool_holders),
         "holder_count": max(0, holdings_count - len(pool_holders)),
@@ -650,7 +753,7 @@ def generate_dashboard(
         "symbol": symbol,
         "token_name": token_name,
         "chain_id": chain_id,
-        "token_address": token_addr or "N/A",
+        "token_identifier": _identifier_html(token_addr, chain_id=chain_id),
         "query_time": query_time or "N/A",
         "block_window": block_window,
         "decimals": decimals,
@@ -1054,10 +1157,15 @@ def _build_tvl_details_data(
     for idx, block in enumerate(labels):
         per_pool = block_pools.get(block) or {}
         total = total_values[idx] if idx < len(total_values) else 0.0
-        try:
-            ts = int(block) if int(block) > 1_000_000_000 else 0
-        except (TypeError, ValueError):
-            ts = 0
+        entry_timestamps = [
+            _entry_ts(info.get("entry") or {}) for info in per_pool.values()
+        ]
+        ts = max((value for value in entry_timestamps if value > 0), default=0)
+        if not ts:
+            try:
+                ts = int(block) if int(block) > 1_000_000_000 else 0
+            except (TypeError, ValueError):
+                ts = 0
         bucket = _find_volume_bucket(timeline, bucket_seconds, ts) if ts else None
         bucket_pools = (bucket or {}).get("pools") or {}
 
@@ -1264,6 +1372,33 @@ def _short_addr(addr: str) -> str:
     return addr[:8] + "..." + addr[-4:]
 
 
+def _identifier_html(value: Any, *, chain_id: int = 1) -> str:
+    """Render a compact, copyable identifier with an optional Etherscan link."""
+    full = str(value or "")
+    if not full:
+        return _fmt_missing()
+    safe_full = html.escape(full, quote=True)
+    safe_short = html.escape(_short_pool_label(full), quote=False)
+    button = (
+        '<button type="button" class="identifier-copy addr" '
+        'data-identifier="{full}" aria-label="Copy full identifier {full}" '
+        'onmouseenter="showIdentifierTooltip(this)" '
+        'onmouseleave="hideIdentifierTooltip()" '
+        'onfocus="showIdentifierTooltip(this)" '
+        'onblur="hideIdentifierTooltip()" '
+        'onclick="copyIdentifier(event,this)">{short}</button>'
+    ).format(full=safe_full, short=safe_short)
+    link = ""
+    if int(chain_id or 0) == 1 and Web3.is_address(full):
+        link = (
+            '<a class="identifier-link" href="https://etherscan.io/address/{full}" '
+            'target="_blank" rel="noopener noreferrer" title="Open in Etherscan" '
+            'aria-label="Open {full} in Etherscan" '
+            'onclick="event.stopPropagation()">&#8599;</a>'
+        ).format(full=safe_full)
+    return '<span class="identifier-wrap">{}{}</span>'.format(button, link)
+
+
 def _fmt_missing() -> str:
     return '<span style="color:#64748b">—</span>'
 
@@ -1312,6 +1447,7 @@ def _table_wallet_movers(
     token_decimals: int,
     symbol: str,
     top_n: int = 20,
+    chain_id: int = 1,
 ) -> str:
     target = (target_token or "").lower()
     if not target:
@@ -1401,7 +1537,7 @@ def _table_wallet_movers(
         rows.append(
             "<tr>"
             "<td>{}</td>"
-            '<td class="addr">{}</td>'
+            "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
@@ -1411,7 +1547,7 @@ def _table_wallet_movers(
             "<td>{}</td>"
             "</tr>".format(
                 i,
-                _short_addr(addr),
+                _identifier_html(addr, chain_id=chain_id),
                 _fmt_bal(float(s["bought"]), symbol),
                 _fmt_bal(float(s["sold"]), symbol),
                 _fmt_bal(float(s["net"]), symbol),
@@ -1428,6 +1564,7 @@ def _table_large_wallets(
     metrics: dict,
     symbol: str,
     top_n: int = 25,
+    chain_id: int = 1,
 ) -> str:
     """Render notable-wallet rows from metrics.wallet_activity."""
     activity = metrics.get("wallet_activity") or {}
@@ -1463,7 +1600,7 @@ def _table_large_wallets(
         rows.append(
             "<tr>"
             "<td>{}</td>"
-            '<td class="addr">{}</td>'
+            "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
@@ -1473,7 +1610,7 @@ def _table_large_wallets(
             "<td>{}</td>"
             "</tr>".format(
                 i,
-                _short_addr(w.get("address", "")),
+                _identifier_html(w.get("address", ""), chain_id=chain_id),
                 _fmt_usd(w.get("max_single_usd")),
                 _fmt_usd(w.get("bought_usd")),
                 _fmt_usd(w.get("sold_usd")),
@@ -1489,6 +1626,7 @@ def _table_large_wallets(
 def _table_withdrawal_summary(
     metrics: dict,
     symbol: str,
+    chain_id: int = 1,
 ) -> str:
     """Render a per-pool withdrawal summary table."""
     rows = metrics.get("withdrawal_severity", {}).get("per_pool_removals", []) or []
@@ -1498,14 +1636,14 @@ def _table_withdrawal_summary(
     for r in rows:
         table_rows.append(
             "<tr>"
-            '<td class="addr">{}</td>'
+            "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "</tr>".format(
-                _short_addr(r.get("pool_address", "")),
+                _identifier_html(r.get("pool_address", ""), chain_id=chain_id),
                 int(r.get("num_withdrawals") or 0),
                 _fmt_bal(float(r.get("removed_target_decimal") or 0), symbol),
                 _fmt_usd(r.get("removed_usd")),
@@ -1525,6 +1663,7 @@ def _table_withdrawals(
     token_decimals: int,
     symbol: str,
     top_n: int = 20,
+    chain_id: int = 1,
 ) -> str:
     events = metrics.get("withdrawal_severity", {}).get("withdrawal_events", []) or []
     if not events:
@@ -1540,23 +1679,26 @@ def _table_withdrawals(
         if removed_decimal is None:
             amount0 = abs(int(e.get("token0_amount", e.get("amount0", "0")) or "0")) / scale
             removed_decimal = amount0
+        actor = e.get("actor", "")
         actor_or_scope = (
             "Pool/block aggregate"
             if e.get("aggregation_scope") == "pool_block"
-            else _short_addr(e.get("actor", ""))
+            else _identifier_html(actor, chain_id=chain_id)
         )
         rows.append(
             "<tr>"
             "<td>{}</td>"
-            '<td class="addr">{}</td>'
-            '<td class="addr">{}</td>'
+            "<td>{}</td>"
+            "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "</tr>".format(
                 int(e.get("block_number") or 0),
-                _short_addr(e.get("pool", e.get("pool_address", ""))),
+                _identifier_html(
+                    e.get("pool", e.get("pool_address", "")), chain_id=chain_id
+                ),
                 actor_or_scope,
                 _fmt_bal(float(removed_decimal or 0), symbol),
                 _fmt_usd(e.get("removed_usd")),
@@ -1567,7 +1709,7 @@ def _table_withdrawals(
     return "\n".join(rows)
 
 
-def _table_top_holders(holders: list, symbol: str) -> str:
+def _table_top_holders(holders: list, symbol: str, chain_id: int = 1) -> str:
     if not holders:
         return (
             '<tr><td colspan="10" style="text-align:center;padding:24px;color:#64748b">'
@@ -1576,7 +1718,6 @@ def _table_top_holders(holders: list, symbol: str) -> str:
     rows = []
     for i, h in enumerate(holders[:20], 1):
         addr = h.get("address", "")
-        addr_short = addr[:6] + "..." + addr[-4:] if len(addr) >= 10 else addr
         banner = (
             h.get("address_type", "eoa")
             if h.get("address_type")
@@ -1592,7 +1733,7 @@ def _table_top_holders(holders: list, symbol: str) -> str:
         rows.append(
             f'<tr class="holder-row" onclick="togglePortfolio(\'{addr}\')" data-owner="{addr}">'
             f"<td>{i}</td>"
-            f'<td class="addr">{addr_short}</td>'
+            f'<td>{_identifier_html(addr, chain_id=chain_id)}</td>'
             f'<td><span class="badge-{banner}">{banner}</span></td>'
             f"<td>{dex_html}</td>"
             f"<td>{_fmt_bal(h.get('balance_decimal', 0), symbol)}</td>"
@@ -1804,11 +1945,11 @@ def _build_address_dex_map(
     return out
 
 
-def _table_pool_holders(holders: list, symbol: str) -> str:
+def _table_pool_holders(holders: list, symbol: str, chain_id: int = 1) -> str:
     rows = []
     for h in holders:
         rows.append(
-            f"<tr><td class=\"addr\">{h.get('address','')}</td>"
+            f"<tr><td>{_identifier_html(h.get('address', ''), chain_id=chain_id)}</td>"
             f"<td>{h.get('pool_label','')}</td>"
             f"<td>{_fmt_bal(h.get('balance_decimal',0),symbol)}</td>"
             f"<td><span class=\"plabel\">POOL</span></td></tr>"
@@ -1821,6 +1962,7 @@ def _table_pool_ident(
     metrics: dict,
     token_decimals: int = 18,
     symbol: str = "TOKEN",
+    chain_id: int = 1,
 ) -> str:
     pool_conc = metrics.get("pool_concentration", {})
     per_pool_tvl = pool_conc.get("per_pool_tvl", {}) or {}
@@ -1834,8 +1976,8 @@ def _table_pool_ident(
     rows = []
     for p in pools:
         pa = (p.get("pool_address") or "").lower()
-        t0 = (p.get("token0") or "")[:10] + "..."
-        t1 = (p.get("token1") or "")[:10] + "..."
+        t0 = _identifier_html(p.get("token0", ""), chain_id=chain_id)
+        t1 = _identifier_html(p.get("token1", ""), chain_id=chain_id)
         in_list = "Yes" if p.get("in_holders_list") else "No"
         raw_tvl = int(tvl_lookup.get(pa, 0) or 0)
         vol_info = vol_lookup.get(pa, {}) or {}
@@ -1844,7 +1986,7 @@ def _table_pool_ident(
         tvl_share = raw_tvl / total_tvl * 100 if total_tvl > 0 and raw_tvl else 0.0
         vol_share = vol_decimal / total_volume * 100 if total_volume > 0 else 0.0
         rows.append(
-            f"<tr><td class=\"addr\">{p.get('pool_address','')}</td>"
+            f"<tr><td>{_identifier_html(p.get('pool_address', ''), chain_id=chain_id)}</td>"
             f"<td>{p.get('protocol','')} {p.get('version','')}</td>"
             f"<td>{t0}/{t1}</td>"
             f"<td>{_fmt_bal(tvl_decimal, symbol)}</td>"
@@ -1890,6 +2032,116 @@ def _load_json(path: Path, default: Any) -> Any:
         except Exception:
             return default
     return default
+
+
+def _read_artifact_rows(
+    out: Path,
+    name: str,
+    fallback: Optional[list[dict[str, Any]]] = None,
+) -> list[dict[str, Any]]:
+    """Read a large table Parquet-first and tolerate legacy JSON-only outputs."""
+    if not (out / "tables" / "{}.parquet".format(name)).exists():
+        return list(fallback or [])
+    try:
+        return read_table(name, out, prefer="parquet", legacy_rows=True)
+    except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+        return list(fallback or [])
+
+
+def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
+    """Load summaries plus Parquet-first row tables for dashboard rendering."""
+    holdings = _load_json(out / "holdings.json", {})
+    token_profile = _load_json(out / "token_profile.json", {})
+    verified_pools = _load_json(out / "verified_pools.json", [])
+    metrics = _load_json(out / "metrics.json", {})
+    risk = _load_json(out / "risk_assessment.json", {})
+
+    holdings = dict(holdings or {})
+    holdings["holdings"] = _read_artifact_rows(
+        out, "holdings", holdings.get("holdings") or []
+    )
+    _restore_display_addresses(
+        holdings["holdings"], ("address", "resolved_owner")
+    )
+    positions = _read_artifact_rows(
+        out, "positions", _load_json(out / "positions.json", [])
+    )
+    _restore_display_addresses(
+        positions,
+        ("pool_address", "owner", "lp_token_address", "beneficial_owner"),
+    )
+    swaps = _read_artifact_rows(
+        out, "swaps", _load_json(out / "swaps.json", [])
+    )
+    liquidity = _read_artifact_rows(
+        out,
+        "liquidity_events",
+        _load_json(out / "liquidity_events.json", []),
+    )
+    transfers = _read_artifact_rows(
+        out, "transfers", _load_json(out / "transfers.json", [])
+    )
+
+    metrics = dict(metrics or {})
+    tvl_fallback = metrics.get("tvl_timeline") or _load_json(
+        out / "tvl_timeline.json", []
+    )
+    metrics["tvl_timeline"] = _read_artifact_rows(
+        out, "tvl_timeline", tvl_fallback
+    )
+
+    volume_summary = dict(metrics.get("volume") or {})
+    volume_document = _load_json(out / "volume_timeline.json", {})
+    if not volume_summary:
+        volume_summary = dict(volume_document or {})
+    volume_fallback = (
+        volume_summary
+        if volume_summary.get("volume_timeline")
+        else volume_document
+    )
+    volume_rows = _read_artifact_rows(
+        out,
+        "volume_timeline",
+        [],
+    )
+    if volume_rows:
+        volume_summary = inflate_volume_timeline(volume_rows, volume_summary)
+    elif volume_fallback.get("volume_timeline"):
+        volume_summary["volume_timeline"] = volume_fallback["volume_timeline"]
+    else:
+        volume_summary["volume_timeline"] = []
+    metrics["volume"] = volume_summary
+
+    combined_events = list(swaps) + list(liquidity) + list(transfers)
+    events_all = combined_events or _load_json(out / "events_all.json", [])
+    return {
+        "holdings": holdings,
+        "token_profile": token_profile,
+        "verified_pools": verified_pools,
+        "metrics": metrics,
+        "risk": risk,
+        "positions": positions,
+        "swaps": swaps,
+        "liquidity_events": liquidity,
+        "transfers": transfers,
+        "events_all": events_all,
+    }
+
+
+def _restore_display_addresses(
+    rows: list[dict[str, Any]],
+    fields: tuple[str, ...],
+) -> None:
+    """Restore EIP-55 display casing after normalized Parquet reads."""
+    for row in rows:
+        for field in fields:
+            value = row.get(field)
+            if not isinstance(value, str) or len(value) != 42:
+                continue
+            try:
+                row[field] = Web3.to_checksum_address(value)
+            except ValueError:
+                continue
 
 
 

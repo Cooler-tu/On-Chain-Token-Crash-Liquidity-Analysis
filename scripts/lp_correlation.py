@@ -14,9 +14,19 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.data.artifacts import (
+    ArtifactError,
+    inflate_volume_timeline,
+    read_table,
+)
 
 
 def _load_json(path: Path, default: Any = None) -> Any:
@@ -27,6 +37,48 @@ def _load_json(path: Path, default: Any = None) -> Any:
             return json.load(f)
     except Exception:
         return default
+
+
+def _read_rows(out: Path, name: str, fallback: list[dict]) -> list[dict]:
+    parquet_path = out / "tables" / "{}.parquet".format(name)
+    if not parquet_path.exists():
+        return list(fallback or [])
+    try:
+        return read_table(name, out, prefer="parquet", legacy_rows=True)
+    except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+        return list(fallback or [])
+
+
+def _load_analysis_inputs(
+    out: Path,
+) -> tuple[dict[str, Any], list[dict], list[dict]]:
+    """Load correlation inputs from Parquet with legacy JSON fallback."""
+    metrics = dict(_load_json(out / "metrics.json", {}) or {})
+    tvl_fallback = metrics.get("tvl_timeline") or _load_json(
+        out / "tvl_timeline.json", []
+    )
+    metrics["tvl_timeline"] = _read_rows(
+        out, "tvl_timeline", tvl_fallback
+    )
+
+    volume_summary = dict(metrics.get("volume") or {})
+    volume_document = _load_json(out / "volume_timeline.json", {}) or {}
+    volume_rows = _read_rows(out, "volume_timeline", [])
+    if volume_rows:
+        volume_summary = inflate_volume_timeline(volume_rows, volume_summary)
+    elif not volume_summary.get("volume_timeline"):
+        volume_summary["volume_timeline"] = volume_document.get(
+            "volume_timeline", []
+        )
+    metrics["volume"] = volume_summary
+
+    liquidity_fallback = _load_json(out / "liquidity_events.json", []) or []
+    transfer_fallback = _load_json(out / "transfers.json", []) or []
+    liquidity_events = _read_rows(
+        out, "liquidity_events", liquidity_fallback
+    )
+    transfers = _read_rows(out, "transfers", transfer_fallback)
+    return metrics, liquidity_events, transfers
 
 
 def _bucket(ts: int, bucket_seconds: int) -> int:
@@ -198,9 +250,7 @@ def main() -> None:
     args = parser.parse_args()
 
     out = Path(args.output_dir)
-    metrics = _load_json(out / "metrics.json", {})
-    liquidity_events = _load_json(out / "liquidity_events.json", [])
-    transfers = _load_json(out / "transfers.json", [])
+    metrics, liquidity_events, transfers = _load_analysis_inputs(out)
     profile = _load_json(out / "token_profile.json", {})
 
     buckets, series = build_series(

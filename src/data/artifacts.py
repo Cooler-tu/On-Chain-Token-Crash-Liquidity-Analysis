@@ -568,6 +568,44 @@ def flatten_volume_timeline(document: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+def inflate_volume_timeline(
+    rows: Iterable[dict[str, Any]],
+    summary: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """Rebuild the legacy nested volume document from flat analytical rows."""
+    document = dict(summary or {})
+    buckets: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        raw_timestamp = row.get("bucket_timestamp")
+        if isinstance(raw_timestamp, datetime):
+            bucket_ts = int(raw_timestamp.timestamp())
+        else:
+            bucket_ts = int(raw_timestamp or 0)
+        pool_address = str(row.get("pool_address") or "").lower()
+        if not pool_address:
+            continue
+        bucket_row = buckets.setdefault(
+            bucket_ts,
+            {
+                "bucket_ts": bucket_ts,
+                "total_volume_in_token": float(
+                    row.get("total_volume_in_token") or 0
+                ),
+                "pools": {},
+            },
+        )
+        bucket_row["pools"][pool_address] = {
+            "volume_in_token": float(row.get("volume_in_token") or 0),
+            "volume_usd": (
+                float(row["volume_usd"])
+                if row.get("volume_usd") is not None
+                else None
+            ),
+        }
+    document["volume_timeline"] = [buckets[key] for key in sorted(buckets)]
+    return document
+
+
 def _table_schema(name: str, pa):
     if name == "swaps":
         return _swap_schema(pa), _normalize_swap_row
