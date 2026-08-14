@@ -32,6 +32,7 @@ const portfolioData = {portfolio_json};
 const tokenSymbol = "{symbol}";
 const chainId = {chain_id};
 const tvlPointDetails = {tvl_detail_json};
+const topChartHolders = topH.slice(0, 10);
 
 function fmtNum(v, digits){
   if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
@@ -108,12 +109,14 @@ function showCopyToast(message, failed){
     toast.classList.remove('copy-toast-visible');
   }, 1800);
 }
-async function copyIdentifier(event, button){
-  if (event) {
+async function copyIdentifierValue(event, value){
+  if (event && typeof event.preventDefault === 'function') {
     event.preventDefault();
+  }
+  if (event && typeof event.stopPropagation === 'function') {
     event.stopPropagation();
   }
-  var value = button ? (button.getAttribute('data-identifier') || '') : '';
+  value = String(value || '');
   if (!value) return;
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -125,6 +128,10 @@ async function copyIdentifier(event, button){
   } catch (err) {
     showCopyToast('Copy failed — full value is shown on hover', true);
   }
+}
+async function copyIdentifier(event, button){
+  var value = button ? (button.getAttribute('data-identifier') || '') : '';
+  return copyIdentifierValue(event, value);
 }
 function renderTvlDetails(index){
   var panel = document.getElementById('tvl-details');
@@ -169,7 +176,7 @@ function closeTvlDetails(){
   tc('c1',{
     type:'doughnut',
     data:{
-      labels:['Pool contracts','Wallets & other contracts'],
+      labels:['Pools with positive balance','Non-pool positive holders'],
       datasets:[{data:[{pool_count},{holder_count}],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
@@ -187,10 +194,39 @@ function closeTvlDetails(){
   tc('c3',{
     type:'bar',
     data:{
-      labels:topH.slice(0,10).map(function(d){return d.address.slice(0,8)+'...';}),
-      datasets:[{label:'Balance',data:topH.slice(0,10).map(function(d){return d.balance_decimal;}),backgroundColor:'#3b82f6',borderRadius:4}]
+      labels:topChartHolders.map(function(d){return shortIdentifier(d.address);}),
+      datasets:[{label:'Balance',data:topChartHolders.map(function(d){return d.balance_decimal;}),backgroundColor:'#3b82f6',borderRadius:4}]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:function(items){
+            var row = items && items.length ? topChartHolders[items[0].dataIndex] : null;
+            return row && row.address ? row.address : '-';
+          },
+          label:function(ctx){
+            var row = topChartHolders[ctx.dataIndex] || {};
+            var balance = Number(row.balance_decimal || 0).toLocaleString(undefined,{maximumFractionDigits:6});
+            return 'Balance: ' + balance + ' ' + tokenSymbol;
+          },
+          footer:function(){return 'Click bar to copy full address';}
+        }}
+      },
+      onHover:function(event,elements){
+        if (event && event.native && event.native.target) {
+          event.native.target.style.cursor = elements && elements.length ? 'pointer' : 'default';
+        }
+      },
+      onClick:function(event,elements){
+        if (!elements || !elements.length) return;
+        var row = topChartHolders[elements[0].index];
+        if (row && row.address) copyIdentifierValue(event.native || event, row.address);
+      },
+      scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}
+    }
   });
   {price_chart}
   {volume_chart}
@@ -271,7 +307,12 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .card h2{font-size:12px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.6px;font-weight:600}
 .stat-value{font-size:30px;font-weight:700;color:var(--text)}
 .stat-label{font-size:12px;color:var(--text-dim);margin-top:2px}
+.stat-note{font-size:10px;color:var(--text-dim);margin-top:4px;opacity:.85}
 .badge{display:inline-block;padding:3px 16px;border-radius:20px;font-weight:600;font-size:13px}
+.method-badge{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600;vertical-align:2px;text-transform:uppercase;letter-spacing:.35px}
+.method-snapshot{background:rgba(34,197,94,.13);color:var(--green)}
+.method-reconstructed{background:rgba(250,204,21,.13);color:var(--yellow)}
+.method-unavailable{background:rgba(100,116,139,.13);color:var(--text-muted)}
 .bg-low{background:rgba(34,197,94,0.12);color:var(--green)}
 .bg-medium{background:rgba(250,204,21,0.12);color:var(--yellow)}
 .bg-high{background:rgba(239,68,68,0.12);color:var(--red)}
@@ -353,7 +394,9 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="info-bar">
     <div class="info-item">Blocks &middot; <span>{block_window}</span></div>
-    <div class="info-item">Balance snap &middot; <span>{query_time}</span></div>
+    <div class="info-item">Balance query &middot; <span>{query_time}</span></div>
+    <div class="info-item">Balance coverage &middot; <span>{balance_coverage}</span></div>
+    <div class="info-item">Balance source &middot; <span>{balance_source_label}</span></div>
     <div class="info-item">Token &middot; <span>{token_name}</span></div>
     <div class="info-item">Decimals &middot; <span>{decimals}</span> <span style="opacity:.6">({decimals_source})</span></div>
     {supply_info}
@@ -365,8 +408,9 @@ tr:hover td{background:rgba(59,130,246,0.04)}
       <div class="stat-label">Unique Transfer Addresses</div>
     </div>
     <div class="card glow">
-      <div class="stat-value">{holdings_count}</div>
-      <div class="stat-label">Active Holders</div>
+      <div class="stat-value">{positive_holder_count}</div>
+      <div class="stat-label">Positive-Balance Holders</div>
+      <div class="stat-note">Non-pool addresses in covered rows</div>
     </div>
     <div class="card glow">
       <div class="stat-value">{num_pools}</div>
@@ -380,7 +424,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card">
-      <h2>Holder Distribution</h2>
+      <h2>Positive Holder Distribution</h2>
       <div class="chart-box-sm"><canvas id="c1"></canvas></div>
     </div>
     <div class="card">
@@ -390,6 +434,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     </div>
     <div class="card">
       <h2>Top Holders</h2>
+      <p style="font-size:11px;color:var(--text-dim);margin:-8px 0 8px">Hover for the full address and balance &middot; Click a bar to copy the address.</p>
       <div class="chart-box-sm"><canvas id="c3"></canvas></div>
     </div>
   </div>
@@ -419,8 +464,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>Pool TVL Timeline (Total + Per Pool)</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Snapshot TVL = pool token balance × price at each bucket (not event-accumulated). Window ~month→daily; ~week/day→hourly ({chart_bucket_label}).</p>
+      <h2>Pool TVL Timeline (Total + Per Pool) {tvl_method_badge}</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">{tvl_method_note} Bucket configuration: {chart_bucket_label}.</p>
       <div class="chart-box"><canvas id="c4"></canvas></div>
       <div id="tvl-details" class="point-details" style="display:none">
         <div class="point-details-head">
@@ -554,6 +599,20 @@ def generate_dashboard(
     total_supply = token_profile.get("total_supply_decimal", 0) or 0
     holdings_count = holdings.get("holdings_count", 0)
     total_addresses = holdings.get("total_unique_addresses", 0)
+    holder_semantics = _holder_semantics(holdings_data)
+    positive_holder_count = holder_semantics["positive_non_pool_count"]
+    positive_pool_count = holder_semantics["positive_pool_count"]
+    balance_covered_count = holder_semantics["covered_count"]
+    zero_fill_count = holder_semantics["zero_fill_count"]
+    coverage_denominator = holder_semantics["total_count"]
+    if coverage_denominator:
+        coverage_pct = balance_covered_count / coverage_denominator * 100
+        balance_coverage = "{:,} / {:,} addresses ({:.1f}%)".format(
+            balance_covered_count, coverage_denominator, coverage_pct
+        )
+    else:
+        balance_coverage = "N/A"
+    balance_source_label = _humanize_source(holdings.get("balance_source") or "unknown")
     query_time = holdings.get("query_time_human", "")
     from_block = holdings.get("from_block") or 0
     to_block = holdings.get("to_block") or holdings.get("balance_block") or 0
@@ -641,6 +700,15 @@ def generate_dashboard(
         )
     if holdings.get("balance_source"):
         balance_note_parts.append("source: {}".format(holdings["balance_source"]))
+    if coverage_denominator:
+        balance_note_parts.append(
+            "{} balance-covered; {} unqueried/zero-filled".format(
+                balance_covered_count, zero_fill_count
+            )
+        )
+        balance_note_parts.append(
+            "positive-holder count excludes pools and zero-filled rows"
+        )
     balance_note = " · ".join(balance_note_parts)
     if balance_note:
         balance_note = '<br><span style="opacity:.85">' + balance_note + "</span>"
@@ -717,6 +785,10 @@ def generate_dashboard(
     if chart_span:
         chart_bucket_label = "{} ({})".format(chart_bucket_label, chart_span)
 
+    tvl_method = _tvl_method_presentation(
+        metrics.get("tvl_timeline_source"), tvl_data
+    )
+
     tvl_chart = _build_tvl_chart_js(tvl_data, token_decimals=decimals, symbol=symbol)
     tvl_details = _build_tvl_details_data(
         tvl_data, volume_metrics, token_decimals=decimals
@@ -734,8 +806,8 @@ def generate_dashboard(
         "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
         "chain_id": int(chain_id or 0),
         "tvl_detail_json": json.dumps(tvl_details, default=str),
-        "pool_count": len(pool_holders),
-        "holder_count": max(0, holdings_count - len(pool_holders)),
+        "pool_count": positive_pool_count,
+        "holder_count": positive_holder_count,
         "pool_share": main_pool_share,
         "pool_other": max(0, 100 - main_pool_share),
         "price_chart": price_chart,
@@ -761,7 +833,9 @@ def generate_dashboard(
         "supply_info": supply_info,
         "empty_note": empty_note,
         "total_addresses": total_addresses,
-        "holdings_count": holdings_count,
+        "positive_holder_count": positive_holder_count,
+        "balance_coverage": balance_coverage,
+        "balance_source_label": balance_source_label,
         "num_pools": len(verified_pools),
         "risk_lvl_class": risk_lvl_class,
         "risk_level": risk_level if risk_level != "N/A" else "N/A",
@@ -770,6 +844,8 @@ def generate_dashboard(
         "pool_conc_summary": pool_conc_summary,
         "balance_note": balance_note,
         "chart_bucket_label": chart_bucket_label,
+        "tvl_method_badge": tvl_method["badge_html"],
+        "tvl_method_note": tvl_method["note"],
         "table_top": table_top,
         "table_movers": table_movers or "",
         "table_withdrawals": table_withdrawals or "",
@@ -1370,6 +1446,115 @@ def _short_addr(addr: str) -> str:
     if len(addr) <= 12:
         return addr
     return addr[:8] + "..." + addr[-4:]
+
+
+def _is_positive_balance(row: dict[str, Any]) -> bool:
+    raw = row.get("balance_raw")
+    if raw not in (None, ""):
+        try:
+            return int(raw) > 0
+        except (TypeError, ValueError):
+            pass
+    try:
+        return float(row.get("balance_decimal") or 0) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _holder_semantics(rows: list[dict[str, Any]]) -> dict[str, int]:
+    """Return explicit holder and balance-coverage counts for dashboard labels."""
+    total_count = len(rows or [])
+    zero_fill_count = sum(
+        1 for row in rows or [] if row.get("balance_source") == "zero_fill"
+    )
+    positive_non_pool_count = sum(
+        1
+        for row in rows or []
+        if not row.get("is_pool")
+        and row.get("balance_source") != "zero_fill"
+        and _is_positive_balance(row)
+    )
+    positive_pool_count = sum(
+        1
+        for row in rows or []
+        if row.get("is_pool")
+        and row.get("balance_source") != "zero_fill"
+        and _is_positive_balance(row)
+    )
+    return {
+        "total_count": total_count,
+        "covered_count": max(0, total_count - zero_fill_count),
+        "zero_fill_count": zero_fill_count,
+        "positive_non_pool_count": positive_non_pool_count,
+        "positive_pool_count": positive_pool_count,
+    }
+
+
+def _humanize_source(value: Any) -> str:
+    text = str(value or "unknown").strip().replace("_", " ")
+    if not text:
+        return "Unknown"
+    words = []
+    for word in text.split():
+        upper = word.upper()
+        words.append(upper if upper in {"RPC", "DUNE"} else word.capitalize())
+    return " ".join(words)
+
+
+def _tvl_method_presentation(
+    source: Any,
+    rows: list[dict[str, Any]],
+) -> dict[str, str]:
+    """Describe TVL according to its real lineage instead of a fixed caption."""
+    normalized = str(source or "").strip().lower()
+    if not normalized:
+        row_sources = {
+            str(row.get("source_event") or "").lower() for row in rows or []
+        }
+        if "balance_x_price" in row_sources:
+            normalized = "dune_snapshot"
+        elif rows:
+            normalized = "event_accumulate"
+
+    if normalized in {"dune_balance_local_price", "dune_snapshot"}:
+        price_note = (
+            "local swap-derived prices"
+            if normalized == "dune_balance_local_price"
+            else "available price observations"
+        )
+        return {
+            "kind": "snapshot",
+            "badge_html": (
+                '<span class="method-badge method-snapshot">Balance snapshot</span>'
+            ),
+            "note": (
+                "Balance-Snapshot TVL uses pool token balance snapshots × {}. "
+                "Hourly views may carry a daily balance across intraday price buckets."
+            ).format(price_note),
+        }
+    if normalized in {"event_accumulate", "event_accumulate_fallback"}:
+        reason = (
+            "The snapshot query failed, so "
+            if normalized == "event_accumulate_fallback"
+            else ""
+        )
+        return {
+            "kind": "reconstructed",
+            "badge_html": (
+                '<span class="method-badge method-reconstructed">Event reconstructed</span>'
+            ),
+            "note": (
+                "{}TVL is reconstructed by accumulating indexed liquidity events. "
+                "Treat it as an activity-based proxy, not an on-chain balance snapshot."
+            ).format(reason),
+        }
+    return {
+        "kind": "unavailable",
+        "badge_html": (
+            '<span class="method-badge method-unavailable">Source unavailable</span>'
+        ),
+        "note": "No reliable TVL lineage is available for this output.",
+    }
 
 
 def _identifier_html(value: Any, *, chain_id: int = 1) -> str:

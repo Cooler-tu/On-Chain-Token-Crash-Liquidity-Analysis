@@ -8,7 +8,9 @@ from src.analysis.dashboard import (
     _build_tvl_chart_js,
     _build_tvl_details_data,
     _find_volume_bucket,
+    _holder_semantics,
     _identifier_html,
+    _tvl_method_presentation,
 )
 
 
@@ -130,6 +132,74 @@ class IdentifierUxTest(unittest.TestCase):
         self.assertIn("async function copyIdentifier", script)
         self.assertIn("fallbackCopyIdentifier", script)
         self.assertIn("identifierHtml(p.address)", script)
+
+    def test_top_holder_chart_reveals_and_copies_full_address(self):
+        dashboard._load_templates()
+        script = dashboard._JS_TEMPLATE or ""
+        template = dashboard._HTML_TEMPLATE or ""
+
+        self.assertIn("const topChartHolders = topH.slice(0, 10)", script)
+        self.assertIn("return row && row.address ? row.address : '-'", script)
+        self.assertIn("Click bar to copy full address", script)
+        self.assertIn("copyIdentifierValue(event.native || event, row.address)", script)
+        self.assertIn("event.native.target.style.cursor", script)
+        self.assertIn("Hover for the full address and balance", template)
+
+
+class DashboardMetricSemanticsTest(unittest.TestCase):
+    def test_holder_counts_exclude_pools_zero_balances_and_zero_fill(self):
+        rows = [
+            {
+                "balance_raw": "10",
+                "balance_source": "rpc",
+                "is_pool": False,
+            },
+            {
+                "balance_raw": "0",
+                "balance_source": "rpc",
+                "is_pool": False,
+            },
+            {
+                "balance_raw": "99",
+                "balance_source": "zero_fill",
+                "is_pool": False,
+            },
+            {
+                "balance_raw": "5",
+                "balance_source": "rpc",
+                "is_pool": True,
+            },
+        ]
+
+        result = _holder_semantics(rows)
+
+        self.assertEqual(result["total_count"], 4)
+        self.assertEqual(result["covered_count"], 3)
+        self.assertEqual(result["zero_fill_count"], 1)
+        self.assertEqual(result["positive_non_pool_count"], 1)
+        self.assertEqual(result["positive_pool_count"], 1)
+
+    def test_event_fallback_is_never_described_as_snapshot(self):
+        result = _tvl_method_presentation("event_accumulate_fallback", [{}])
+
+        self.assertEqual(result["kind"], "reconstructed")
+        self.assertIn("snapshot query failed", result["note"].lower())
+        self.assertIn("not an on-chain balance snapshot", result["note"])
+        self.assertIn("Event reconstructed", result["badge_html"])
+
+    def test_balance_source_gets_snapshot_description(self):
+        result = _tvl_method_presentation("dune_balance_local_price", [{}])
+
+        self.assertEqual(result["kind"], "snapshot")
+        self.assertIn("pool token balance snapshots", result["note"])
+        self.assertIn("local swap-derived prices", result["note"])
+        self.assertIn("Balance snapshot", result["badge_html"])
+
+    def test_legacy_rows_can_infer_balance_snapshot_lineage(self):
+        result = _tvl_method_presentation(
+            None, [{"source_event": "balance_x_price"}]
+        )
+        self.assertEqual(result["kind"], "snapshot")
 
 
 if __name__ == "__main__":

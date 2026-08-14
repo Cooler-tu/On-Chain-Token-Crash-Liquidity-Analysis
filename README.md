@@ -36,7 +36,8 @@ End-to-end **Ethereum mainnet** tool for token liquidity / crash analysis: disco
 - Holdings via Dune address discovery + RPC `balanceOf`; dashboard tags **EOA / contract / pool**.
 - Dashboard **DEX column**: Uniswap / Curve / Balancer from LP, swaps, pool transfers, or same-tx linkage. Expand row → **LP portfolio only** (not the same as the DEX tag).
 - Hover DEX badge for `LP` vs `Swap`. `—` = no DEX link in this window (e.g. P2P only).
-- Dashboard identifiers stay compact in tables; hover or keyboard focus reveals the full value, click copies it, and valid mainnet addresses include an Etherscan link. V4 bytes32 pool IDs remain copyable without a misleading address link.
+- Dashboard identifiers stay compact in tables; hover or keyboard focus reveals the full value, click copies it, and valid mainnet addresses include an Etherscan link. The Top Holders chart also reveals the full address/balance on hover and copies the address on bar click. V4 bytes32 pool IDs remain copyable without a misleading address link.
+- Dashboard holder cards now separate transfer-observed addresses from covered, positive-balance non-pool holders and disclose balance-query coverage. TVL captions follow `tvl_timeline_source`, so event reconstruction is no longer presented as a balance snapshot.
 
 ```bash
 set -a && source .env && set +a
@@ -248,7 +249,8 @@ See `SUPPORTED_PROTOCOLS.md` for contract addresses and notes.
 - 持仓：Dune 发现地址 + RPC `balanceOf`；看板区分 **EOA / 合约 / 池账户**。
 - **DEX 列**：按本窗口证据标 Uniswap / Curve / Balancer（LP、swap、与池转账、或同笔 tx 关联）。
 - **点开一行**只看 LP 仓位，不等于 DEX 标签；悬停标签可见 `LP` / `Swap`。`—` = 本窗口无 DEX 关联（如纯转账）。
-- 看板中的地址和 Pool ID 保持短格式；悬浮或键盘聚焦可查看全文，点击即可复制。合法主网地址提供 Etherscan 跳转，V4 bytes32 poolId 只提供查看与复制，避免错误跳转。
+- 看板中的地址和 Pool ID 保持短格式；悬浮或键盘聚焦可查看全文，点击即可复制。Top Holders 图表悬浮柱子会显示完整地址与余额，点击柱子复制地址。合法主网地址提供 Etherscan 跳转，V4 bytes32 poolId 只提供查看与复制，避免错误跳转。
+- 看板将“窗口内出现过的地址”与“余额已覆盖且为正的非池 Holder”分开统计，并公开余额查询覆盖率；TVL 文案按 `tvl_timeline_source` 动态显示，不再把事件累计重建误写成余额快照。
 
 ```bash
 set -a && source .env && set +a
