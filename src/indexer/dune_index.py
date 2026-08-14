@@ -142,6 +142,18 @@ def _normalize_liquidity(
     meta = _LIQ_META.get(sql_name, {})
     version = str(row.get("version") or meta.get("version") or "").lower()
     delta_raw = str(row.get("liquidity_delta") or "0")
+    amounts_available = any(
+        key in row and row.get(key) is not None
+        for key in ("token0_amount", "token1_amount", "amount0", "amount1")
+    )
+    if row.get("quantification_status"):
+        quantification_status = str(row["quantification_status"])
+    elif amounts_available:
+        quantification_status = "quantified"
+    elif version in ("v4", "4") and delta_raw not in ("", "0"):
+        quantification_status = "liquidity_delta_only"
+    else:
+        quantification_status = "unmapped"
     event_type = str(row.get("event_type") or meta.get("event_type") or "")
     if not event_type and version in ("v4", "4"):
         try:
@@ -189,6 +201,8 @@ def _normalize_liquidity(
         "nft_token_id": nft_id,
         "event_count": max(1, int(row.get("event_count") or 1)),
         "aggregation_scope": str(row.get("aggregation_scope") or ""),
+        "amounts_available": amounts_available,
+        "quantification_status": quantification_status,
         "verified": True,
     }
 

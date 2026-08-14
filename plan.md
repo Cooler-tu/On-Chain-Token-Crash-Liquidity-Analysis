@@ -32,6 +32,11 @@
 - **Dashboard Address UX** (2026-08-13) — unified token, wallet, pool, withdrawal, TVL-detail, LP-portfolio, and Top Holders chart identifiers: hover/focus shows the full value, table/button and chart-bar clicks copy with feedback, valid Ethereum addresses link to Etherscan, and V4 bytes32 pool IDs remain copy-only.
 - **Dashboard metric semantics** (2026-08-13) — separated transfer-observed addresses from covered positive-balance non-pool holders, exposed balance coverage/source, aligned holder-distribution counts to the same definition, and made TVL captions reflect snapshot vs event-reconstructed lineage. Current uPEG output now reports 38 positive non-pool holders from 80/1,134 covered addresses and labels its TVL as event-reconstructed.
 - **Artifact storage Phase 3B** (2026-08-13) — removed new `events_all.json` generation and CLI file rereads; canonical swaps/liquidity/transfers plus a typed `position_events` table now form the sorted runtime event view without losing PositionManager NFT evidence. Added compact `holdings_summary.json`; dashboard, wallet clustering, fund flow, and site publication are Parquet-first with old JSON fallback.
+- **Adaptive Notable Wallet selection** (2026-08-14) — replaced universal `$10k / 50 swaps / 0.1%` defaults with within-window P99 cutoffs for max single trade, absolute net flow, cumulative volume, and activity; Dashboard now exposes the computed thresholds, relative volume share, and P99 reasons while preserving explicit fixed-threshold compatibility.
+- **Dashboard pool chart clarity** (2026-08-14) — expanded pool-series colors and dash patterns; replaced the ambiguous DEX pool-contract balance table with an explained custody-reserve pie chart, including the Uniswap V4 shared-PoolManager caveat.
+- **Measured pool-liquidity share semantics** (2026-08-14) — disclosed the measured/verified denominator, snapshot method, and coverage beside pool shares; renamed the columns in user-facing language and rendered unavailable V4 per-pool estimates as `Not measured` instead of `0%`.
+- **Non-pool holder ranking semantics** (2026-08-14) — renamed the chart/table as Top 10/20 by end balance, explicitly excluded pool/custody and zero-balance rows, enforced dashboard-side descending order, and disclosed that EOAs/contracts and partial balance coverage remain in scope.
+- **Withdrawal quantification semantics** (2026-08-14) — separated measured token amounts from V4 liquidity-delta-only signals and unmapped events; Dashboard preserves real measured zeroes while rendering missing inputs as `Token amount not returned` and dependent fields as `Cannot calculate`, with detected/known/missing coverage counts.
 
 ---
 
@@ -44,14 +49,15 @@
 
 ## 📋 Backlog (ordered by priority)
 
-1. **Real token crash analysis** — known drain / rug windows with `--incident-block`
-2. **Mass-scan utility** — batch tokens → comparison table
-3. **Historical crash pattern research** — common LP-withdrawal signatures
-4. **Deep holder unwrap** — routers / aggregators / beneficial owners beyond surface EOA label
-5. **Multi-chain** — Arbitrum, Base, Polygon
-6. **TVL timeline in USD** — needs price oracle (related to next-week TVL ranking, but full USD oracle is later)
-7. **Real-time monitoring** — alert on sudden liquidity changes
-8. **High-coverage holder/TVL mode (deferred)** — expand historical balance coverage and key-block TVL snapshots only when a real crash case requires it; keep optional because of Dune/RPC cost and quota risk
+1. **Dashboard pool identity / custody cleanup** — remove the misleading custody-reserve pie from the main analysis flow; rename `Pool Address` to `Pool Identifier`, expose `Contract Address` vs `V4 Pool ID`, and explain the many-to-one V4 Pool ID → shared PoolManager mapping.
+2. **Real token crash analysis** — known drain / rug windows with `--incident-block`
+3. **Mass-scan utility** — batch tokens → comparison table
+4. **Historical crash pattern research** — common LP-withdrawal signatures
+5. **Deep holder unwrap** — routers / aggregators / beneficial owners beyond surface EOA label
+6. **Multi-chain** — Arbitrum, Base, Polygon
+7. **TVL timeline in USD** — needs price oracle (related to next-week TVL ranking, but full USD oracle is later)
+8. **Real-time monitoring** — alert on sudden liquidity changes
+9. **High-coverage holder/TVL mode (deferred)** — expand historical balance coverage and key-block TVL snapshots only when a real crash case requires it; keep optional because of Dune/RPC cost and quota risk
 
 ---
 

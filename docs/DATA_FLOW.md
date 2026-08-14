@@ -367,8 +367,8 @@ TVL_pool(t) = (balance_raw / 10^decimals) × price_usd
 |------|--------|----------|
 | pool concentration | 各池 TVL | `main_pool_share` 等 |
 | LP concentration | positions | `top_lp_share` |
-| withdrawal severity | liquidity_events + 价格/TVL | `per_pool_removals`、USD、占池 TVL 比 |
-| wallet activity | swaps（+ transfers） | Trade / Mover / Frequent 标签 |
+| withdrawal severity | liquidity_events + 价格/TVL | `quantified / liquidity_delta_only / unmapped` 覆盖状态；有金额时再产出 `per_pool_removals`、USD、占池 TVL 比 |
+| wallet activity | swaps（+ transfers） | 窗口内 P99 Trade / Mover / Volume / Activity 自适应标签；可显式切回固定阈值 |
 
 | **写出** | `metrics.json`、`tvl_timeline.json`、`volume_timeline.json` |
 | **给谁用** | Risk、Dashboard 曲线 / Top Movers / Notable Wallets / 撤池表 |
@@ -443,6 +443,14 @@ source=auto 时：直接用 transfers 抽地址，不再跑 holders SQL
 | 10 | metrics+labels | 风险分 | `risk_assessment.json` |
 | 11 | 全部产物 | md + holdings 刷新 | `report.md` |
 | 12 | output 目录 | HTML + DEX/portfolio | `dashboard.html` |
+
+Dashboard 的池曲线采用扩展颜色与虚实线组合区分多池。DEX 储备饼图来自 holdings 中 `is_pool=true` 的正余额行，表示目标 token 在已识别池/托管地址之间的快照分布；V4 PoolManager 为共享托管，不应把该扇区解释为单个 V4 池的完整 TVL。
+
+`All Verified Pools` 的 liquidity share 只在成功测量的 `per_pool_tvl` 分母内计算。页面同时显示 measured/verified 覆盖率；缺少可靠 V4 per-pool 测量时写 `Not measured`，不把未知值伪装成 `0%`。
+
+Non-pool holder 展示在 Dashboard 内再次执行明确排名：排除 pool/custody 与非正 end balance，按期末余额降序，图表取前 10、表格取前 20；其范围仍受 holdings 覆盖率限制。
+
+Liquidity Withdrawals 不再把 V4 `ModifyLiquidity` 的 token0/token1 零占位解释成真实撤出 0。数据层记录 `quantified`、`liquidity_delta_only`、`unmapped` 三态；看板明确显示 `Token amount not returned`，依赖金额的 USD/TVL 列显示 `Cannot calculate`，并单独保留 raw liquidity change 与底层 `event_count`。只有 `quantified` 状态下的 0 才表示测得的真实 0。
 
 ---
 

@@ -20,9 +20,21 @@ from ..data.artifacts import (
     read_holdings_document,
     read_table,
 )
+from ..models import VerifiedPool
+from .metrics import calculate_withdrawal_severity
 
 _HTML_TEMPLATE: str | None = None
 _JS_TEMPLATE: str | None = None
+
+# Pool series need to remain distinguishable on the dark dashboard even when a
+# token has substantially more than the six pools covered by the old palette.
+_CHART_SERIES_COLORS = [
+    "#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6",
+    "#60a5fa", "#f97316", "#a3e635", "#ec4899", "#06b6d4",
+    "#fb7185", "#c084fc", "#2dd4bf", "#eab308", "#84cc16",
+    "#38bdf8", "#e879f9", "#a78bfa", "#34d399", "#fbbf24",
+]
+_CHART_LINE_DASHES = [[], [9, 4], [3, 3], [12, 4, 3, 4]]
 
 
 def _load_templates():
@@ -38,7 +50,9 @@ const portfolioData = {portfolio_json};
 const tokenSymbol = "{symbol}";
 const chainId = {chain_id};
 const tvlPointDetails = {tvl_detail_json};
+const chartSeriesColors = {chart_colors_json};
 const topChartHolders = topH.slice(0, 10);
+const poolReserveRows = poolH.filter(function(d){return Number(d.balance_decimal || 0) > 0;});
 
 function fmtNum(v, digits){
   if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
@@ -191,7 +205,7 @@ function closeTvlDetails(){
   tc('c2',{
     type:'doughnut',
     data:{
-      labels:['Main Pool Share','Other Pools'],
+      labels:['Main measured pool','Other measured pools'],
       datasets:[{data:[{pool_share},{pool_other}],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
@@ -234,6 +248,57 @@ function closeTvlDetails(){
       scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}
     }
   });
+  if (document.getElementById('c7') && poolReserveRows.length) {
+    tc('c7',{
+      type:'pie',
+      data:{
+        labels:poolReserveRows.map(function(d){
+          return (d.pool_label || 'DEX custody') + ' · ' + shortIdentifier(d.address);
+        }),
+        datasets:[{
+          label:'Observed token reserve',
+          data:poolReserveRows.map(function(d){return Number(d.balance_decimal || 0);}),
+          backgroundColor:poolReserveRows.map(function(_,i){return chartSeriesColors[i % chartSeriesColors.length];}),
+          borderColor:'#1e293b',
+          borderWidth:2,
+          hoverOffset:8
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'right',labels:{color:'#94a3b8',padding:14,boxWidth:14,font:{size:11}}},
+          tooltip:{callbacks:{
+            title:function(items){
+              var row = items && items.length ? poolReserveRows[items[0].dataIndex] : null;
+              return row && row.address ? row.address : '-';
+            },
+            label:function(ctx){
+              var row = poolReserveRows[ctx.dataIndex] || {};
+              var total = poolReserveRows.reduce(function(sum,d){return sum + Number(d.balance_decimal || 0);},0);
+              var value = Number(row.balance_decimal || 0);
+              var share = total > 0 ? value / total * 100 : 0;
+              return (row.pool_label || 'DEX custody') + ': '
+                + value.toLocaleString(undefined,{maximumFractionDigits:6}) + ' ' + tokenSymbol
+                + ' (' + share.toFixed(2) + '%)';
+            },
+            footer:function(){return 'Click slice to copy full address';}
+          }}
+        },
+        onHover:function(event,elements){
+          if (event && event.native && event.native.target) {
+            event.native.target.style.cursor = elements && elements.length ? 'pointer' : 'default';
+          }
+        },
+        onClick:function(event,elements){
+          if (!elements || !elements.length) return;
+          var row = poolReserveRows[elements[0].index];
+          if (row && row.address) copyIdentifierValue(event.native || event, row.address);
+        }
+      }
+    });
+  }
   {price_chart}
   {volume_chart}
   {tvl_chart}
@@ -326,6 +391,7 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .fw{grid-column:1/-1}
 .chart-box{position:relative;height:260px;width:100%}
 .chart-box-sm{position:relative;height:200px;width:100%}
+.pool-reserve-chart{position:relative;height:300px;width:100%;max-width:900px;margin:0 auto}
 .point-details{margin-top:14px;padding:14px;background:rgba(15,23,42,0.65);border:1px solid var(--border);border-radius:8px}
 .point-details-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .point-details-title{font-size:13px;font-weight:600;color:var(--text)}
@@ -359,6 +425,14 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 .info-bar{display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:20px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px}
 .info-item{font-size:12px;color:var(--text-muted)}
 .info-item span{color:var(--text);font-weight:500}
+.coverage-note{margin:-4px 0 14px;padding:10px 12px;border:1px solid rgba(250,204,21,.24);border-radius:7px;background:rgba(250,204,21,.07);font-size:12px;line-height:1.55;color:var(--text-muted)}
+.coverage-note strong{display:block;color:var(--yellow);margin-bottom:2px}
+.coverage-inline{color:var(--yellow);font-weight:600}
+.not-measured{color:var(--text-dim);font-style:italic;white-space:nowrap}
+.amount-missing{display:inline-block;padding:3px 7px;border-radius:5px;background:rgba(250,204,21,.10);color:var(--yellow);font-size:11px;font-weight:600;font-style:normal;white-space:nowrap}
+.cannot-calculate{color:var(--text-dim);font-size:11px;white-space:nowrap}
+.measured-share{white-space:nowrap;color:var(--text)}
+.measured-share small{color:var(--text-dim);font-size:10px}
 .empty-note{padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:var(--red);font-size:13px;margin-bottom:16px}
 .footer{margin-top:32px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-dim)}
 .footer a{color:var(--accent-light);text-decoration:none}
@@ -434,13 +508,13 @@ tr:hover td{background:rgba(59,130,246,0.04)}
       <div class="chart-box-sm"><canvas id="c1"></canvas></div>
     </div>
     <div class="card">
-      <h2>Pool Concentration</h2>
+      <h2>Measured Pool Concentration</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 8px;line-height:1.5">{pool_conc_summary}</p>
       <div class="chart-box-sm"><canvas id="c2"></canvas></div>
     </div>
     <div class="card">
-      <h2>Top Holders</h2>
-      <p style="font-size:11px;color:var(--text-dim);margin:-8px 0 8px">Hover for the full address and balance &middot; Click a bar to copy the address.</p>
+      <h2>Top {top_chart_holder_count} Non-Pool Holders</h2>
+      <p style="font-size:11px;color:var(--text-dim);margin:-8px 0 8px">Positive end balances, ranked highest to lowest &middot; Hover for the full address and balance &middot; Click a bar to copy.</p>
       <div class="chart-box-sm"><canvas id="c3"></canvas></div>
     </div>
   </div>
@@ -460,8 +534,9 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>All Non-Pool Holders</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.{balance_note}</p>
+      <h2>Top {top_table_holder_count} Non-Pool Holders by End Balance</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 6px">Pool and DEX custody addresses are excluded. Positive end balances are ranked from highest to lowest among addresses covered by the balance query. EOA and contract addresses may both appear; this is not a complete holder census when coverage is partial.</p>
+      <p style="font-size:11px;color:var(--text-dim);margin:0 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.{balance_note}</p>
       <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>End Balance ({symbol})</th><th>Start Balance</th><th>Net Change</th><th>Peak</th><th>Tx Count</th><th></th></tr></thead><tbody>{table_top}</tbody></table></div>
     </div>
   </div>
@@ -492,9 +567,10 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <div class="grid">
     <div class="card fw">
       <h2>Liquidity Withdrawals</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Removed amount is normalized to the target-token side of each pool (no token0 + token1 double counting). USD prefers Dune amount_usd, then stablecoin quote, then pool price.</p>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Read this table in two layers: a negative raw liquidity change confirms a removal action; calculating removed {symbol}, USD value, and TVL share additionally requires token amounts. Missing token amounts are never converted to zero.</p>
+{withdrawal_quantification_note}
 {table_withdrawal_summary}
-      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor / Scope</th><th>Removed ({symbol})</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Events</th><th>Actor / Scope</th><th>Raw Liquidity Change</th><th>Removed ({symbol})</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody>{table_withdrawals}</tbody></table></div>
     </div>
   </div>
 
@@ -588,7 +664,7 @@ def generate_dashboard(
     portfolio_json = json.dumps(portfolio_map, indent=2)
     _write_json(out / "portfolios.json", portfolio_map)
 
-    top_holders = [h for h in holdings_data if not h.get("is_pool")][:20]
+    top_holders = _rank_non_pool_holders(holdings_data, limit=20)
     pool_holders = [h for h in holdings_data if h.get("is_pool")]
     tvl_data = metrics.get("tvl_timeline", [])
     pool_conc = metrics.get("pool_concentration", {})
@@ -603,6 +679,15 @@ def generate_dashboard(
     decimals = token_profile.get("decimals", 18)
     decimals_source = token_profile.get("decimals_source", "unknown")
     total_supply = token_profile.get("total_supply_decimal", 0) or 0
+    metrics = _refresh_withdrawal_metrics(
+        metrics,
+        liq_data,
+        verified_pools,
+        token_addr,
+        decimals,
+        pool_conc,
+        tvl_data,
+    )
     holdings_count = holdings.get("holdings_count", 0)
     total_addresses = holdings.get("total_unique_addresses", 0)
     holder_semantics = _holder_semantics(holdings_data)
@@ -632,6 +717,7 @@ def generate_dashboard(
         block_window = "… → {:,}".format(int(to_block))
     else:
         block_window = "N/A"
+    pool_liquidity = _pool_liquidity_presentation(pool_ident, metrics)
     main_pool_share = pool_conc.get("main_pool_share", 0) * 100
     main_pool_addr = pool_conc.get("main_pool", "")
     main_pool_label = _identifier_html(main_pool_addr, chain_id=chain_id)
@@ -640,16 +726,21 @@ def generate_dashboard(
     main_volume_label = _identifier_html(main_volume_addr, chain_id=chain_id)
     if main_pool_addr and main_volume_addr:
         pool_conc_summary = (
-            "Main TVL pool: {} ({:.2f}%) · Main volume pool: {} ({:.2f}%)".format(
+            "Main measured liquidity pool: {} ({:.2f}%) · Main volume pool: {} ({:.2f}%)".format(
                 main_pool_label, main_pool_share, main_volume_label, main_volume_share
             )
         )
     elif main_pool_addr:
-        pool_conc_summary = "Main TVL pool: {} ({:.2f}%)".format(
+        pool_conc_summary = "Main measured liquidity pool: {} ({:.2f}%)".format(
             main_pool_label, main_pool_share
         )
     else:
         pool_conc_summary = "No active pool concentration data."
+    pool_conc_summary = (
+        '<span class="coverage-inline">{}</span><br>{}'.format(
+            pool_liquidity["coverage_title"], pool_conc_summary
+        )
+    )
 
     risk_lvl_class = risk_level.lower() if risk_level != "N/A" else "n-a"
     risk_color = _risk_color(risk_score)
@@ -670,7 +761,6 @@ def generate_dashboard(
 
     # Build tables
     table_top = _table_top_holders(top_holders, symbol, chain_id=chain_id)
-    table_pool = _table_pool_holders(pool_holders, symbol, chain_id=chain_id)
     table_ident = _table_pool_ident(
         pool_ident, metrics, decimals, symbol, chain_id=chain_id
     )
@@ -683,6 +773,7 @@ def generate_dashboard(
     table_withdrawal_summary = _table_withdrawal_summary(
         metrics, symbol, chain_id=chain_id
     )
+    withdrawal_quantification_note = _withdrawal_quantification_note(metrics)
     table_large = _table_large_wallets(metrics, symbol, chain_id=chain_id)
 
     balance_note_parts = []
@@ -724,38 +815,74 @@ def generate_dashboard(
     activity = metrics.get("wallet_activity") or {}
     large_wallet_note = (
         "Flags are independent: Trade = largest single swap; Mover = |net USD|; "
-        "Frequent = swap count; Share = cumulative activity share."
+        "Activity = swap count; Volume = cumulative wallet volume."
     )
     if activity:
         note_parts = []
+        modes = activity.get("threshold_modes") or {}
+        percentile_label = activity.get("adaptive_percentile_label") or "P99"
+        adaptive_note = activity.get("selection_mode") in (
+            "adaptive_percentile", "hybrid"
+        )
+        if adaptive_note:
+            note_parts.append(
+                "{} within {} wallets".format(
+                    percentile_label,
+                    int(activity.get("wallets_considered") or 0),
+                )
+            )
         trade_th = activity.get("large_trade_threshold_usd")
         mover_th = activity.get("mover_net_usd_threshold")
         activity_th = activity.get("activity_trade_threshold")
         if trade_th:
-            note_parts.append("Trade ≥ ${:,.0f} single swap".format(trade_th))
-        if mover_th:
-            note_parts.append("Mover ≥ ${:,.0f} |net USD|".format(mover_th))
-        if activity_th:
-            note_parts.append("Frequent ≥ {} swaps".format(int(activity_th)))
-        if activity.get("volume_ratio"):
             note_parts.append(
-                "Share ≥ {:.1%} of total volume".format(activity["volume_ratio"])
+                "Trade ≥ ${:,.0f} single swap{}".format(
+                    trade_th,
+                    " (adaptive)" if modes.get("trade") == "percentile" else "",
+                )
             )
+        if mover_th:
+            note_parts.append(
+                "Mover ≥ ${:,.0f} |net USD|{}".format(
+                    mover_th,
+                    " (adaptive)" if modes.get("mover") == "percentile" else "",
+                )
+            )
+        if activity_th:
+            note_parts.append(
+                "Activity ≥ {} swaps{}".format(
+                    int(activity_th),
+                    " (adaptive)" if modes.get("activity") == "percentile" else "",
+                )
+            )
+        volume_th = activity.get("ratio_threshold_usd")
+        if volume_th:
+            if modes.get("volume") == "fixed_ratio":
+                note_parts.append(
+                    "Share ≥ {:.2%} of total volume".format(
+                        float(activity.get("volume_ratio") or 0)
+                    )
+                )
+            else:
+                note_parts.append(
+                    "Volume ≥ ${:,.0f} (adaptive)".format(volume_th)
+                )
         if note_parts:
-            large_wallet_note = "Flags are independent: " + " · ".join(note_parts) + "."
+            prefix = (
+                "Independent adaptive signals: "
+                if adaptive_note else "Independent signals: "
+            )
+            large_wallet_note = prefix + " · ".join(note_parts) + "."
 
-    if table_pool:
-        pool_section_parts.append(f"""<div class="grid">
-    <div class="card fw">
-      <h2>DEX pool contracts (token reserves)</h2>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody>{table_pool}</tbody></table></div>
-    </div>
-  </div>""")
+    pool_reserve_section = _pool_reserve_section(pool_holders, symbol)
+    if pool_reserve_section:
+        pool_section_parts.append(pool_reserve_section)
     if table_ident:
         pool_section_parts.append(f"""<div class="grid">
     <div class="card fw">
       <h2>All Verified Pools</h2>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>TVL ({symbol})</th><th>Volume ({symbol})</th><th>TVL Share</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
+      <div class="coverage-note"><strong>{pool_liquidity['coverage_title']}</strong>{pool_liquidity['comparison_note']}<br>{pool_liquidity['method_note']}</div>
+      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>Estimated Pool Liquidity (in {html.escape(str(symbol))})</th><th>Volume ({symbol})</th><th>{pool_liquidity['share_header']}</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
     </div>
   </div>""")
     pool_section = "\n".join(pool_section_parts)
@@ -773,7 +900,7 @@ def generate_dashboard(
     <div class="card fw">
       <h2>Notable Wallets (USD)</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">{large_wallet_note}</p>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Max Single USD</th><th>Bought USD</th><th>Sold USD</th><th>Net USD</th><th>Total USD</th><th>Swap Tx</th><th>Flags</th></tr></thead><tbody>{table_large}</tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Max Single USD</th><th>Bought USD</th><th>Sold USD</th><th>Net USD</th><th>Total USD</th><th>Volume Share</th><th>Swap Tx</th><th>Flags</th></tr></thead><tbody>{table_large}</tbody></table></div>
     </div>
   </div>""")
     pool_section = "\n".join(pool_section_parts)
@@ -812,6 +939,7 @@ def generate_dashboard(
         "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
         "chain_id": int(chain_id or 0),
         "tvl_detail_json": json.dumps(tvl_details, default=str),
+        "chart_colors_json": json.dumps(_CHART_SERIES_COLORS),
         "pool_count": positive_pool_count,
         "holder_count": positive_holder_count,
         "pool_share": main_pool_share,
@@ -840,6 +968,8 @@ def generate_dashboard(
         "empty_note": empty_note,
         "total_addresses": total_addresses,
         "positive_holder_count": positive_holder_count,
+        "top_chart_holder_count": min(10, len(top_holders)),
+        "top_table_holder_count": len(top_holders),
         "balance_coverage": balance_coverage,
         "balance_source_label": balance_source_label,
         "num_pools": len(verified_pools),
@@ -856,16 +986,17 @@ def generate_dashboard(
         "table_movers": table_movers or "",
         "table_withdrawals": table_withdrawals or "",
         "table_withdrawal_summary": table_withdrawal_summary or "",
+        "withdrawal_quantification_note": withdrawal_quantification_note,
         "pool_section": pool_section,
         "js_script": js_script,
     }
-    html = _HTML_TEMPLATE
+    dashboard_html = _HTML_TEMPLATE
     for k, v in html_vars.items():
-        html = html.replace("{" + k + "}", str(v))
+        dashboard_html = dashboard_html.replace("{" + k + "}", str(v))
 
     dashboard_path = out / "dashboard.html"
     with open(dashboard_path, "w") as f:
-        f.write(html)
+        f.write(dashboard_html)
 
     return str(dashboard_path.resolve())
 
@@ -1145,7 +1276,6 @@ def _build_tvl_chart_config(
 
     labels, total_values, block_pools, use_usd = _tvl_series(tvl_data, token_decimals)
     unit = "USD" if use_usd else (symbol or "token")
-    colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
     datasets = [{
         "label": "Total ({})".format(unit),
         "data": total_values,
@@ -1157,7 +1287,7 @@ def _build_tvl_chart_config(
     }]
     pool_addresses = sorted({pa for per_pool in block_pools.values() for pa in per_pool})
     for i, pa in enumerate(pool_addresses):
-        color = colors[i % len(colors)]
+        color = _CHART_SERIES_COLORS[i % len(_CHART_SERIES_COLORS)]
         datasets.append({
             "label": _short_pool_label(pa),
             "data": [
@@ -1167,6 +1297,7 @@ def _build_tvl_chart_config(
             "borderColor": color,
             "backgroundColor": color + "33",
             "borderWidth": 1.5,
+            "borderDash": _CHART_LINE_DASHES[i % len(_CHART_LINE_DASHES)],
             "fill": False,
             "tension": 0.2,
             "pointRadius": 0,
@@ -1315,17 +1446,17 @@ def _build_price_chart_config(
         return _empty_line_config()
 
     labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
-    colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
     datasets = []
     for i, (pa, entries) in enumerate(sorted(by_pool.items())):
         vals_by_block = {t["block_number"]: t["price_usd"] for t in entries}
-        color = colors[i % len(colors)]
+        color = _CHART_SERIES_COLORS[i % len(_CHART_SERIES_COLORS)]
         datasets.append({
             "label": _short_pool_label(pa),
             "data": [vals_by_block.get(b) for b in labels],
             "borderColor": color,
             "backgroundColor": color + "33",
             "borderWidth": 1.5,
+            "borderDash": _CHART_LINE_DASHES[i % len(_CHART_LINE_DASHES)],
             "pointRadius": 0,
             "fill": False,
             "spanGaps": True,
@@ -1394,10 +1525,9 @@ def _build_volume_chart_config(
         else:
             labels.append("0")
 
-    colors = ["#f59e0b", "#22c55e", "#f43f5e", "#8b5cf6", "#14b8a6", "#60a5fa"]
     datasets = []
     for i, pa in enumerate(pool_ids):
-        color = colors[i % len(colors)]
+        color = _CHART_SERIES_COLORS[i % len(_CHART_SERIES_COLORS)]
         data = []
         for bucket in timeline:
             data.append(
@@ -1465,6 +1595,34 @@ def _is_positive_balance(row: dict[str, Any]) -> bool:
         return float(row.get("balance_decimal") or 0) > 0
     except (TypeError, ValueError):
         return False
+
+
+def _rank_non_pool_holders(
+    rows: list[dict[str, Any]], limit: int = 20
+) -> list[dict[str, Any]]:
+    """Return positive non-pool rows ranked by end balance, largest first."""
+    candidates = [
+        row
+        for row in rows
+        if not row.get("is_pool")
+        and row.get("balance_source") != "zero_fill"
+        and _is_positive_balance(row)
+    ]
+
+    def _end_balance(row: dict[str, Any]) -> float | int:
+        raw = row.get("balance_raw")
+        if raw not in (None, ""):
+            try:
+                return int(raw)
+            except (TypeError, ValueError):
+                pass
+        try:
+            return float(row.get("balance_decimal") or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    ranked = sorted(candidates, key=_end_balance, reverse=True)
+    return ranked[:max(0, int(limit))]
 
 
 def _holder_semantics(rows: list[dict[str, Any]]) -> dict[str, int]:
@@ -1763,6 +1921,8 @@ def _table_large_wallets(
     if not wallets:
         return ""
     rows = []
+    modes = activity.get("threshold_modes") or {}
+    percentile_label = activity.get("adaptive_percentile_label") or "P99"
     for i, w in enumerate(wallets, 1):
         flags = []
         trade_th = activity.get("large_trade_threshold_usd")
@@ -1770,26 +1930,43 @@ def _table_large_wallets(
         activity_th = activity.get("activity_trade_threshold")
         if w.get("large_trade"):
             flags.append(
-                "Trade ${}k+".format(int(trade_th) // 1000)
-                if trade_th else "Trade"
+                "Trade {}".format(percentile_label)
+                if modes.get("trade") == "percentile"
+                else (
+                    "Trade ${}k+".format(int(trade_th) // 1000)
+                    if trade_th else "Trade"
+                )
             )
         if w.get("large_mover"):
             flags.append(
-                "Mover ${}k+".format(int(mover_th) // 1000)
-                if mover_th else "Mover"
+                "Mover {}".format(percentile_label)
+                if modes.get("mover") == "percentile"
+                else (
+                    "Mover ${}k+".format(int(mover_th) // 1000)
+                    if mover_th else "Mover"
+                )
             )
         if w.get("high_activity"):
             flags.append(
-                "Frequent {}tx+".format(int(activity_th))
-                if activity_th else "Frequent"
+                "Activity {}".format(percentile_label)
+                if modes.get("activity") == "percentile"
+                else (
+                    "Frequent {}tx+".format(int(activity_th))
+                    if activity_th else "Frequent"
+                )
             )
         if w.get("market_share"):
-            flags.append("Share")
+            flags.append(
+                "Volume {}".format(percentile_label)
+                if modes.get("volume") == "percentile"
+                else "Share"
+            )
         flag_html = '<span class="badge-dex-other">{}</span>'.format(
             " / ".join(flags)
         )
         rows.append(
             "<tr>"
+            "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
@@ -1807,11 +1984,98 @@ def _table_large_wallets(
                 _fmt_usd(w.get("sold_usd")),
                 _fmt_usd(w.get("net_usd")),
                 _fmt_usd(w.get("total_usd")),
+                "{:.3%}".format(float(w.get("volume_share_pct") or 0) / 100.0),
                 int(w.get("swap_count") or 0),
                 flag_html,
             )
         )
     return "\n".join(rows)
+
+
+def _refresh_withdrawal_metrics(
+    metrics: dict,
+    liquidity_events: list[dict],
+    verified_pools: list[dict],
+    target_token: str,
+    token_decimals: int,
+    pool_concentration: dict,
+    timeline: list[dict],
+) -> dict:
+    """Reapply current withdrawal semantics to old Parquet/JSON output locally."""
+    removals = [
+        row for row in liquidity_events
+        if str(row.get("event_type") or "").upper() == "LIQUIDITY_REMOVE"
+    ]
+    if not removals or not verified_pools or not target_token:
+        return metrics
+
+    # Preserve the incident/window scope recorded in the existing metrics.  Old
+    # output can otherwise contain canonical rows beyond the selected incident.
+    old_events = (
+        metrics.get("withdrawal_severity", {}).get("withdrawal_events", []) or []
+    )
+    scope_keys = {
+        (
+            int(row.get("block_number", row.get("block", 0)) or 0),
+            str(row.get("pool", row.get("pool_address", "")) or "").lower(),
+        )
+        for row in old_events
+    }
+    if scope_keys:
+        scoped = [
+            row for row in removals
+            if (
+                int(row.get("block_number") or 0),
+                str(row.get("pool_address") or "").lower(),
+            ) in scope_keys
+        ]
+        if scoped:
+            removals = scoped
+
+    allowed = set(VerifiedPool.__dataclass_fields__)
+    pool_models = [
+        VerifiedPool(**{key: value for key, value in row.items() if key in allowed})
+        for row in verified_pools
+        if row.get("verified", True)
+    ]
+    refreshed = calculate_withdrawal_severity(
+        removals,
+        pre_event_tvl=int(pool_concentration.get("total_tvl") or 0),
+        incident_block=0,
+        verified_pools=pool_models,
+        target_token=target_token,
+        token_decimals=token_decimals,
+        tvl_by_pool=pool_concentration.get("per_pool_tvl") or {},
+        timeline=timeline,
+    )
+    result = dict(metrics)
+    result["withdrawal_severity"] = refreshed
+    return result
+
+
+def _withdrawal_quantification_note(metrics: dict) -> str:
+    severity = metrics.get("withdrawal_severity", {}) or {}
+    total = int(severity.get("num_withdrawals") or 0)
+    quantified = int(severity.get("quantified_withdrawals") or 0)
+    delta_only = int(severity.get("liquidity_delta_only_withdrawals") or 0)
+    unmapped = int(severity.get("unmapped_withdrawals") or 0)
+    if total <= 0:
+        return ""
+    detail = (
+        "Amount known: {:,} · Amount missing: {:,} · Pool mapping failed: {:,}."
+    ).format(quantified, delta_only, unmapped)
+    explanation = (
+        "For the {:,} missing-amount actions, the V4 query returned a negative "
+        "raw liquidity change but no token0/token1 amounts. Removed token, USD, "
+        "and TVL share therefore cannot be calculated. This is missing data—not "
+        "a zero withdrawal.".format(delta_only)
+        if delta_only else
+        "Every detected action in this window includes token amounts."
+    )
+    return (
+        '<div class="coverage-note"><strong>{:,} removal actions detected</strong>'
+        "{} {}</div>"
+    ).format(total, detail, explanation)
 
 
 def _table_withdrawal_summary(
@@ -1859,25 +2123,57 @@ def _table_withdrawals(
     events = metrics.get("withdrawal_severity", {}).get("withdrawal_events", []) or []
     if not events:
         return (
-            '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">'
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:#64748b">'
             "No liquidity removal events in this window.</td></tr>"
         )
     events = events[:top_n]
-    scale = 10 ** max(0, int(token_decimals or 18))
     rows = []
     for e in events:
+        status = str(e.get("quantification_status") or "").lower()
         removed_decimal = e.get("removed_target_decimal")
-        if removed_decimal is None:
-            amount0 = abs(int(e.get("token0_amount", e.get("amount0", "0")) or "0")) / scale
-            removed_decimal = amount0
+        if status not in {"quantified", "liquidity_delta_only", "unmapped"}:
+            status = "quantified" if removed_decimal is not None else "unmapped"
+        if status == "quantified" and removed_decimal is not None:
+            removed_html = _fmt_bal(float(removed_decimal), symbol)
+        elif status == "liquidity_delta_only":
+            removed_html = (
+                '<span class="amount-missing" title="Removal detected; this query did not return token0/token1 amounts">'
+                "Token amount not returned</span>"
+            )
+        else:
+            removed_html = (
+                '<span class="amount-missing" title="The event could not be mapped to the target-token side">'
+                "Pool/token mapping failed</span>"
+            )
+        if status == "quantified":
+            usd_html = _fmt_usd(e.get("removed_usd"))
+            share_html = _fmt_pct(e.get("pool_tvl_share"))
+        else:
+            unavailable = (
+                '<span class="cannot-calculate" '
+                'title="A token amount is required for this calculation">'
+                "Cannot calculate</span>"
+            )
+            usd_html = unavailable
+            share_html = unavailable
         actor = e.get("actor", "")
         actor_or_scope = (
             "Pool/block aggregate"
             if e.get("aggregation_scope") == "pool_block"
             else _identifier_html(actor, chain_id=chain_id)
         )
+        delta_raw = str(e.get("liquidity_delta") or "0")
+        try:
+            delta_display = "{:,}".format(int(delta_raw))
+        except (TypeError, ValueError):
+            delta_display = html.escape(delta_raw) or "-"
+        delta_html = '<span title="{}">{}</span>'.format(
+            html.escape(delta_raw, quote=True), delta_display
+        )
         rows.append(
             "<tr>"
+            "<td>{}</td>"
+            "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
             "<td>{}</td>"
@@ -1890,10 +2186,12 @@ def _table_withdrawals(
                 _identifier_html(
                     e.get("pool", e.get("pool_address", "")), chain_id=chain_id
                 ),
+                int(e.get("event_count") or 1),
                 actor_or_scope,
-                _fmt_bal(float(removed_decimal or 0), symbol),
-                _fmt_usd(e.get("removed_usd")),
-                _fmt_pct(e.get("pool_tvl_share")),
+                delta_html,
+                removed_html,
+                usd_html,
+                share_html,
                 ("{} {}".format(e.get("protocol", ""), e.get("version", ""))).strip() or "-",
             )
         )
@@ -2148,6 +2446,99 @@ def _table_pool_holders(holders: list, symbol: str, chain_id: int = 1) -> str:
     return "\n".join(rows)
 
 
+def _pool_reserve_section(holders: list, symbol: str) -> str:
+    """Explain and render the target-token balance distribution for DEX custody rows."""
+    if not holders:
+        return ""
+    safe_symbol = html.escape(str(symbol or "TOKEN"))
+    return f"""<div class="grid">
+    <div class="card fw">
+      <h2>DEX Custody Token Reserve Distribution</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px;line-height:1.55">Share of the observed {safe_symbol} balance held by identified DEX pool or custody addresses at the balance snapshot. This is not LP count or full USD TVL. V2/V3 balances are generally pool-local; a V4 PoolManager address is shared custody and may aggregate multiple V4 pools. Hover for the full address, balance, and share &middot; Click a slice to copy.</p>
+      <div class="pool-reserve-chart"><canvas id="c7"></canvas></div>
+    </div>
+  </div>"""
+
+
+def _pool_liquidity_presentation(pools: list, metrics: dict) -> dict[str, str]:
+    """Describe the denominator and coverage behind per-pool TVL shares."""
+    pool_conc = metrics.get("pool_concentration", {}) or {}
+    measured_ids = {
+        str(pool_id).lower()
+        for pool_id, value in (pool_conc.get("per_pool_tvl") or {}).items()
+        if int(value or 0) > 0
+    }
+    verified_count = len(pools)
+    measured_count = sum(
+        1
+        for pool in pools
+        if str(pool.get("pool_address") or "").lower() in measured_ids
+    )
+    coverage_pct = (
+        measured_count / verified_count * 100 if verified_count else 0.0
+    )
+    partial = measured_count < verified_count
+    prefix = "Partial coverage" if partial else "Coverage"
+    coverage_title = (
+        "{} · {} of {} verified pools measured ({:.1f}%)".format(
+            prefix, measured_count, verified_count, coverage_pct
+        )
+        if verified_count
+        else "Coverage unavailable · no verified pools"
+    )
+
+    missing_v4 = sum(
+        1
+        for pool in pools
+        if str(pool.get("version") or "").lower() == "v4"
+        and str(pool.get("pool_address") or "").lower() not in measured_ids
+    )
+    comparison_note = (
+        "The percentages below compare only the {} measured pool{}; "
+        "they do not represent all {} verified pools.".format(
+            measured_count, "" if measured_count == 1 else "s", verified_count
+        )
+        if partial
+        else "The percentages below compare all verified pools."
+    )
+    if missing_v4:
+        comparison_note += (
+            " The {} V4 pool{} {} not included because V4 Pool IDs share a "
+            "PoolManager and currently have no reliable per-pool liquidity measurement."
+        ).format(
+            missing_v4,
+            "" if missing_v4 == 1 else "s",
+            "is" if missing_v4 == 1 else "are",
+        )
+
+    source = str(pool_conc.get("source") or "none")
+    if source == "onchain":
+        method = "End-block on-chain estimate"
+    elif source == "timeline":
+        method = "Timeline-derived estimate"
+    else:
+        method = "No comparable per-pool liquidity estimate"
+    snapshot_block = pool_conc.get("snapshot_block")
+    if snapshot_block not in (None, ""):
+        try:
+            method += " · Block {:,}".format(int(snapshot_block))
+        except (TypeError, ValueError):
+            method += " · Block {}".format(snapshot_block)
+    method_note = (
+        method
+        + ". Estimated pool liquidity is expressed in target-token units, not USD. "
+        + "“Not measured” does not mean zero liquidity."
+    )
+    return {
+        "coverage_title": coverage_title,
+        "comparison_note": comparison_note,
+        "method_note": method_note,
+        "share_header": "Share Among Measured Pools ({}/{})".format(
+            measured_count, verified_count
+        ),
+    }
+
+
 def _table_pool_ident(
     pools: list,
     metrics: dict,
@@ -2170,19 +2561,43 @@ def _table_pool_ident(
         t0 = _identifier_html(p.get("token0", ""), chain_id=chain_id)
         t1 = _identifier_html(p.get("token1", ""), chain_id=chain_id)
         in_list = "Yes" if p.get("in_holders_list") else "No"
-        raw_tvl = int(tvl_lookup.get(pa, 0) or 0)
+        measured = pa in tvl_lookup and int(tvl_lookup.get(pa, 0) or 0) > 0
+        raw_tvl = int(tvl_lookup.get(pa, 0) or 0) if measured else 0
         vol_info = vol_lookup.get(pa, {}) or {}
         tvl_decimal = raw_tvl / scale if raw_tvl else 0.0
         vol_decimal = float(vol_info.get("volume_in_token", 0) or 0)
-        tvl_share = raw_tvl / total_tvl * 100 if total_tvl > 0 and raw_tvl else 0.0
+        tvl_share = raw_tvl / total_tvl * 100 if total_tvl > 0 and measured else 0.0
         vol_share = vol_decimal / total_volume * 100 if total_volume > 0 else 0.0
+        if measured:
+            tvl_cell = _fmt_bal(tvl_decimal, symbol)
+            share_label = (
+                "&lt;0.1%" if 0 < tvl_share < 0.1 else "{:.1f}%".format(tvl_share)
+            )
+            share_cell = (
+                '<span class="measured-share">{} '
+                '<small>of measured liquidity</small></span>'.format(share_label)
+            )
+        else:
+            unavailable_note = (
+                "Not measured: per-pool V4 liquidity is unavailable because V4 "
+                "Pool IDs share the PoolManager custody contract."
+                if str(p.get("version") or "").lower() == "v4"
+                else "Not measured in the current pool-liquidity snapshot."
+            )
+            safe_note = html.escape(unavailable_note, quote=True)
+            tvl_cell = '<span class="not-measured" title="{}">Not measured</span>'.format(
+                safe_note
+            )
+            share_cell = '<span class="not-measured" title="{}">Not measured</span>'.format(
+                safe_note
+            )
         rows.append(
             f"<tr><td>{_identifier_html(p.get('pool_address', ''), chain_id=chain_id)}</td>"
             f"<td>{p.get('protocol','')} {p.get('version','')}</td>"
             f"<td>{t0}/{t1}</td>"
-            f"<td>{_fmt_bal(tvl_decimal, symbol)}</td>"
+            f"<td>{tvl_cell}</td>"
             f"<td>{_fmt_bal(vol_decimal, symbol)}</td>"
-            f"<td>{tvl_share:.2f}%</td>"
+            f"<td>{share_cell}</td>"
             f"<td>{vol_share:.2f}%</td>"
             f"<td>{in_list}</td></tr>"
         )

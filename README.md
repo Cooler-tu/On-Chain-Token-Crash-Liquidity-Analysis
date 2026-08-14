@@ -38,6 +38,11 @@ End-to-end **Ethereum mainnet** tool for token liquidity / crash analysis: disco
 - Hover DEX badge for `LP` vs `Swap`. `—` = no DEX link in this window (e.g. P2P only).
 - Dashboard identifiers stay compact in tables; hover or keyboard focus reveals the full value, click copies it, and valid mainnet addresses include an Etherscan link. The Top Holders chart also reveals the full address/balance on hover and copies the address on bar click. V4 bytes32 pool IDs remain copyable without a misleading address link.
 - Dashboard holder cards now separate transfer-observed addresses from covered, positive-balance non-pool holders and disclose balance-query coverage. TVL captions follow `tvl_timeline_source`, so event reconstruction is no longer presented as a balance snapshot.
+- Notable Wallets use within-window P99 cutoffs for max single trade, absolute net flow, cumulative volume, and swap activity instead of universal `$10k / 50 swaps` defaults. Existing outputs can refresh this metric locally without Dune/RPC calls.
+- Pool timeline series use a larger dark-theme palette plus dash patterns. The DEX custody reserve view is a pie chart of observed target-token balances, explicitly separated from LP count and full USD TVL; Uniswap V4 PoolManager balances may aggregate multiple V4 pools.
+- Pool-liquidity shares disclose their denominator and measurement coverage. The current uPEG end-block estimate covers 3 of 14 verified pools; unmeasured V4 Pool IDs show `Not measured` rather than a misleading zero, and percentages are explicitly limited to measured pools.
+- Non-pool holder rankings explicitly exclude pool/custody rows and zero end balances, then sort covered addresses by end balance descending. The chart shows up to 10 and the table up to 20; EOAs and contracts can both appear, so the view is not presented as a complete holder census under partial coverage.
+- Liquidity removals now distinguish `quantified`, `liquidity-delta-only`, and `unmapped` evidence. V4 `ModifyLiquidity` rows without token amounts display `Token amount not returned` instead of a false `0.0000`; dependent USD/TVL fields say `Cannot calculate`, while a measured zero remains zero.
 
 ```bash
 set -a && source .env && set +a
@@ -45,6 +50,7 @@ python3 -m src.cli analyze uPEG \
   --from-block 25003546 --to-block 25004000 \
   --output-dir output
 python3 -m src.cli dashboard --output-dir output
+python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity
 ```
 
 ---
@@ -78,10 +84,12 @@ open output/dashboard.html
 | `discover-only` | Profile + discover + verify pools |
 | `holdings` | Rebuild holdings / pool-ID tables |
 | `dune` | Query Dune directly: `pools` / `swaps` / `tvl` / `data-map` |
-| `dashboard` | Regenerate `dashboard.html` from existing output |
+| `dashboard` | Regenerate `dashboard.html`; optionally refresh adaptive wallet selection locally |
 
 ```bash
 python3 -m src.cli dashboard --output-dir output
+# Recompute adaptive Notable Wallets from local swaps, then rebuild dashboard
+python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity
 python3 scripts/publish_site.py          # rebuild public site/
 python3 scripts/publish_site.py --serve  # preview
 ```
@@ -251,6 +259,7 @@ See `SUPPORTED_PROTOCOLS.md` for contract addresses and notes.
 - **点开一行**只看 LP 仓位，不等于 DEX 标签；悬停标签可见 `LP` / `Swap`。`—` = 本窗口无 DEX 关联（如纯转账）。
 - 看板中的地址和 Pool ID 保持短格式；悬浮或键盘聚焦可查看全文，点击即可复制。Top Holders 图表悬浮柱子会显示完整地址与余额，点击柱子复制地址。合法主网地址提供 Etherscan 跳转，V4 bytes32 poolId 只提供查看与复制，避免错误跳转。
 - 看板将“窗口内出现过的地址”与“余额已覆盖且为正的非池 Holder”分开统计，并公开余额查询覆盖率；TVL 文案按 `tvl_timeline_source` 动态显示，不再把事件累计重建误写成余额快照。
+- 撤池表区分“已量化金额”“只有 liquidity delta 信号”和“无法映射”三种证据。V4 `ModifyLiquidity` 未提供 token amount 时显示 `Token amount not returned`，依赖金额的列显示 `Cannot calculate`，不再误写成 `0.0000`；真正测得的 0 仍保留为 0。
 
 ```bash
 set -a && source .env && set +a
@@ -276,10 +285,12 @@ export ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR_API_KEY"
 | `analyze` | 完整流水线 |
 | `discover-only` | 只发现/验证池 |
 | `holdings` | 重跑持仓 |
-| `dashboard` | 用已有数据重生成看板 |
+| `dashboard` | 用已有数据重生成看板；可在本地刷新自适应钱包筛选 |
 
 ```bash
 python3 -m src.cli dashboard --output-dir output
+# 只读本地 swaps，重算 P99 Notable Wallets，不请求 Dune/RPC
+python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity
 python3 scripts/publish_site.py
 ```
 

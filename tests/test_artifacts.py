@@ -98,6 +98,8 @@ def _liquidity_row():
         "protocol": "uniswap",
         "version": "v4",
         "pool_address": "0xEEFF",
+        "token0_amount": "0",
+        "token1_amount": "0",
         "liquidity_delta": "-12345678901234567890",
         "source_event": "ModifyLiquidity",
         "tick_lower": -120,
@@ -402,6 +404,10 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertEqual(liquidity["tick_lower"], -120)
             self.assertEqual(
                 liquidity["liquidity_delta"], "-12345678901234567890"
+            )
+            self.assertFalse(liquidity["amounts_available"])
+            self.assertEqual(
+                liquidity["quantification_status"], "liquidity_delta_only"
             )
 
     def test_holdings_parquet_preserves_nested_json_summary(self):

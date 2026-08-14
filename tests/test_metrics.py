@@ -33,6 +33,21 @@ def _pool() -> VerifiedPool:
     )
 
 
+def _v4_pool() -> VerifiedPool:
+    return VerifiedPool(
+        chain_id=1,
+        protocol="uniswap",
+        version="v4",
+        architecture="singleton_pool_manager",
+        factory_address="0x0000000000000000000000000000000000000000",
+        pool_address="0x" + "ab" * 32,
+        custody_address="0x000000000004444c5dc75cB358380D2e3dE08A90",
+        token0=TARGET,
+        token1=WETH,
+        verified=True,
+    )
+
+
 class WithdrawalNormalizationTest(unittest.TestCase):
     def test_removed_target_is_not_token0_plus_token1(self):
         pool = _pool()
@@ -97,6 +112,71 @@ class WithdrawalNormalizationTest(unittest.TestCase):
         self.assertEqual(result["per_pool_removals"][0]["num_withdrawals"], 3)
         self.assertEqual(result["withdrawal_events"][0]["aggregation_scope"], "pool_block")
 
+    def test_v4_liquidity_delta_is_not_misreported_as_zero_amount(self):
+        pool = _v4_pool()
+        events = [{
+            "event_type": "LIQUIDITY_REMOVE",
+            "block_number": 5,
+            "block_timestamp": 100,
+            "pool_address": pool.pool_address,
+            "protocol": "uniswap",
+            "version": "v4",
+            "source_event": "ModifyLiquidity",
+            "token0_amount": "0",
+            "token1_amount": "0",
+            "liquidity_delta": "-779119453124748",
+            "event_count": 5,
+            "aggregation_scope": "pool_block",
+            "amounts_available": False,
+            "quantification_status": "liquidity_delta_only",
+        }]
+
+        result = calculate_withdrawal_severity(
+            events,
+            pre_event_tvl=0,
+            incident_block=0,
+            verified_pools=[pool],
+            target_token=TARGET,
+            token_decimals=18,
+        )
+
+        self.assertEqual(result["num_withdrawals"], 5)
+        self.assertEqual(result["quantified_withdrawals"], 0)
+        self.assertEqual(result["liquidity_delta_only_withdrawals"], 5)
+        row = result["withdrawal_events"][0]
+        self.assertIsNone(row["removed_target_decimal"])
+        self.assertEqual(row["liquidity_delta"], "-779119453124748")
+        self.assertEqual(row["protocol"], "uniswap")
+        self.assertEqual(row["version"], "v4")
+
+    def test_quantified_zero_remains_a_real_zero(self):
+        pool = _pool()
+        result = calculate_withdrawal_severity(
+            [{
+                "event_type": "LIQUIDITY_REMOVE",
+                "block_number": 5,
+                "pool_address": pool.pool_address,
+                "protocol": "uniswap",
+                "version": "v3",
+                "source_event": "Burn",
+                "token0_amount": "0",
+                "token1_amount": "0",
+                "liquidity_delta": "0",
+                "amounts_available": True,
+                "quantification_status": "quantified",
+            }],
+            pre_event_tvl=0,
+            incident_block=0,
+            verified_pools=[pool],
+            target_token=TARGET,
+            token_decimals=18,
+        )
+
+        self.assertEqual(result["quantified_withdrawals"], 1)
+        self.assertEqual(
+            result["withdrawal_events"][0]["removed_target_decimal"], 0.0
+        )
+
 
 class WalletActivityTest(unittest.TestCase):
     def test_flags_large_wallet_and_excludes_router(self):
@@ -151,6 +231,68 @@ class WalletActivityTest(unittest.TestCase):
         self.assertEqual(result["num_large_mover_wallets"], 1)
         self.assertEqual(result["num_notable_wallets"], 1)
         self.assertEqual(result["total_swap_volume_usd"], 100000.0)
+
+    def test_adaptive_percentiles_scale_with_market_and_window_activity(self):
+        pool = _pool()
+
+        def build(scale: float) -> dict:
+            events = []
+            for idx in range(100):
+                events.append({
+                    "event_type": "SWAP",
+                    "block_number": 10 + idx,
+                    "block_timestamp": 100 + idx,
+                    "pool_address": pool.pool_address,
+                    "actor": "0x{:040x}".format(1000 + idx),
+                    "token0_address": TARGET,
+                    "token1_address": WETH,
+                    "token0_amount": "1000000000000000000",
+                    "token1_amount": "1000000000000000000",
+                    "amount_usd": (100.0 + idx) * scale,
+                })
+            activity_actor = "0x{:040x}".format(9999)
+            for idx in range(10):
+                events.append({
+                    "event_type": "SWAP",
+                    "block_number": 1000 + idx,
+                    "block_timestamp": 1000 + idx,
+                    "pool_address": pool.pool_address,
+                    "actor": activity_actor,
+                    "token0_address": TARGET,
+                    "token1_address": WETH,
+                    "token0_amount": "1000000000000000000",
+                    "token1_amount": "1000000000000000000",
+                    "amount_usd": 1.0 * scale,
+                })
+            return calculate_wallet_activity(
+                events, [pool], TARGET, 18, adaptive_percentile=0.99
+            )
+
+        small = build(1.0)
+        large = build(1000.0)
+        self.assertEqual(small["selection_mode"], "adaptive_percentile")
+        self.assertEqual(small["adaptive_percentile_label"], "P99")
+        self.assertEqual(small["activity_trade_threshold"], 10)
+        self.assertLess(small["large_trade_threshold_usd"], 10_000.0)
+        self.assertGreater(large["large_trade_threshold_usd"], 10_000.0)
+        self.assertAlmostEqual(
+            large["large_trade_threshold_usd"],
+            small["large_trade_threshold_usd"] * 1000.0,
+            places=2,
+        )
+        small_notable = {
+            row["address"] for row in small["wallets"] if row["notable"]
+        }
+        large_notable = {
+            row["address"] for row in large["wallets"] if row["notable"]
+        }
+        self.assertEqual(small_notable, large_notable)
+        activity_wallet = next(
+            row for row in small["wallets"]
+            if row["address"] == "0x{:040x}".format(9999)
+        )
+        self.assertTrue(activity_wallet["high_activity"])
+        self.assertFalse(activity_wallet["large_trade"])
 
 
 class LocalSwapAggregatesTest(unittest.TestCase):

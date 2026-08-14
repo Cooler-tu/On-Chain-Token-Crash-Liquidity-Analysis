@@ -525,6 +525,8 @@ V4 balance 使用 20-byte PoolManager custody 地址，不使用 bytes32 poolId�
 - 时间线 `tvl_in_token` 是目标 token 单边余额，不代表池中两侧完整资产。
 - Dune 余额失败时回退到事件累加路径，口径会发生变化。
 
+Dashboard 中的 `DEX Custody Token Reserve Distribution` 使用 holdings 余额快照，展示已识别 DEX 池/托管地址持有的目标 token 余额占比。它不是 LP 数量，也不是池中两侧资产的完整 USD TVL。V2/V3 地址通常对应单池；V4 的 PoolManager 是共享托管地址，因此一个扇区可能汇总多个 V4 poolId 的余额。
+
 ---
 
 
@@ -542,6 +544,10 @@ main_pool_share = 最大池 TVL / 所有池 TVL 加总
 ```
 
 这是以目标 token 计价的近似，不是严格 USD TVL。若 RPC 路径失败，可能使用 timeline 最后一条单边 `tvl_in_token`，因此存在 `2×` 与单边口径混用风险。
+
+Dashboard 不再把缺少 per-pool 测量的池显示为 `0%`。表格使用 `Estimated Pool Liquidity (in TOKEN)` 与 `Share Among Measured Pools (measured/verified)`，并公开 snapshot block、来源和覆盖率。百分比的分母只包含 `per_pool_tvl` 中成功得到正值的池；V4 Pool ID 因共享 PoolManager、不能从合约 `balanceOf` 直接拆分时显示 `Not measured`。因此当前 uPEG 的 `99.4%` 应读作“占 3 个已测池总量的 99.4%”，而不是占全部 14 个 verified pools。
+
+`Top Non-Pool Holders` 不是全量持有人清单：Dashboard 排除 `is_pool=true` 的池/托管地址和非正期末余额，再按 end balance 降序排列；柱状图最多 10 行，明细表最多 20 行。`Non-Pool` 仅表示未被标记为池，仍可包含 EOA、Treasury、交易所或其他合约。排名范围受 balance-query coverage 约束。
 
 ---
 
@@ -574,6 +580,7 @@ main_pool_share = 最大池 TVL / 所有池 TVL 加总
 2. 只归一化目标 token 一侧，不再把 token0+token1 直接相加。
 3. Dune 聚合行用 `event_count` 保留原事件数量。
 4. USD 优先使用事件 `amount_usd`，其次 stable quote，再次使用 timeline price。
+5. 量化覆盖使用三态：`quantified` 表示 token amount 已知；`liquidity_delta_only` 表示已确认流动性减少但缺少 token amount；`unmapped` 表示无法可靠映射目标 token 侧。只有第一种状态才计算 token、USD 和 TVL share。
 
 公式：
 
@@ -582,9 +589,9 @@ severity =
   min(total_removed_target_raw / pre_event_tvl_raw, 1)
 ```
 
-输出：总撤出、估算 USD、分池撤出、占池 TVL 比、withdrawal severity。
+输出：检测事件数与三态覆盖计数；对已量化事件再输出总撤出、估算 USD、分池撤出、占池 TVL 比、withdrawal severity。
 
-限制：分母可能来自 `2×` pool concentration，而分子是目标 token 单边，当前可能低估或高估 severity。
+限制：Uniswap V4 `ModifyLiquidity` 只直接提供 `liquidityDelta`，不直接提供 amount0/amount1；这类行只能证明发生了 removal activity，不能从 delta 直接换算 token 或 USD。Dashboard 因此显示 `Token amount not returned`，相关 USD/TVL 列显示 `Cannot calculate`，不会把零占位误报为真实 0。另一个限制是分母可能来自 `2×` pool concentration，而分子是目标 token 单边，当前可能低估或高估 severity。
 
 ---
 
@@ -596,16 +603,26 @@ severity =
 
 - 按 actor 聚合买入 USD、卖出 USD、净流量、交易次数
 - 排除 pool/router/custody 等基础设施地址
-- 标记 large trade、large mover、high activity、market share
+- 标记 large trade、large mover、high activity、cumulative volume
 
-默认主要阈值：
+默认不再跨 token 使用固定 `$10k / 50 swaps`。系统在每个 token、每个分析窗口内，分别计算以下指标的 **P99（exclusive percentile）**：
 
-- 单笔约 ≥ $10k
-- 净流量绝对值约 ≥ $10k
-- 交易次数 ≥ 50
-- 市场份额 ≥ 总量 0.1%
+- `max_single_usd`：最大单笔交易
+- `abs(net_usd)`：方向性净流量
+- `total_usd`：累计成交额
+- `swap_count`：交易活跃度
+
+任一指标进入窗口内 P99 即成为 Notable Wallet。这样阈值随 token 规模、市场活跃度和分析窗口自动变化；Dashboard 同时显示本次实际阈值、成交量占比与 P99 标签。显式传入旧参数时仍可使用固定阈值模式，便于回归和特定研究假设。
 
 输出：`metrics.json.wallet_activity`，Dashboard 显示 Notable Wallets。
+
+已有输出无需重跑链上查询，可在本地刷新筛选结果：
+
+```bash
+python3 -m src.cli dashboard \
+  --output-dir output \
+  --refresh-wallet-activity
+```
 
 ---
 
@@ -683,6 +700,8 @@ incident_timeline.json
 - `address_dex.json`
 - `portfolios.json`
 - `dashboard.html`
+
+Dashboard 重建时会用 canonical `liquidity_events` 在本地重新应用当前 withdrawal 三态语义，因此旧输出无需再次访问 Dune/RPC，也能把 V4 的未知金额从真实 0 中区分出来。
 
 ---
 
@@ -853,4 +872,3 @@ python3 -m src.cli analyze <TOKEN> \
 ## 10. 最短总述
 
 > 系统先用 Dune 发现活跃池、持有人和窗口事件，再用 RPC 做 token/pool 验证与关键时点状态。`dex.trades` 逐笔只拉一次（swaps）；volume/price 在本地按桶聚合，有 swaps 时不再重查。发现池仍有一次独立的 `pools` GROUP BY。Dune 流动性事件按 pool+block 聚合。Holdings 的 start/end/peak/moved 来自一次 `tokens_ethereum.balances` 窗口查询，本地做差，不通过 Transfer 全量重放。TVL = 日级池余额 × 桶内最后成交价。最后由本地 Python 计算集中度、撤池严重度和规则型风险分。当前仍存在 latest/to_block、日级余额/小时价格和单边/2× TVL 混用，需要在结论中明确限制。
-

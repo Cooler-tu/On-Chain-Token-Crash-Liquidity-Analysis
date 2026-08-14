@@ -350,6 +350,8 @@ def _liquidity_schema(pa):
             pa.field("event_count", pa.int64(), nullable=False),
             pa.field("aggregation_scope", pa.string(), nullable=True),
             pa.field("amount_usd", pa.float64(), nullable=True),
+            pa.field("amounts_available", pa.bool_(), nullable=False),
+            pa.field("quantification_status", pa.string(), nullable=False),
         ],
         metadata=_schema_metadata("liquidity_events"),
     )
@@ -360,6 +362,40 @@ def _normalize_liquidity_row(row: dict[str, Any]) -> dict[str, Any]:
         raise ArtifactSchemaError("liquidity_events rows must be dictionaries")
     base = _normalize_transfer_row(row)
     base["event_type"] = str(row.get("event_type") or "")
+    try:
+        delta_nonzero = int(row.get("liquidity_delta") or 0) != 0
+    except (TypeError, ValueError):
+        delta_nonzero = False
+    amounts_available = row.get("amounts_available")
+    if amounts_available is None:
+        # Legacy V4 ModifyLiquidity artifacts contain a real liquidityDelta but
+        # use zero placeholders for token amounts.  Do not silently reinterpret
+        # those placeholders as measured zero withdrawals.
+        version = str(row.get("version") or "").lower()
+        source_event = str(row.get("source_event") or "").lower()
+        try:
+            amounts_zero = (
+                int(row.get("token0_amount") or 0) == 0
+                and int(row.get("token1_amount") or 0) == 0
+            )
+        except (TypeError, ValueError):
+            amounts_zero = False
+        v4_delta_only = (
+            version in ("v4", "4")
+            and source_event == "modifyliquidity"
+            and delta_nonzero
+            and amounts_zero
+        )
+        amounts_available = not v4_delta_only
+    amounts_available = bool(amounts_available)
+    quantification_status = str(row.get("quantification_status") or "").lower()
+    if quantification_status not in {
+        "quantified", "liquidity_delta_only", "unmapped"
+    }:
+        quantification_status = "quantified" if amounts_available else (
+            "liquidity_delta_only" if delta_nonzero
+            else "unmapped"
+        )
     base.update(
         {
             "tick_lower": (
@@ -382,6 +418,8 @@ def _normalize_liquidity_row(row: dict[str, Any]) -> dict[str, Any]:
                 if row.get("amount_usd") is not None
                 else None
             ),
+            "amounts_available": amounts_available,
+            "quantification_status": quantification_status,
         }
     )
     return base

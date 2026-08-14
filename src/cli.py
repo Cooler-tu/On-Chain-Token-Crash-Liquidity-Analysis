@@ -33,13 +33,13 @@ from .verification.verifier import verify_pools
 from .indexer.indexer import index_events
 from .analysis.positions import analyze_positions
 from .analysis.labels import analyze_labels, find_deployer
-from .analysis.metrics import calculate_all_metrics
+from .analysis.metrics import calculate_all_metrics, calculate_wallet_activity
 from .analysis.timeline import analyze_timeline
 from .analysis.risk import compute_risk
 from .report.generator import generate_report
 from .analysis.holdings import analyze_holdings
 from .analysis.dashboard import generate_dashboard
-from .data.artifacts import combine_event_tables
+from .data.artifacts import combine_event_tables, read_table
 
 app = typer.Typer()
 
@@ -719,6 +719,11 @@ def holdings(
 @app.command()
 def dashboard(
     output_dir: str = typer.Option("output", help="Output directory"),
+    refresh_wallet_activity: bool = typer.Option(
+        False,
+        "--refresh-wallet-activity",
+        help="Recompute adaptive Notable Wallets from local swap artifacts",
+    ),
 ):
     """Step 3: Generate a visual HTML dashboard from analysis results.
 
@@ -726,6 +731,49 @@ def dashboard(
     output files to already exist in the output directory. Large row tables
     are read Parquet-first with legacy JSON fallback.
     """
+    if refresh_wallet_activity:
+        out = Path(output_dir)
+        profile_path = out / "token_profile.json"
+        pools_path = out / "verified_pools.json"
+        metrics_path = out / "metrics.json"
+        if not (profile_path.exists() and pools_path.exists() and metrics_path.exists()):
+            typer.echo(
+                "Cannot refresh wallet activity: token_profile.json, "
+                "verified_pools.json, and metrics.json are required.",
+                err=True,
+            )
+            raise typer.Exit(1)
+        profile = json.loads(profile_path.read_text())
+        verified_pools = [
+            VerifiedPool(**dict(row))
+            for row in json.loads(pools_path.read_text())
+        ]
+        swaps = read_table(
+            "swaps", out, prefer="parquet", legacy_rows=True
+        )
+        try:
+            tvl_timeline = read_table(
+                "tvl_timeline", out, prefer="parquet", legacy_rows=True
+            )
+        except FileNotFoundError:
+            tvl_timeline = []
+        wallet_activity = calculate_wallet_activity(
+            swaps,
+            verified_pools,
+            str(profile.get("address") or ""),
+            int(profile.get("decimals") or 18),
+            timeline=tvl_timeline,
+        )
+        metrics = json.loads(metrics_path.read_text())
+        metrics["wallet_activity"] = wallet_activity
+        _write_json(metrics_path, metrics)
+        typer.echo(
+            "Wallet activity refreshed locally: {} notable / {} wallets ({})".format(
+                wallet_activity.get("num_notable_wallets", 0),
+                wallet_activity.get("wallets_considered", 0),
+                wallet_activity.get("adaptive_percentile_label", "adaptive"),
+            )
+        )
     dashboard_path = generate_dashboard(output_dir=output_dir)
     typer.echo("Dashboard generated: {}".format(dashboard_path))
 

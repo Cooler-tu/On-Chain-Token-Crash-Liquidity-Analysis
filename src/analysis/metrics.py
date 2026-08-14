@@ -1403,6 +1403,38 @@ def calculate_withdrawal_severity(
             return a1, a0, pt0, _known_decimals(pt0)
         return 0, 0, "", 18
 
+    def _quantification_status(
+        evt: dict, pool: Optional[VerifiedPool]
+    ) -> str:
+        """Distinguish measured zero from an event whose amount is unavailable."""
+        if pool is None:
+            return "unmapped"
+        explicit = str(evt.get("quantification_status") or "").lower()
+        if explicit in {"quantified", "liquidity_delta_only", "unmapped"}:
+            return explicit
+        try:
+            delta_nonzero = int(evt.get("liquidity_delta") or 0) != 0
+            amounts_zero = (
+                int(evt.get("token0_amount") or 0) == 0
+                and int(evt.get("token1_amount") or 0) == 0
+            )
+        except (TypeError, ValueError):
+            delta_nonzero = False
+            amounts_zero = False
+        amounts_available = evt.get("amounts_available")
+        if amounts_available is False:
+            return "liquidity_delta_only" if delta_nonzero else "unmapped"
+        version = str(evt.get("version") or pool.version or "").lower()
+        source_event = str(evt.get("source_event") or "").lower()
+        if (
+            version in ("v4", "4")
+            and source_event == "modifyliquidity"
+            and delta_nonzero
+            and amounts_zero
+        ):
+            return "liquidity_delta_only"
+        return "quantified"
+
     normalized: list[dict] = []
     per_pool: dict[str, dict[str, Any]] = defaultdict(
         lambda: {
@@ -1418,6 +1450,11 @@ def calculate_withdrawal_severity(
     total_usd = 0.0
     attributed_events = 0
     withdrawal_event_count = 0
+    quantification_counts = {
+        "quantified": 0,
+        "liquidity_delta_only": 0,
+        "unmapped": 0,
+    }
 
     for evt in pre_crash_removals:
         event_count = max(1, int(evt.get("event_count") or 1))
@@ -1429,24 +1466,42 @@ def calculate_withdrawal_severity(
         except (TypeError, ValueError):
             pass
         pool = _find_pool(evt)
+        quantification_status = _quantification_status(evt, pool)
+        quantification_counts[quantification_status] += event_count
         removed_raw, quote_raw, quote_addr, quote_dec = _normalize_removal(evt, pool)
-        if removed_raw <= 0:
+        protocol = pool.protocol if pool else str(evt.get("protocol") or "")
+        version = pool.version if pool else str(evt.get("version") or "")
+        resolved_pool_address = (
+            pool.pool_address if pool else str(evt.get("pool_address") or "")
+        )
+        pool_label = "{} {}".format(protocol, version).strip()
+        if quantification_status != "quantified" or removed_raw <= 0:
             normalized.append({
                 "block_number": evt.get("block_number", 0),
-                "pool": evt.get("pool_address", ""),
-                "pool_address": evt.get("pool_address", ""),
+                "block": evt.get("block_number", 0),
+                "ts": evt.get("block_timestamp", 0),
+                "pool": resolved_pool_address,
+                "pool_address": resolved_pool_address,
                 "actor": evt.get("actor", ""),
+                "amount0": evt.get("token0_amount", "0"),
+                "amount1": evt.get("token1_amount", "0"),
                 "token0_amount": evt.get("token0_amount", "0"),
                 "token1_amount": evt.get("token1_amount", "0"),
-                "pool_label": "",
-                "protocol": "",
-                "version": "",
-                "removed_target_decimal": None,
+                "liquidity_delta": str(evt.get("liquidity_delta") or "0"),
+                "pool_label": pool_label,
+                "protocol": protocol,
+                "version": version,
+                "removed_target_raw": 0 if quantification_status == "quantified" else None,
+                "removed_target_decimal": (
+                    0.0 if quantification_status == "quantified" else None
+                ),
                 "removed_usd": None,
                 "pool_tvl_share": None,
                 "usd_source": "",
                 "event_count": event_count,
                 "aggregation_scope": evt.get("aggregation_scope", ""),
+                "amounts_available": quantification_status == "quantified",
+                "quantification_status": quantification_status,
             })
             continue
 
@@ -1492,6 +1547,7 @@ def calculate_withdrawal_severity(
             "amount1": evt.get("token1_amount", "0"),
             "token0_amount": evt.get("token0_amount", "0"),
             "token1_amount": evt.get("token1_amount", "0"),
+            "liquidity_delta": str(evt.get("liquidity_delta") or "0"),
             "actor": evt.get("actor", ""),
             "pool_label": pool_label,
             "protocol": meta.get("protocol", ""),
@@ -1504,6 +1560,8 @@ def calculate_withdrawal_severity(
             "usd_source": usd_source,
             "event_count": event_count,
             "aggregation_scope": evt.get("aggregation_scope", ""),
+            "amounts_available": True,
+            "quantification_status": "quantified",
         })
 
         agg = per_pool[pool_key]
@@ -1552,6 +1610,11 @@ def calculate_withdrawal_severity(
     return {
         "num_withdrawals": withdrawal_event_count,
         "attributed_withdrawals": attributed_events,
+        "quantified_withdrawals": quantification_counts["quantified"],
+        "liquidity_delta_only_withdrawals": quantification_counts[
+            "liquidity_delta_only"
+        ],
+        "unmapped_withdrawals": quantification_counts["unmapped"],
         "total_removed_token0": legacy_total,
         "legacy_total_removed_token0": legacy_total,
         "total_removed_target_raw": total_target_raw,
@@ -1564,12 +1627,43 @@ def calculate_withdrawal_severity(
             "Removed target-token amount is normalized to the pool side holding "
             "the target token (no token0 + token1 double counting). USD prefers "
             "event amount_usd, then stablecoin quote, then target amount x pool "
-            "price_usd at or before the event block."
+            "price_usd at or before the event block. Quantified zero is kept as "
+            "zero; V4 ModifyLiquidity rows without token amounts are classified "
+            "as liquidity_delta_only rather than treated as zero."
         ),
         "withdrawal_events": sorted(
             normalized, key=lambda e: -int(e.get("block_number") or 0)
         ),
     }
+
+
+def _exclusive_percentile(values: list[float], percentile: float) -> float:
+    """Return an exclusive percentile suitable for outlier cutoffs.
+
+    The ``(n + 1) * p`` position keeps a P99 cutoff near the largest values
+    for smaller samples instead of collapsing to the modal value (especially
+    important for integer swap counts with many ties).
+    """
+    ordered = sorted(float(v) for v in values if math.isfinite(float(v)))
+    if not ordered:
+        return 0.0
+    if len(ordered) == 1:
+        return ordered[0]
+    q = min(1.0, max(0.0, float(percentile)))
+    position = q * (len(ordered) + 1) - 1
+    if position <= 0:
+        return ordered[0]
+    if position >= len(ordered) - 1:
+        return ordered[-1]
+    lower = int(math.floor(position))
+    fraction = position - lower
+    return ordered[lower] + (ordered[lower + 1] - ordered[lower]) * fraction
+
+
+def _percentile_rank(value: float, ordered: list[float]) -> float:
+    if not ordered:
+        return 0.0
+    return 100.0 * bisect.bisect_right(ordered, float(value)) / len(ordered)
 
 
 def calculate_wallet_activity(
@@ -1578,19 +1672,20 @@ def calculate_wallet_activity(
     target_token: str,
     token_decimals: int,
     timeline: Optional[list[dict]] = None,
-    min_large_trade_usd: float = 10_000.0,
-    mover_net_usd: float = 10_000.0,
-    min_activity_trades: int = 50,
-    volume_ratio: float = 0.001,
+    min_large_trade_usd: Optional[float] = None,
+    mover_net_usd: Optional[float] = None,
+    min_activity_trades: Optional[int] = None,
+    volume_ratio: Optional[float] = None,
+    adaptive_percentile: float = 0.99,
     top_n: int = 200,
 ) -> dict[str, Any]:
-    """Aggregate USD-valued swap activity per wallet with independent flags.
+    """Aggregate USD-valued swaps and select statistically unusual wallets.
 
-    ``large_trade`` means the wallet's largest single swap >=
-    ``min_large_trade_usd``; ``large_mover`` means |net USD| >=
-    ``mover_net_usd``; ``high_activity`` means swap count >=
-    ``min_activity_trades``. ``market_share`` is informational (cumulative
-    activity >= ``volume_ratio`` of total swap USD volume).
+    By default each flag uses the within-window ``adaptive_percentile`` of its
+    metric, so the cutoff scales with token size and window activity.  Passing
+    an explicit threshold keeps the former fixed-threshold behaviour for that
+    metric.  ``volume_ratio`` similarly overrides the adaptive cumulative-
+    volume cutoff when supplied.
     """
     target = Web3.to_checksum_address(target_token).lower()
     pool_meta = _swap_pool_meta(verified_pools)
@@ -1696,15 +1791,91 @@ def calculate_wallet_activity(
             s["sold_token"] += target_decimal
         s["net_usd"] += sign * usd
 
-    ratio_threshold = total_usd * volume_ratio
+    raw_rows: list[tuple[str, dict[str, Any]]] = list(stats.items())
+    max_single_values = [float(s["max_single_usd"]) for _, s in raw_rows]
+    net_values = [abs(float(s["net_usd"])) for _, s in raw_rows]
+    activity_values = [float(s["swap_count"]) for _, s in raw_rows]
+    total_values = [float(s["total_usd"]) for _, s in raw_rows]
+
+    adaptive_q = min(0.9999, max(0.50, float(adaptive_percentile)))
+    trade_mode = "fixed" if min_large_trade_usd is not None else "percentile"
+    mover_mode = "fixed" if mover_net_usd is not None else "percentile"
+    activity_mode = "fixed" if min_activity_trades is not None else "percentile"
+    volume_mode = "fixed_ratio" if volume_ratio is not None else "percentile"
+
+    trade_threshold = (
+        float(min_large_trade_usd)
+        if min_large_trade_usd is not None
+        else _exclusive_percentile(max_single_values, adaptive_q)
+    )
+    mover_threshold = (
+        float(mover_net_usd)
+        if mover_net_usd is not None
+        else _exclusive_percentile(net_values, adaptive_q)
+    )
+    activity_threshold = (
+        int(min_activity_trades)
+        if min_activity_trades is not None
+        else int(math.ceil(_exclusive_percentile(activity_values, adaptive_q)))
+    )
+    volume_threshold_usd = (
+        total_usd * float(volume_ratio)
+        if volume_ratio is not None
+        else _exclusive_percentile(total_values, adaptive_q)
+    )
+    effective_volume_ratio = (
+        volume_threshold_usd / total_usd if total_usd > 0 else 0.0
+    )
+
+    modes = {trade_mode, mover_mode, activity_mode, volume_mode}
+    if modes <= {"percentile"}:
+        selection_mode = "adaptive_percentile"
+    elif modes <= {"fixed", "fixed_ratio"}:
+        selection_mode = "fixed"
+    else:
+        selection_mode = "hybrid"
+
+    ordered_max = sorted(max_single_values)
+    ordered_net = sorted(net_values)
+    ordered_activity = sorted(activity_values)
+    ordered_total = sorted(total_values)
+    variable = {
+        "trade": len(set(max_single_values)) > 1,
+        "mover": len(set(net_values)) > 1,
+        "activity": len(set(activity_values)) > 1,
+        "volume": len(set(total_values)) > 1,
+    }
+
     rows = []
-    for addr, s in stats.items():
+    for addr, s in raw_rows:
         total = s["total_usd"]
-        large_trade = s["max_single_usd"] >= min_large_trade_usd
-        large_mover = abs(s["net_usd"]) >= mover_net_usd
-        high_activity = s["swap_count"] >= min_activity_trades
-        market_share = (
-            volume_ratio > 0 and total_usd > 0 and total >= ratio_threshold
+        max_single = float(s["max_single_usd"])
+        abs_net = abs(float(s["net_usd"]))
+        swap_count = int(s["swap_count"])
+        large_trade = max_single >= trade_threshold and (
+            trade_mode == "fixed" or variable["trade"]
+        )
+        large_mover = abs_net >= mover_threshold and (
+            mover_mode == "fixed" or variable["mover"]
+        )
+        high_activity = swap_count >= activity_threshold and (
+            activity_mode == "fixed" or variable["activity"]
+        )
+        market_share = total >= volume_threshold_usd and (
+            (volume_mode == "fixed_ratio" and float(volume_ratio or 0) > 0)
+            or (volume_mode == "percentile" and variable["volume"])
+        )
+        trade_pct = _percentile_rank(max_single, ordered_max)
+        mover_pct = _percentile_rank(abs_net, ordered_net)
+        activity_pct = _percentile_rank(swap_count, ordered_activity)
+        volume_pct = _percentile_rank(total, ordered_total)
+        # Legacy fixed-ratio ``Share`` remains informational.  The adaptive
+        # cumulative-volume outlier is a true selection signal.
+        notable = bool(
+            large_trade
+            or large_mover
+            or high_activity
+            or (market_share and volume_mode == "percentile")
         )
         rows.append({
             "address": addr,
@@ -1716,18 +1887,36 @@ def calculate_wallet_activity(
             "max_single_usd": round(s["max_single_usd"], 2),
             "bought_token": round(s["bought_token"], 6),
             "sold_token": round(s["sold_token"], 6),
+            "volume_share_pct": round(
+                (total / total_usd * 100.0) if total_usd > 0 else 0.0, 6
+            ),
+            "net_direction_pct": round(
+                (abs_net / total * 100.0) if total > 0 else 0.0, 4
+            ),
+            "trade_percentile": round(trade_pct, 4),
+            "mover_percentile": round(mover_pct, 4),
+            "activity_percentile": round(activity_pct, 4),
+            "volume_percentile": round(volume_pct, 4),
+            "notability_score": round(
+                max(trade_pct, mover_pct, activity_pct, volume_pct), 4
+            ),
             "large_trade": bool(large_trade),
             "large_mover": bool(large_mover),
             "high_activity": bool(high_activity),
             "market_share": bool(market_share),
             "large": bool(large_trade or large_mover),
-            "notable": bool(large_trade or large_mover or high_activity),
+            "notable": notable,
+            "flag_count": sum(
+                bool(flag)
+                for flag in (large_trade, large_mover, high_activity, market_share)
+            ),
         })
     rows.sort(
         key=lambda r: (
-            -float(r["max_single_usd"]),
+            -int(r["flag_count"]),
+            -float(r["notability_score"]),
             -abs(float(r["net_usd"])),
-            -int(r["swap_count"]),
+            -float(r["total_usd"]),
         )
     )
     notable_rows = [r for r in rows if r["notable"]]
@@ -1740,12 +1929,21 @@ def calculate_wallet_activity(
     ]
 
     return {
-        "large_trade_threshold_usd": min_large_trade_usd,
-        "mover_net_usd_threshold": mover_net_usd,
-        "activity_trade_threshold": min_activity_trades,
-        "volume_ratio": volume_ratio,
+        "selection_mode": selection_mode,
+        "adaptive_percentile": round(adaptive_q, 6),
+        "adaptive_percentile_label": "P{:g}".format(adaptive_q * 100),
+        "threshold_modes": {
+            "trade": trade_mode,
+            "mover": mover_mode,
+            "activity": activity_mode,
+            "volume": volume_mode,
+        },
+        "large_trade_threshold_usd": round(trade_threshold, 2),
+        "mover_net_usd_threshold": round(mover_threshold, 2),
+        "activity_trade_threshold": activity_threshold,
+        "volume_ratio": round(effective_volume_ratio, 8),
         "total_swap_volume_usd": round(total_usd, 2),
-        "ratio_threshold_usd": round(ratio_threshold, 2),
+        "ratio_threshold_usd": round(volume_threshold_usd, 2),
         "num_large_trade_wallets": sum(1 for r in rows if r["large_trade"]),
         "num_large_mover_wallets": sum(1 for r in rows if r["large_mover"]),
         "num_high_activity_wallets": sum(1 for r in rows if r["high_activity"]),
@@ -1755,11 +1953,9 @@ def calculate_wallet_activity(
         "wallets": out_rows,
         "note": (
             "USD per swap prefers Dune amount_usd, then stablecoin quote, then "
-            "target amount x pool price_usd at or before the swap block. "
-            "large_trade = max single swap >= threshold; large_mover = "
-            "|net USD| >= threshold; high_activity = swap count >= threshold; "
-            "market_share is informational (total activity >= share of total "
-            "USD volume)."
+            "target amount x pool price_usd at or before the swap block. By "
+            "default, Trade, Mover, Volume, and Activity use within-window "
+            "percentile cutoffs; explicit arguments retain fixed thresholds."
         ),
     }
 
