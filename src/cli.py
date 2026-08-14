@@ -158,6 +158,14 @@ def analyze(
             "Not a dashboard UI toggle — covers the full --from-block/--to-block range."
         ),
     ),
+    artifact_format: str = typer.Option(
+        "json",
+        help=(
+            "Artifact storage: json (legacy default) | both (JSON + Parquet "
+            "dual-write for swaps). Parquet-only becomes available after all "
+            "readers migrate."
+        ),
+    ),
 ):
     """End-to-end analysis: token → liquidity report + dashboard.
 
@@ -178,6 +186,21 @@ def analyze(
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     timer = _StepTimer()
+
+    from .data.artifacts import (
+        ArtifactDependencyError,
+        validate_artifact_environment,
+    )
+
+    try:
+        artifact_mode = validate_artifact_environment(artifact_format)
+    except (ValueError, ArtifactDependencyError) as exc:
+        raise typer.BadParameter(str(exc), param_hint="--artifact-format") from exc
+    if artifact_mode == "parquet":
+        raise typer.BadParameter(
+            "Parquet-only mode is not available during Phase 1; use 'both'",
+            param_hint="--artifact-format",
+        )
 
     token_address = _resolve_or_exit(token, chain_id, pick)
 
@@ -317,6 +340,7 @@ def analyze(
         output_dir=output_dir,
         index_token_transfer=not fast_mode,
         source=index_source,
+        artifact_format=artifact_mode,
     )
     swaps = indexed["swaps"]
     liquidity_events = indexed["liquidity_events"]

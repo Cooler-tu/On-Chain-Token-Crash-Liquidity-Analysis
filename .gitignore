@@ -9,3 +9,6 @@ __pycache__/
 .venv/
 output/
 output-*/
+*.parquet
+*.duckdb
+*.duckdb.wal

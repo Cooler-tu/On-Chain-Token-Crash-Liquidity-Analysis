@@ -9,6 +9,7 @@ from typing import Any, Callable, Optional
 
 from web3 import Web3
 
+from ..data.artifacts import validate_artifact_environment, write_table
 from ..data.dune import DuneError, query
 from ..models import VerifiedPool
 
@@ -256,9 +257,16 @@ def index_events_from_dune(
     output_dir: str | Path = "output",
     index_token_transfer: bool = True,
     force_refresh: bool = False,
+    artifact_format: str = "json",
     on_progress: Optional[ProgressFn] = None,
 ) -> dict[str, list]:
     """Pull swaps / liquidity / transfers from Dune and write indexer outputs."""
+    artifact_mode = validate_artifact_environment(artifact_format)
+    if artifact_mode == "parquet":
+        raise ValueError(
+            "Parquet-only analysis is not available during Phase 1; use "
+            "artifact_format='both' so legacy JSON readers keep working"
+        )
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     dune_dir = out / "dune_cache" / "index_{}_{}".format(from_block, to_block)
@@ -388,7 +396,9 @@ def index_events_from_dune(
         key=lambda e: (int(e.get("block_number") or 0), int(e.get("log_index") or 0)),
     )
 
-    _write_json(out / "swaps.json", swaps)
+    swaps_artifact = write_table(
+        "swaps", swaps, out, artifact_format=artifact_mode
+    )
     _write_json(out / "liquidity_events.json", liquidity)
     _write_json(out / "transfers.json", transfers)
     _write_json(out / "events_all.json", events_all)
@@ -399,6 +409,8 @@ def index_events_from_dune(
             "from_block": from_block,
             "to_block": to_block,
             "token": token,
+            "artifact_format": artifact_mode,
+            "artifacts": {"swaps": swaps_artifact},
             "dune_cache": str(dune_dir),
             "parallel_jobs": [label for label, _ in jobs],
             "counts": {

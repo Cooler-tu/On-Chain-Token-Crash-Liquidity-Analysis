@@ -94,8 +94,15 @@ python3 scripts/publish_site.py --serve  # preview
 | `--fast-mode` | Skip heavy exhaustive indexing | `false` |
 | `--output-dir` | Artifacts directory | `output` |
 | `--pools-file` | Load pool candidates from a saved Dune pools JSON (skip live discovery) | (none) |
+| `--artifact-format` | `json` or swaps dual-write as `both` (JSON + Parquet) | `json` |
 
 > Indexing is **resumable** via `event_indexer_checkpoint.json`. Change token/window or delete checkpoint to start clean.
+
+Phase 1 of the artifact-storage migration keeps JSON as the compatibility default. Use
+`--artifact-format both` to additionally write `tables/swaps.parquet`; Parquet-only mode
+will be enabled after the remaining readers and tables migrate. Parquet and DuckDB files
+are local artifacts and are not committed by default. See
+[`docs/ARTIFACT_STORAGE_DESIGN.md`](docs/ARTIFACT_STORAGE_DESIGN.md).
 
 ### Dune (optional primary data path)
 

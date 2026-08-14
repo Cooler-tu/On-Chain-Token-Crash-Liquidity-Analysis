@@ -1468,6 +1468,7 @@ def index_events(
     index_token_transfer: bool = True,
     source: str = "auto",
     force_dune_refresh: bool = False,
+    artifact_format: str = "json",
 ) -> dict[str, list]:
     """Index swaps / liquidity / transfers.
 
@@ -1476,6 +1477,15 @@ def index_events(
       - ``dune``: require Dune (raise on failure)
       - ``rpc``: Alchemy/Infura eth_getLogs path (slow on free tiers)
     """
+    from ..data.artifacts import validate_artifact_environment
+
+    artifact_mode = validate_artifact_environment(artifact_format)
+    if artifact_mode == "parquet":
+        raise ValueError(
+            "Parquet-only analysis is not available during Phase 1; use "
+            "artifact_format='both' so legacy JSON readers keep working"
+        )
+
     mode = (source or "auto").strip().lower()
     if mode not in ("auto", "dune", "rpc"):
         mode = "auto"
@@ -1501,6 +1511,7 @@ def index_events(
                 output_dir=output_dir,
                 index_token_transfer=index_token_transfer,
                 force_refresh=force_dune_refresh,
+                artifact_format=artifact_mode,
                 on_progress=lambda m: _progress(m),
             )
         except Exception as exc:
@@ -1626,6 +1637,11 @@ def index_events(
         collected.extend(token_evts)
 
     result = _flush_outputs(out, collected, from_block, to_block)
+    from ..data.artifacts import write_table
+
+    swaps_artifact = write_table(
+        "swaps", result["swaps"], out, artifact_format=artifact_mode
+    )
     _write_json(
         out / "index_source.json",
         {
@@ -1633,6 +1649,8 @@ def index_events(
             "from_block": from_block,
             "to_block": to_block,
             "token": target_token,
+            "artifact_format": artifact_mode,
+            "artifacts": {"swaps": swaps_artifact},
             "counts": {
                 "swaps": len(result["swaps"]),
                 "liquidity_events": len(result["liquidity_events"]),
