@@ -31,6 +31,7 @@
 - **Artifact storage Phase 3A** (2026-08-13) — standalone dashboard and LP-correlation prototype now read their large inputs Parquet-first with JSON fallback; volume rows are re-inflated to the existing chart contract, EIP-55 display casing is restored, and `both`-mode `metrics.json` no longer duplicates timeline arrays (66.0–93.8% smaller in existing outputs) while chart/portfolio parity remain exact; also fixed TVL click details to match volume using the point's real timestamp.
 - **Dashboard Address UX** (2026-08-13) — unified token, wallet, pool, withdrawal, TVL-detail, LP-portfolio, and Top Holders chart identifiers: hover/focus shows the full value, table/button and chart-bar clicks copy with feedback, valid Ethereum addresses link to Etherscan, and V4 bytes32 pool IDs remain copy-only.
 - **Dashboard metric semantics** (2026-08-13) — separated transfer-observed addresses from covered positive-balance non-pool holders, exposed balance coverage/source, aligned holder-distribution counts to the same definition, and made TVL captions reflect snapshot vs event-reconstructed lineage. Current uPEG output now reports 38 positive non-pool holders from 80/1,134 covered addresses and labels its TVL as event-reconstructed.
+- **Artifact storage Phase 3B** (2026-08-13) — removed new `events_all.json` generation and CLI file rereads; canonical swaps/liquidity/transfers plus a typed `position_events` table now form the sorted runtime event view without losing PositionManager NFT evidence. Added compact `holdings_summary.json`; dashboard, wallet clustering, fund flow, and site publication are Parquet-first with old JSON fallback.
 
 ---
 
@@ -50,6 +51,7 @@
 5. **Multi-chain** — Arbitrum, Base, Polygon
 6. **TVL timeline in USD** — needs price oracle (related to next-week TVL ranking, but full USD oracle is later)
 7. **Real-time monitoring** — alert on sudden liquidity changes
+8. **High-coverage holder/TVL mode (deferred)** — expand historical balance coverage and key-block TVL snapshots only when a real crash case requires it; keep optional because of Dune/RPC cost and quota risk
 
 ---
 

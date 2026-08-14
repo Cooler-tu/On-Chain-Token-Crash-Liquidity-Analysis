@@ -1,6 +1,6 @@
 # Artifact Storage Design
 
-> Status: Phase 3 reader migration in progress (2026-08-13)
+> Status: Phase 3 reader migration complete (2026-08-13)
 > Scope: local analysis artifacts produced by `python3 -m src.cli analyze`
 > Non-goal: this document does not change metric definitions, risk logic, or dashboard presentation.
 
@@ -12,7 +12,8 @@ This is convenient, but it creates four problems as analysis windows grow:
 1. Large event arrays are difficult to inspect as tables.
 2. `json.load()` parses the complete file even when a caller needs only a few columns or rows.
 3. Field names are repeated for every row, increasing file size and Git diff noise.
-4. `events_all.json` duplicates swaps, liquidity events, and transfers that already exist separately.
+4. `events_all.json` duplicates swaps, liquidity, transfers, and PositionManager evidence
+   that can be represented as canonical tables plus a logical view.
 
 The current sample is still small enough that JSON parsing is fast. The purpose of this
 change is therefore scalability, reviewability, and a clearer data contract—not a claim
@@ -112,6 +113,7 @@ These artifacts are row-oriented tables that benefit from typed columns and sele
 - `swaps.json`
 - `liquidity_events.json`
 - `transfers.json`
+- `position_events.json` (PositionManager NFT ownership evidence)
 - `holdings.json` → separate run summary from holder rows
 - `positions.json`
 - `tvl_timeline.json`
@@ -123,8 +125,9 @@ avoids special cases in downstream joins.
 
 ### 5.3 Remove as a physical artifact
 
-`events_all.json` should not exist in the final format. It duplicates the three event tables.
-Where a combined stream is needed, create a DuckDB view or query the tables independently.
+`events_all.json` should not exist in the final format. Its rows now live in swaps,
+liquidity events, transfers, and the small `position_events` table. Where a combined stream
+is needed, create an in-memory logical view, a DuckDB view, or query the tables independently.
 
 Example logical view:
 
@@ -140,7 +143,11 @@ FROM read_parquet('tables/liquidity_events.parquet')
 UNION ALL BY NAME
 SELECT 'transfer' AS event_type, block_number, block_time, transaction_hash,
        log_index, NULL AS pool_address, actor
-FROM read_parquet('tables/transfers.parquet');
+FROM read_parquet('tables/transfers.parquet')
+UNION ALL BY NAME
+SELECT 'position' AS event_type, block_number, block_time, transaction_hash,
+       log_index, pool_address, actor
+FROM read_parquet('tables/position_events.parquet');
 ```
 
 Callers that require event-specific fields should query the original table rather than the
@@ -491,9 +498,12 @@ access layer.
   Parquet-first reads so compact `metrics.json` runs remain analyzable.
 - [x] Resolve TVL click-detail volume matching from each point's real `block_timestamp`
   instead of treating a block number as a Unix timestamp.
-- [ ] Move metrics, timeline, labels, and clustering readers to the artifact access layer.
-- Replace `events_all.json` with a logical query/view.
-- Keep legacy JSON fallback for old committed demos.
+- [x] Keep metrics, timeline, labels, and positions on a sorted in-memory logical event view;
+  move wallet clustering, fund flow, and site publication to the artifact access layer.
+- [x] Replace newly generated `events_all.json` with canonical event tables plus
+  `position_events`; retain read-only fallback for old committed demos.
+- [x] Split compact `holdings_summary.json` from canonical holder rows so summary consumers
+  do not need to parse the large nested holdings document.
 
 ### Phase 4 — switch default and publication cleanup
 

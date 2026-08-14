@@ -39,6 +39,7 @@ from .analysis.risk import compute_risk
 from .report.generator import generate_report
 from .analysis.holdings import analyze_holdings
 from .analysis.dashboard import generate_dashboard
+from .data.artifacts import combine_event_tables
 
 app = typer.Typer()
 
@@ -348,6 +349,7 @@ def analyze(
     swaps = indexed["swaps"]
     liquidity_events = indexed["liquidity_events"]
     transfers = indexed["transfers"]
+    position_events = indexed.get("position_events", [])
 
     typer.echo("  {} swaps, {} liquidity events, {} transfers".format(
         len(swaps), len(liquidity_events), len(transfers)
@@ -358,12 +360,9 @@ def analyze(
         )
     )
 
-    events_all_path = out / "events_all.json"
-    if events_all_path.exists():
-        with open(events_all_path) as f:
-            events_all = json.load(f)
-    else:
-        events_all = swaps + liquidity_events + transfers
+    events_all = combine_event_tables(
+        swaps, liquidity_events, transfers, position_events
+    )
 
     # Step 7: Address labeling
     typer.echo("[7/12] Labeling addresses ...")
@@ -710,6 +709,9 @@ def holdings(
     typer.echo("\n=== Holdings Analysis Complete ===")
     typer.echo("Output files:")
     typer.echo("  holdings.json        - Full holdings data (JSON)")
+    typer.echo("  holdings_summary.json - Compact run metadata")
+    if artifact_mode == "both":
+        typer.echo("  tables/holdings.parquet - Typed holdings rows")
     typer.echo("  holdings_table.csv   - Holdings table (CSV)")
     typer.echo("  pool_identification_table.csv - Pool identification table (CSV)")
 
@@ -720,8 +722,9 @@ def dashboard(
 ):
     """Step 3: Generate a visual HTML dashboard from analysis results.
 
-    Requires holdings.json, verified_pools.json, and other analysis
-    output files to already exist in the output directory.
+    Requires holdings artifacts, verified_pools.json, and other analysis
+    output files to already exist in the output directory. Large row tables
+    are read Parquet-first with legacy JSON fallback.
     """
     dashboard_path = generate_dashboard(output_dir=output_dir)
     typer.echo("Dashboard generated: {}".format(dashboard_path))

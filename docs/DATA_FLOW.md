@@ -306,7 +306,7 @@ aggregation_scope = pool_block
 | **拿到什么** | from、to、amount_raw、tx、block/time/log |
 | **用途** | holdings refresh、DEX 关联、wallet activity |
 
-| **写出** | `swaps.json`、`liquidity_events.json`、`transfers.json`、`events_all.json`、`index_source.json`、checkpoint / `dune_cache` |
+| **写出** | `swaps`、`liquidity_events`、`transfers`、`position_events` canonical tables（JSON 和/或 Parquet）、`index_source.json`、checkpoint / `dune_cache`；combined stream 仅在内存中构建 |
 | **给谁用** | Labels、Metrics 撤池与 volume fallback、Timeline、Holdings refresh |
 
 ---

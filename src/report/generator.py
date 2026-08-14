@@ -509,7 +509,7 @@ def _add_data_sources(lines: list[str]):
     lines.append("| `verified_pools.json` | Verified pool addresses with confidence |")
     lines.append("| `swaps.json` | Normalized swap events |")
     lines.append("| `liquidity_events.json` | Normalized liquidity change events |")
-    lines.append("| `events_all.json` | All indexed events (combined) |")
+    lines.append("| Event tables | `swaps`, `liquidity_events`, and `transfers` (JSON and/or Parquet) |")
     lines.append("| `positions.json` | LP position ownership |")
     lines.append("| `address_labels.json` | Address role annotations |")
     lines.append("| `metrics.json` | TVL, concentration, and withdrawal metrics |")

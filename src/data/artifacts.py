@@ -76,6 +76,62 @@ def read_summary(
         return json.load(f)
 
 
+def read_holdings_summary(output_dir: str | Path) -> dict[str, Any]:
+    """Read the compact holdings run summary with legacy-document fallback."""
+    summary = read_summary("holdings_summary", output_dir, None)
+    if isinstance(summary, dict):
+        return dict(summary)
+    legacy = read_summary("holdings", output_dir, {})
+    if not isinstance(legacy, dict):
+        return {}
+    return {key: value for key, value in legacy.items() if key != "holdings"}
+
+
+def read_holdings_document(
+    output_dir: str | Path,
+    *,
+    prefer: str = "parquet",
+    legacy_rows: bool = True,
+) -> dict[str, Any]:
+    """Return holdings summary plus Parquet-first rows as one logical document."""
+    out = Path(output_dir)
+    legacy = read_summary("holdings", out, {})
+    legacy_rows_value = (
+        legacy.get("holdings") or [] if isinstance(legacy, dict) else []
+    )
+    try:
+        rows = read_table(
+            "holdings", out, prefer=prefer, legacy_rows=legacy_rows
+        )
+    except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+        rows = list(legacy_rows_value)
+    document = read_holdings_summary(out)
+    document["holdings"] = rows
+    return document
+
+
+def combine_event_tables(
+    swaps: Iterable[dict[str, Any]],
+    liquidity_events: Iterable[dict[str, Any]],
+    transfers: Iterable[dict[str, Any]],
+    position_events: Iterable[dict[str, Any]] = (),
+) -> list[dict[str, Any]]:
+    """Build the former ``events_all`` logical view without a duplicate file."""
+    rows = (
+        list(swaps)
+        + list(liquidity_events)
+        + list(transfers)
+        + list(position_events)
+    )
+    return sorted(
+        rows,
+        key=lambda row: (
+            int(row.get("block_number") or 0),
+            int(row.get("log_index") or 0),
+        ),
+    )
+
+
 def _pyarrow_modules():
     try:
         import pyarrow as pa
@@ -242,6 +298,13 @@ def _transfer_schema(pa):
     )
 
 
+def _position_event_schema(pa):
+    return pa.schema(
+        _event_base_fields(pa),
+        metadata=_schema_metadata("position_events"),
+    )
+
+
 def _normalize_transfer_row(row: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(row, dict):
         raise ArtifactSchemaError("transfers rows must be dictionaries")
@@ -267,6 +330,14 @@ def _normalize_transfer_row(row: dict[str, Any]) -> dict[str, Any]:
             else None
         ),
     }
+
+
+def _normalize_position_event_row(row: dict[str, Any]) -> dict[str, Any]:
+    normalized = _normalize_transfer_row(row)
+    normalized["event_type"] = str(
+        row.get("event_type") or "POSITION_TRANSFER"
+    )
+    return normalized
 
 
 def _liquidity_schema(pa):
@@ -611,6 +682,8 @@ def _table_schema(name: str, pa):
         return _swap_schema(pa), _normalize_swap_row
     if name == "transfers":
         return _transfer_schema(pa), _normalize_transfer_row
+    if name == "position_events":
+        return _position_event_schema(pa), _normalize_position_event_row
     if name == "liquidity_events":
         return _liquidity_schema(pa), _normalize_liquidity_row
     if name == "holdings":

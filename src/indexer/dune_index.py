@@ -353,6 +353,7 @@ def index_events_from_dune(
     swaps: list[dict] = []
     liquidity: list[dict] = []
     transfers: list[dict] = []
+    position_events: list[dict] = []
 
     def _consume(label: str, payload: Any) -> None:
         nonlocal swaps, liquidity, transfers
@@ -391,11 +392,6 @@ def index_events_from_dune(
     if index_token_transfer:
         _progress("Dune: {} transfer(s)".format(len(transfers)), on_progress)
 
-    events_all = sorted(
-        swaps + liquidity + transfers,
-        key=lambda e: (int(e.get("block_number") or 0), int(e.get("log_index") or 0)),
-    )
-
     table_artifacts = {
         "swaps": write_table(
             "swaps", swaps, out, artifact_format=artifact_mode
@@ -406,8 +402,10 @@ def index_events_from_dune(
         "transfers": write_table(
             "transfers", transfers, out, artifact_format=artifact_mode
         ),
+        "position_events": write_table(
+            "position_events", position_events, out, artifact_format=artifact_mode
+        ),
     }
-    _write_json(out / "events_all.json", events_all)
     _write_json(
         out / "index_source.json",
         {
@@ -423,6 +421,7 @@ def index_events_from_dune(
                 "swaps": len(swaps),
                 "liquidity_events": len(liquidity),
                 "transfers": len(transfers),
+                "position_events": len(position_events),
             },
             "notes": [
                 "Swaps from dex.trades (all DEXes, filtered by token).",
@@ -447,4 +446,5 @@ def index_events_from_dune(
         "swaps": swaps,
         "liquidity_events": liquidity,
         "transfers": transfers,
+        "position_events": position_events,
     }

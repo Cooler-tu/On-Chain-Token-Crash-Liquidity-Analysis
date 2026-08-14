@@ -7,10 +7,13 @@ from unittest.mock import patch
 
 from src.data.artifacts import (
     ArtifactDependencyError,
+    combine_event_tables,
     flatten_volume_timeline,
     inflate_volume_timeline,
     normalize_artifact_format,
     query_tables,
+    read_holdings_document,
+    read_holdings_summary,
     read_table,
     validate_artifact_environment,
     write_table,
@@ -25,8 +28,14 @@ from src.analysis.holdings import _write_holdings_artifacts
 from src.analysis.positions import analyze_positions, _write_position_artifacts
 from src.analysis.dashboard import _load_dashboard_inputs
 from scripts.lp_correlation import _load_analysis_inputs
+from scripts.fund_flow import _read_artifact_rows as _read_fund_flow_rows
+from scripts import publish_site
 from src.indexer.dune_index import index_events_from_dune
+from src.indexer.indexer import _assemble_outputs
 from src.models import VerifiedPool
+from src.analysis.wallet_clustering import (
+    _read_artifact_rows as _read_clustering_rows,
+)
 
 
 HAS_PYARROW = importlib.util.find_spec("pyarrow") is not None
@@ -221,6 +230,88 @@ class ArtifactFormatTest(unittest.TestCase):
             self.assertEqual(rows[0]["block_number"], 25_000_001)
             self.assertEqual(rows[0]["token0_amount"], str(2**255 + 123))
 
+    def test_event_tables_form_sorted_logical_view(self):
+        rows = combine_event_tables(
+            [{"event_type": "SWAP", "block_number": 2, "log_index": 5}],
+            [{"event_type": "LIQUIDITY_ADD", "block_number": 1, "log_index": 9}],
+            [{"event_type": "TOKEN_TRANSFER", "block_number": 2, "log_index": 1}],
+            [{"event_type": "POSITION_TRANSFER", "block_number": 1, "log_index": 10}],
+        )
+        self.assertEqual(
+            [row["event_type"] for row in rows],
+            ["LIQUIDITY_ADD", "POSITION_TRANSFER", "TOKEN_TRANSFER", "SWAP"],
+        )
+
+    def test_rpc_index_split_preserves_position_manager_transfers(self):
+        event = {
+            "_stream": "v3_pm:0xmanager",
+            "event_type": "POSITION_TRANSFER",
+            "source_event": "Transfer",
+            "block_number": 1,
+            "transaction_hash": "0xabc",
+            "log_index": 2,
+            "nft_token_id": "42",
+        }
+        swaps, liquidity, transfers, position_events = _assemble_outputs([event])
+        self.assertEqual(swaps, [])
+        self.assertEqual(liquidity, [])
+        self.assertEqual(transfers, [])
+        self.assertEqual(position_events[0]["nft_token_id"], "42")
+
+    def test_holdings_summary_reads_legacy_nested_document(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            (out / "holdings.json").write_text(json.dumps({
+                "holdings_count": 1,
+                "balance_source": "rpc",
+                "holdings": [{"address": "0xabc"}],
+            }))
+            summary = read_holdings_summary(out)
+            document = read_holdings_document(out, prefer="json")
+            self.assertNotIn("holdings", summary)
+            self.assertEqual(summary["holdings_count"], 1)
+            self.assertEqual(document["holdings"][0]["address"], "0xabc")
+
+    def test_offline_tools_keep_json_only_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            write_table("transfers", [_transfer_row()], out, "json")
+            clustering = _read_clustering_rows(out, "transfers")
+            fund_flow = _read_fund_flow_rows(out, "transfers")
+            self.assertEqual(clustering[0]["transaction_hash"], "0xA1B2C3")
+            self.assertEqual(fund_flow[0]["transaction_hash"], "0xA1B2C3")
+
+    def test_publish_discovery_skips_non_analysis_output_dirs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "output-helper").mkdir()
+            out = root / "output-token"
+            out.mkdir()
+            (out / "token_profile.json").write_text(json.dumps({
+                "symbol": "TST",
+                "name": "Test Token",
+                "address": TARGET,
+                "decimals": 18,
+            }))
+            (out / "holdings.json").write_text(json.dumps({
+                "total_unique_addresses": 2,
+                "holdings": [
+                    {"address": "0x1", "balance_raw": "1", "is_pool": False},
+                    {
+                        "address": "0x2",
+                        "balance_raw": "0",
+                        "balance_source": "zero_fill",
+                        "is_pool": False,
+                    },
+                ],
+            }))
+            (out / "verified_pools.json").write_text("[]")
+            with patch.object(publish_site, "PROJECT_ROOT", root):
+                outputs = publish_site.discover_outputs()
+            self.assertEqual(len(outputs), 1)
+            self.assertEqual(outputs[0]["symbol"], "TST")
+            self.assertEqual(outputs[0]["holdings_count"], 1)
+
     @unittest.skipIf(HAS_PYARROW, "only verifies the dependency error without PyArrow")
     def test_requested_parquet_has_clear_dependency_error(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -271,6 +362,20 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertEqual(table.num_rows, 0)
             self.assertIn("block_number", table.column_names)
 
+    def test_position_event_table_preserves_nft_evidence(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            row = {
+                **_transfer_row(),
+                "event_type": "POSITION_TRANSFER",
+                "nft_token_id": str(2**200),
+            }
+            meta = write_table("position_events", [row], tmp, "parquet")
+            stored = pq.read_table(meta["paths"]["parquet"]).to_pylist()[0]
+            self.assertEqual(stored["event_type"], "POSITION_TRANSFER")
+            self.assertEqual(stored["nft_token_id"], str(2**200))
+
     def test_transfer_and_liquidity_schemas_preserve_raw_values(self):
         import pyarrow.parquet as pq
 
@@ -315,8 +420,11 @@ class ParquetArtifactTest(unittest.TestCase):
             _write_holdings_artifacts(out, result, [row], "both")
 
             document = json.loads((out / "holdings.json").read_text())
+            summary = json.loads((out / "holdings_summary.json").read_text())
             self.assertEqual(document["from_block"], 25_000_000)
             self.assertEqual(document["holdings"][0]["address"], "0xAABB")
+            self.assertEqual(summary["from_block"], 25_000_000)
+            self.assertNotIn("holdings", summary)
             self.assertEqual(document["artifact_format"], "both")
             self.assertIn(
                 "parquet", document["artifacts"]["holdings"]["paths"]
@@ -335,6 +443,21 @@ class ParquetArtifactTest(unittest.TestCase):
                 "holdings", out, prefer="parquet", legacy_rows=True
             )
             self.assertEqual(legacy[0]["query_timestamp"], 1_778_000_200)
+            logical = read_holdings_document(out, prefer="parquet")
+            self.assertEqual(logical["holdings"][0]["address"], "0xaabb")
+
+    def test_offline_tools_prefer_parquet_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            (out / "transfers.json").write_text(json.dumps([
+                {**_transfer_row(), "transaction_hash": "0xSTALE"}
+            ]))
+            write_table("transfers", [_transfer_row()], out, "parquet")
+
+            clustering = _read_clustering_rows(out, "transfers")
+            fund_flow = _read_fund_flow_rows(out, "transfers")
+            self.assertEqual(clustering[0]["transaction_hash"], "0xa1b2c3")
+            self.assertEqual(fund_flow[0]["transaction_hash"], "0xa1b2c3")
 
     def test_positions_dual_write_preserves_protocol_fields_and_summary(self):
         import pyarrow.parquet as pq
@@ -535,6 +658,11 @@ class ParquetArtifactTest(unittest.TestCase):
             (out / "swaps.json").write_text("[]")
             (out / "liquidity_events.json").write_text("[]")
             (out / "transfers.json").write_text("[]")
+            (out / "events_all.json").write_text(json.dumps([{
+                **_transfer_row(),
+                "event_type": "POSITION_TRANSFER",
+                "nft_token_id": "77",
+            }]))
             (out / "metrics.json").write_text(json.dumps({
                 "tvl_timeline": [],
                 "volume": {
@@ -561,7 +689,8 @@ class ParquetArtifactTest(unittest.TestCase):
             inputs = _load_dashboard_inputs(out)
             self.assertEqual(inputs["holdings"]["holdings"][0]["address"], "0xaabb")
             self.assertEqual(inputs["positions"][0]["owner"], "0xddeeff")
-            self.assertEqual(len(inputs["events_all"]), 1)
+            self.assertEqual(len(inputs["events_all"]), 2)
+            self.assertEqual(inputs["position_events"][0]["nft_token_id"], "77")
             self.assertEqual(
                 inputs["metrics"]["tvl_timeline"][0]["price"],
                 _tvl_timeline_row()["price"],
@@ -683,6 +812,9 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertTrue((Path(tmp) / "tables" / "swaps.parquet").exists())
             self.assertTrue((Path(tmp) / "tables" / "transfers.parquet").exists())
             self.assertTrue(
+                (Path(tmp) / "tables" / "position_events.parquet").exists()
+            )
+            self.assertTrue(
                 (Path(tmp) / "tables" / "liquidity_events.parquet").exists()
             )
             source = json.loads((Path(tmp) / "index_source.json").read_text())
@@ -690,6 +822,8 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertEqual(source["artifacts"]["swaps"]["rows"], 1)
             self.assertEqual(source["artifacts"]["transfers"]["rows"], 0)
             self.assertEqual(source["artifacts"]["liquidity_events"]["rows"], 0)
+            self.assertEqual(source["artifacts"]["position_events"]["rows"], 0)
+            self.assertFalse((Path(tmp) / "events_all.json").exists())
 
 
 @unittest.skipUnless(

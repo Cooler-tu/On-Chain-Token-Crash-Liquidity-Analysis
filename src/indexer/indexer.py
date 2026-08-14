@@ -644,11 +644,13 @@ def _public_event(e: dict) -> dict:
     return {k: v for k, v in e.items() if not k.startswith("_")}
 
 
-def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
+def _assemble_outputs(
+    events: list[dict],
+) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
     swaps: list[dict] = []
     liquidity: list[dict] = []
     transfers: list[dict] = []
-    all_events: list[dict] = []
+    position_events: list[dict] = []
 
     for e in events:
         stream = e.get("_stream", "")
@@ -658,13 +660,13 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
 
         if stream.startswith("token:"):
             transfers.append(pub)
-            all_events.append(pub)
         elif stream.startswith("v3_pm:"):
             # Keep PM liquidity + NFT transfers so position analysis can recover tokenIds.
             if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES", "POSITION_TRANSFER"):
                 if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "COLLECT_FEES"):
                     liquidity.append(pub)
-                all_events.append(pub)
+                else:
+                    position_events.append(pub)
         # V2 / V3 / V4 pool events (v4id = topic-filtered PoolManager streams)
         elif (
             stream.startswith("v2:")
@@ -674,26 +676,23 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
         ):
             if et == "SWAP":
                 swaps.append(pub)
-                all_events.append(pub)
             elif src in ("Mint", "Burn", "Collect", "ModifyLiquidity"):
                 liquidity.append(pub)
-                all_events.append(pub)
 
         # V4 Position Manager events
         elif stream.startswith("v4pm:"):
             if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE", "POSITION_TRANSFER"):
                 if et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE"):
                     liquidity.append(pub)
-                all_events.append(pub)
+                else:
+                    position_events.append(pub)
 
         # V1 pool events
         elif stream.startswith("v1:"):
             if et == "SWAP":
                 swaps.append(pub)
-                all_events.append(pub)
             elif src in ("AddLiquidity", "RemoveLiquidity"):
                 liquidity.append(pub)
-                all_events.append(pub)
 
         # Curve pool events
         elif (
@@ -703,21 +702,17 @@ def _assemble_outputs(events: list[dict]) -> tuple[list[dict], list[dict], list[
         ):
             if et == "SWAP":
                 swaps.append(pub)
-                all_events.append(pub)
             elif src in ("AddLiquidity", "RemoveLiquidity", "RemoveLiquidityOne", "RemoveLiquidityImbalance"):
                 liquidity.append(pub)
-                all_events.append(pub)
 
         # Balancer V2 pool events (balid = topic-filtered Vault streams)
         elif stream.startswith("balancer:") or stream.startswith("balid:"):
             if et == "SWAP":
                 swaps.append(pub)
-                all_events.append(pub)
             elif et in ("LIQUIDITY_ADD", "LIQUIDITY_REMOVE"):
                 liquidity.append(pub)
-                all_events.append(pub)
 
-    return swaps, liquidity, transfers, all_events
+    return swaps, liquidity, transfers, position_events
 
 
 def _flush_outputs(
@@ -732,15 +727,16 @@ def _flush_outputs(
             e for e in events
             if from_block <= int(e.get("block_number", 0)) <= to_block
         ]
-    swaps, liquidity, transfers, all_events = _assemble_outputs(events)
+    swaps, liquidity, transfers, position_events = _assemble_outputs(events)
     _write_json(out / "swaps.json", swaps)
     _write_json(out / "liquidity_events.json", liquidity)
     _write_json(out / "transfers.json", transfers)
-    _write_json(out / "events_all.json", all_events)
+    _write_json(out / "position_events.json", position_events)
     return {
         "swaps": swaps,
         "liquidity_events": liquidity,
         "transfers": transfers,
+        "position_events": position_events,
     }
 
 
@@ -1652,6 +1648,12 @@ def index_events(
         "transfers": write_table(
             "transfers", result["transfers"], out, artifact_format=artifact_mode
         ),
+        "position_events": write_table(
+            "position_events",
+            result["position_events"],
+            out,
+            artifact_format=artifact_mode,
+        ),
     }
     _write_json(
         out / "index_source.json",
@@ -1666,6 +1668,7 @@ def index_events(
                 "swaps": len(result["swaps"]),
                 "liquidity_events": len(result["liquidity_events"]),
                 "transfers": len(result["transfers"]),
+                "position_events": len(result["position_events"]),
             },
         },
     )

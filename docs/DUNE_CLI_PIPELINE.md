@@ -925,11 +925,12 @@ quota/result size→ dune.py 缩小 block chunk
 swaps.json
 liquidity_events.json
 transfers.json
-events_all.json
+position_events.json              # RPC PositionManager evidence; Dune path may be empty
 index_source.json
 tables/swaps.parquet              # --artifact-format both
 tables/liquidity_events.parquet   # --artifact-format both
 tables/transfers.parquet          # --artifact-format both
+tables/position_events.parquet    # --artifact-format both
 tables/positions.parquet          # --artifact-format both (written in Step 5)
 ```
 
@@ -1049,7 +1050,7 @@ balance_raw / 10^decimals × price_usd
 如果 snapshot 路径失败：
 
 ```text
-events_all
+sorted in-memory event view
 → 本地累加 swaps 与 pool/block Mint/Burn aggregates
 → event_accumulate_fallback
 ```
@@ -1113,6 +1114,9 @@ timeline = analyze_timeline(
     ...
 )
 ```
+
+这里的 `events_all` 是运行时参数名；新分析由四张 canonical event tables 在内存中排序合并，
+不再回读或生成物理 `events_all.json`。旧输出仍可通过 dashboard fallback 打开。
 
 此步骤不新增 Dune 查询。
 

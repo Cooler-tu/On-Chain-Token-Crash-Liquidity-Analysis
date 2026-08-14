@@ -16,7 +16,11 @@ from typing import Any, Optional
 from web3 import Web3
 
 from ..client import get_contract, has_bytecode
-from ..data.artifacts import validate_artifact_environment, write_table
+from ..data.artifacts import (
+    validate_artifact_environment,
+    write_summary,
+    write_table,
+)
 from ..models import VerifiedPool
 
 _ZERO = "0x0000000000000000000000000000000000000000"
@@ -37,7 +41,10 @@ def _write_holdings_artifacts(
         "name": "holdings",
         "format": artifact_mode,
         "rows": len(holdings_rows),
-        "paths": {"json": str(out / "holdings.json")},
+        "paths": {
+            "json": str(out / "holdings.json"),
+            "summary": str(out / "holdings_summary.json"),
+        },
     }
     if artifact_mode == "both":
         parquet_artifact = write_table(
@@ -46,6 +53,10 @@ def _write_holdings_artifacts(
         holdings_artifact["paths"].update(parquet_artifact["paths"])
     result["artifact_format"] = artifact_mode
     result["artifacts"] = {"holdings": holdings_artifact}
+    holdings_summary = {
+        key: value for key, value in result.items() if key != "holdings"
+    }
+    write_summary("holdings_summary", holdings_summary, out)
     _write_json(out / "holdings.json", result)
 
 

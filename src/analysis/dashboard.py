@@ -13,7 +13,13 @@ from typing import Any, Optional
 
 from web3 import Web3
 
-from ..data.artifacts import ArtifactError, inflate_volume_timeline, read_table
+from ..data.artifacts import (
+    ArtifactError,
+    combine_event_tables,
+    inflate_volume_timeline,
+    read_holdings_document,
+    read_table,
+)
 
 _HTML_TEMPLATE: str | None = None
 _JS_TEMPLATE: str | None = None
@@ -2235,16 +2241,13 @@ def _read_artifact_rows(
 
 def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
     """Load summaries plus Parquet-first row tables for dashboard rendering."""
-    holdings = _load_json(out / "holdings.json", {})
+    holdings = read_holdings_document(out, prefer="parquet", legacy_rows=True)
     token_profile = _load_json(out / "token_profile.json", {})
     verified_pools = _load_json(out / "verified_pools.json", [])
     metrics = _load_json(out / "metrics.json", {})
     risk = _load_json(out / "risk_assessment.json", {})
 
     holdings = dict(holdings or {})
-    holdings["holdings"] = _read_artifact_rows(
-        out, "holdings", holdings.get("holdings") or []
-    )
     _restore_display_addresses(
         holdings["holdings"], ("address", "resolved_owner")
     )
@@ -2265,6 +2268,23 @@ def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
     )
     transfers = _read_artifact_rows(
         out, "transfers", _load_json(out / "transfers.json", [])
+    )
+    legacy_events_all = _load_json(out / "events_all.json", [])
+    position_artifact_exists = (
+        (out / "tables" / "position_events.parquet").exists()
+        or (out / "position_events.json").exists()
+    )
+    position_fallback = _load_json(out / "position_events.json", [])
+    if not position_artifact_exists:
+        position_fallback = [
+            row
+            for row in legacy_events_all
+            if (row.get("event_type") or "").upper() == "POSITION_TRANSFER"
+        ]
+    position_events = _read_artifact_rows(
+        out,
+        "position_events",
+        position_fallback,
     )
 
     metrics = dict(metrics or {})
@@ -2297,8 +2317,10 @@ def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
         volume_summary["volume_timeline"] = []
     metrics["volume"] = volume_summary
 
-    combined_events = list(swaps) + list(liquidity) + list(transfers)
-    events_all = combined_events or _load_json(out / "events_all.json", [])
+    combined_events = combine_event_tables(
+        swaps, liquidity, transfers, position_events
+    )
+    events_all = combined_events or legacy_events_all
     return {
         "holdings": holdings,
         "token_profile": token_profile,
@@ -2309,6 +2331,7 @@ def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
         "swaps": swaps,
         "liquidity_events": liquidity,
         "transfers": transfers,
+        "position_events": position_events,
         "events_all": events_all,
     }
 

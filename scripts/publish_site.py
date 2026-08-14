@@ -33,6 +33,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.analysis.dashboard import generate_dashboard  # noqa: E402
+from src.data.artifacts import read_holdings_document  # noqa: E402
 
 
 SITE_DIR = PROJECT_ROOT / "site"
@@ -50,16 +51,26 @@ def discover_outputs() -> list[dict[str, Any]]:
         if not out_dir.is_dir():
             continue
 
-        token_profile = _load_json(out_dir / "token_profile.json")
-        holdings = _load_json(out_dir / "holdings.json", {})
-        risk = _load_json(out_dir / "risk_assessment.json", {})
-        metrics = _load_json(out_dir / "metrics.json", {})
-        incident = _load_json(out_dir / "incident_timeline.json", {})
-        verified_pools = _load_json(out_dir / "verified_pools.json", [])
-
+        token_profile = _load_json(out_dir / "token_profile.json", {}) or {}
         symbol = token_profile.get("symbol", "")
         if not symbol:
             continue
+
+        holdings = read_holdings_document(
+            out_dir, prefer="parquet", legacy_rows=True
+        )
+        holdings_rows = holdings.get("holdings") or []
+        positive_holders = sum(
+            1
+            for row in holdings_rows
+            if not row.get("is_pool")
+            and row.get("balance_source") != "zero_fill"
+            and _positive_balance(row)
+        )
+        risk = _load_json(out_dir / "risk_assessment.json", {}) or {}
+        metrics = _load_json(out_dir / "metrics.json", {}) or {}
+        incident = _load_json(out_dir / "incident_timeline.json", {}) or {}
+        verified_pools = _load_json(out_dir / "verified_pools.json", []) or []
 
         # Deduplicate (keep first occurrence)
         key = symbol.lower()
@@ -78,7 +89,7 @@ def discover_outputs() -> list[dict[str, Any]]:
             "chain_id": token_profile.get("chain_id", 1),
             "decimals": token_profile.get("decimals", 18),
             "total_supply": token_profile.get("total_supply_decimal", 0) or 0,
-            "holdings_count": holdings.get("holdings_count", 0),
+            "holdings_count": positive_holders,
             "total_addresses": holdings.get("total_unique_addresses", 0),
             "num_pools": len(verified_pools),
             "risk_score": risk_score,
@@ -290,6 +301,19 @@ def _load_json(path: Path, default: Any = None) -> Any:
         except Exception:
             return default
     return default
+
+
+def _positive_balance(row: dict[str, Any]) -> bool:
+    raw = row.get("balance_raw")
+    if raw not in (None, ""):
+        try:
+            return int(raw) > 0
+        except (TypeError, ValueError):
+            pass
+    try:
+        return float(row.get("balance_decimal") or 0) > 0
+    except (TypeError, ValueError):
+        return False
 
 
 def build_site(outputs: list[dict[str, Any]]) -> Path:

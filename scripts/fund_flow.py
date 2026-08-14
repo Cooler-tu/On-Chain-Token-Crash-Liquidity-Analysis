@@ -3,7 +3,8 @@
 
 Aggregates ERC-20 Transfer events into (from, to) edges and writes
 ``fund_flow.json`` plus a top-edges summary.  Node types are inferred from
-holdings.json (pool / EOA / contract) and can be extended with CEX labels.
+the canonical holdings artifact (pool / EOA / contract) and can be extended
+with CEX labels. Parquet is preferred; legacy JSON remains supported.
 
 Usage:
     python3 scripts/fund_flow.py --output-dir output \
@@ -13,9 +14,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.data.artifacts import ArtifactError, read_table  # noqa: E402
 
 
 def _load_json(path: Path, default: Any = None) -> Any:
@@ -28,6 +35,16 @@ def _load_json(path: Path, default: Any = None) -> Any:
         return default
 
 
+def _read_artifact_rows(out: Path, name: str) -> list[dict[str, Any]]:
+    try:
+        return read_table(name, out, prefer="parquet", legacy_rows=True)
+    except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+        try:
+            return read_table(name, out, prefer="json", legacy_rows=True)
+        except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+            return []
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fund flow prototype")
     parser.add_argument("--output-dir", default="output")
@@ -36,13 +53,13 @@ def main() -> None:
     args = parser.parse_args()
 
     out = Path(args.output_dir)
-    transfers = _load_json(out / "transfers.json", [])
-    holdings = _load_json(out / "holdings.json", {})
+    transfers = _read_artifact_rows(out, "transfers")
+    holdings = _read_artifact_rows(out, "holdings")
     profile = _load_json(out / "token_profile.json", {})
     scale = 10 ** max(0, int(profile.get("decimals", 18) or 18))
 
     node_types: dict[str, str] = {}
-    for row in (holdings.get("holdings") or []):
+    for row in holdings:
         addr = str(row.get("address") or "").lower()
         if not addr:
             continue

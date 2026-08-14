@@ -27,7 +27,12 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .card h2{font-size:12px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.6px;font-weight:600}
 .stat-value{font-size:30px;font-weight:700;color:var(--text)}
 .stat-label{font-size:12px;color:var(--text-dim);margin-top:2px}
+.stat-note{font-size:10px;color:var(--text-dim);margin-top:4px;opacity:.85}
 .badge{display:inline-block;padding:3px 16px;border-radius:20px;font-weight:600;font-size:13px}
+.method-badge{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600;vertical-align:2px;text-transform:uppercase;letter-spacing:.35px}
+.method-snapshot{background:rgba(34,197,94,.13);color:var(--green)}
+.method-reconstructed{background:rgba(250,204,21,.13);color:var(--yellow)}
+.method-unavailable{background:rgba(100,116,139,.13);color:var(--text-muted)}
 .bg-low{background:rgba(34,197,94,0.12);color:var(--green)}
 .bg-medium{background:rgba(250,204,21,0.12);color:var(--yellow)}
 .bg-high{background:rgba(239,68,68,0.12);color:var(--red)}
@@ -35,11 +40,30 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .fw{grid-column:1/-1}
 .chart-box{position:relative;height:260px;width:100%}
 .chart-box-sm{position:relative;height:200px;width:100%}
+.point-details{margin-top:14px;padding:14px;background:rgba(15,23,42,0.65);border:1px solid var(--border);border-radius:8px}
+.point-details-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.point-details-title{font-size:13px;font-weight:600;color:var(--text)}
+.point-details-meta{font-size:12px;color:var(--text-dim);margin-bottom:10px}
+.detail-summary{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.detail-summary strong{color:var(--text)}
+.close-btn{border:1px solid var(--border);background:transparent;color:var(--text-muted);width:26px;height:26px;border-radius:6px;font-size:16px;line-height:1;cursor:pointer;flex:0 0 auto}
+.close-btn:hover{color:var(--text);border-color:var(--accent)}
+.muted{color:var(--text-dim)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);color:var(--text-dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
 td{padding:6px;border-bottom:1px solid #1e293b;color:#cbd5e1}
 tr:hover td{background:rgba(59,130,246,0.04)}
 .addr{font-family:'SF Mono','Fira Code','Cascadia Code','Courier New',monospace;font-size:11px;color:var(--accent-light);word-break:break-all}
+.identifier-wrap{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.identifier-copy{appearance:none;border:0;background:transparent;padding:2px 3px;border-radius:4px;cursor:pointer;white-space:nowrap;line-height:1.35}
+.identifier-copy:hover,.identifier-copy:focus-visible{background:rgba(96,165,250,.12);outline:none;color:#93c5fd}
+.identifier-copy:focus-visible{box-shadow:0 0 0 2px rgba(96,165,250,.45)}
+.identifier-link{display:inline-flex;align-items:center;justify-content:center;color:var(--text-dim);text-decoration:none;font-size:12px;width:18px;height:18px;border-radius:4px}
+.identifier-link:hover,.identifier-link:focus-visible{color:var(--accent-light);background:rgba(96,165,250,.12);outline:none}
+.identifier-tooltip{position:fixed;z-index:1000;max-width:min(620px,calc(100vw - 24px));padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:#020617;color:var(--text);box-shadow:var(--shadow);font:11px/1.4 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace;overflow-wrap:anywhere;pointer-events:none}
+.copy-toast{position:fixed;right:20px;bottom:20px;z-index:1100;padding:10px 14px;border:1px solid rgba(74,222,128,.35);border-radius:8px;background:#052e16;color:#bbf7d0;box-shadow:var(--shadow);font-size:12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .16s,transform .16s}
+.copy-toast.copy-toast-visible{opacity:1;transform:translateY(0)}
+.copy-toast.copy-toast-error{border-color:rgba(248,113,113,.35);background:#450a0a;color:#fecaca}
 .plabel{display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(96,165,250,0.12);color:var(--accent-light)}
 .scroll{max-height:360px;overflow-y:auto}
 .scroll::-webkit-scrollbar{width:5px}
@@ -52,6 +76,24 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 .empty-note{padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:var(--red);font-size:13px;margin-bottom:16px}
 .footer{margin-top:32px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-dim)}
 .footer a{color:var(--accent-light);text-decoration:none}
+.holder-row{cursor:pointer;transition:background .15s}
+.holder-row:hover{background:var(--bg-card-hover,#1e293b)}
+.expand-icon{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;border-radius:4px;background:var(--bg-card,#0f172a);color:var(--accent);font-weight:700;font-size:14px;transition:transform .2s}
+.badge-eoa{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,.15);color:#22c55e}
+.badge-contract{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(234,179,8,.15);color:#eab308}
+.badge-pool{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:#3b82f6}
+.badge-uniswap{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(255,0,122,.15);color:#ff007a;margin:1px}
+.badge-curve{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(0,0,0,.35);color:#a0aec0;margin:1px;border:1px solid #4a5568}
+.badge-balancer{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(30,144,255,.15);color:#1e90ff;margin:1px}
+.badge-dex-other{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(148,163,184,.15);color:#94a3b8;margin:1px}
+.dex-muted{color:var(--text-dim);font-size:11px}
+.portfolio-row>td{padding:0!important;background:var(--bg-card,#0f172a)}
+.portfolio-inner{padding:12px 16px 16px}
+.portfolio-table{width:100%;border-collapse:collapse;font-size:12px}
+.portfolio-table th{padding:6px 8px;text-align:left;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:600}
+.portfolio-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+.portfolio-table tr:last-child td{border-bottom:none}
+.no-positions{padding:16px;text-align:center;color:var(--text-dim);font-size:13px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}.nav-bar{flex-direction:column;gap:10px;align-items:flex-start}.nav-links a{margin-left:0;margin-right:14px}.stat-value{font-size:24px}}
 </style>
 </head>
@@ -67,83 +109,111 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   </nav>
 
   <h1>SPX <span class="symbol-muted">Holdings &amp; Liquidity</span></h1>
-  <p class="subtitle">Chain ID: 1 &middot; Token: <span class="addr">0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C</span></p>
-  
+  <p class="subtitle">Chain ID: 1 &middot; Token: <span class="identifier-wrap"><button type="button" class="identifier-copy addr" data-identifier="0x390661D13ACB3204419f9Bf7612aB072E944E8Cd" aria-label="Copy full identifier 0x390661D13ACB3204419f9Bf7612aB072E944E8Cd" onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()" onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()" onclick="copyIdentifier(event,this)">0x390661...E8Cd</button><a class="identifier-link" href="https://etherscan.io/address/0x390661D13ACB3204419f9Bf7612aB072E944E8Cd" target="_blank" rel="noopener noreferrer" title="Open in Etherscan" aria-label="Open 0x390661D13ACB3204419f9Bf7612aB072E944E8Cd in Etherscan" onclick="event.stopPropagation()">&#8599;</a></span></p>
+  <div class="empty-note">No transfer/holdings data in this block window — pool list and risk score below still reflect discovery results.</div>
 
   <div class="info-bar">
-    <div class="info-item">Analysis &middot; <span>2026-07-18 06:07:41 UTC</span></div>
+    <div class="info-item">Blocks &middot; <span>N/A</span></div>
+    <div class="info-item">Balance query &middot; <span>N/A</span></div>
+    <div class="info-item">Balance coverage &middot; <span>N/A</span></div>
+    <div class="info-item">Balance source &middot; <span>Unknown</span></div>
     <div class="info-item">Token &middot; <span>SPX6900</span></div>
-    <div class="info-item">Decimals &middot; <span>8</span></div>
+    <div class="info-item">Decimals &middot; <span>18</span> <span style="opacity:.6">(unknown)</span></div>
     
   </div>
 
   <div class="grid">
     <div class="card glow">
-      <div class="stat-value">3</div>
+      <div class="stat-value">0</div>
       <div class="stat-label">Unique Transfer Addresses</div>
     </div>
     <div class="card glow">
-      <div class="stat-value">3</div>
-      <div class="stat-label">Active Holders</div>
+      <div class="stat-value">0</div>
+      <div class="stat-label">Positive-Balance Holders</div>
+      <div class="stat-note">Non-pool addresses in covered rows</div>
     </div>
     <div class="card glow">
-      <div class="stat-value">8</div>
+      <div class="stat-value">1</div>
       <div class="stat-label">Verified Liquidity Pools</div>
     </div>
     <div class="card glow">
-      <div class="stat-value"><span class="badge bg-low">LOW</span></div>
-      <div class="stat-label">Risk Index &middot; Score <span style="color:#4ade80">0.1944</span></div>
+      <div class="stat-value"><span class="badge bg-n-a">N/A</span></div>
+      <div class="stat-label">Risk Index &middot; Score <span style="color:#4ade80">0</span></div>
     </div>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h2>Holder Distribution</h2>
+      <h2>Positive Holder Distribution</h2>
       <div class="chart-box-sm"><canvas id="c1"></canvas></div>
     </div>
     <div class="card">
       <h2>Pool Concentration</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 8px;line-height:1.5">No active pool concentration data.</p>
       <div class="chart-box-sm"><canvas id="c2"></canvas></div>
     </div>
     <div class="card">
       <h2>Top Holders</h2>
+      <p style="font-size:11px;color:var(--text-dim);margin:-8px 0 8px">Hover for the full address and balance &middot; Click a bar to copy the address.</p>
       <div class="chart-box-sm"><canvas id="c3"></canvas></div>
     </div>
   </div>
 
   <div class="grid">
-    <div class="card fw">
-      <h2>Largest token balances (pool contracts excluded)</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Ranked by ERC-20 balance. Pool <em>contracts</em> (the addresses that custody AMM reserves) are listed separately below — LP providers and other wallets are still included here. DEX = venue activity in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = no DEX link found.</p>
-      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Balance (SPX)</th><th>Tx Count</th><th>Label</th></tr></thead><tbody><tr><td>1</td><td class="addr">0x0376b46804BE07379829bb321002EC170D52cBfc</td><td>0.0000 SPX</td><td>1</td><td></td></tr>
-<tr><td>2</td><td class="addr">0x2dfaDAB8266483beD9Fd9A292Ce56596a2D1378D</td><td>0.0000 SPX</td><td>2</td><td></td></tr></tbody></table></div>
+    <div class="card">
+      <h2>Price Timeline (USD)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Swap-derived USD price per pool. Bucket from analysis window: ~month→daily 00:00 UTC; ~week/day→hourly.</p>
+      <div class="chart-box"><canvas id="c5"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Trading Volume by Pool</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Volume in SPX; stacked by pool. Same time bucket as price &amp; TVL (auto buckets).</p>
+      <div class="chart-box"><canvas id="c6"></canvas></div>
     </div>
   </div>
 
   <div class="grid">
     <div class="card fw">
-      <h2>DEX pool contracts (token reserves)</h2>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol</th><th>Balance</th><th>Label</th></tr></thead><tbody><tr><td class="addr">0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39</td><td>UNISWAP V2</td><td>12.92M SPX</td><td><span class="plabel">POOL</span></td></tr></tbody></table></div>
+      <h2>All Non-Pool Holders</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">DEX = touched that venue in this window (LP, swap, pool transfer, or same tx as a pool trade). “—” = only P2P / no DEX link found here.</p>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Address</th><th>Type</th><th>DEX</th><th>End Balance (SPX)</th><th>Start Balance</th><th>Net Change</th><th>Peak</th><th>Tx Count</th><th></th></tr></thead><tbody><tr><td colspan="10" style="text-align:center;padding:24px;color:#64748b">No holder data available</td></tr></tbody></table></div>
     </div>
   </div>
-<div class="grid">
+
+  <div class="grid">
     <div class="card fw">
       <h2>All Verified Pools</h2>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>In Holders</th></tr></thead><tbody><tr><td class="addr">0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39</td><td>uniswap v2</td><td>0xC02aaA39.../0xE0f63A42...</td><td>Yes</td></tr>
-<tr><td class="addr">0xEb8261A88eBF20f6fC6fd402a50e864FfcEFd4C6</td><td>uniswap v2</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr>
-<tr><td class="addr">0xE60FbA68Aa34040a1da64Cc661d06920853C16CF</td><td>uniswap v3</td><td>0xC02aaA39.../0xE0f63A42...</td><td>No</td></tr>
-<tr><td class="addr">0x7C706586679Af2BA6D1A9fC2DA9C6aF59883fdD3</td><td>uniswap v3</td><td>0xC02aaA39.../0xE0f63A42...</td><td>No</td></tr>
-<tr><td class="addr">0x00Ed26e794b949E18B142F9108429b74CE08aC99</td><td>uniswap v3</td><td>0xC02aaA39.../0xE0f63A42...</td><td>No</td></tr>
-<tr><td class="addr">0x95b5Dc7efdc7b9CB5A1254dF176Bb526Ad1B7C72</td><td>uniswap v3</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr>
-<tr><td class="addr">0x14167b77c5bc79C16bb4493830B2fbb74f503665</td><td>uniswap v3</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr>
-<tr><td class="addr">0xa1532d04697cCB522E4EFC8FBa5daa75A412f7b8</td><td>uniswap v3</td><td>0xA0b86991.../0xE0f63A42...</td><td>No</td></tr></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>TVL (SPX)</th><th>Volume (SPX)</th><th>TVL Share</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody><tr><td><span class="identifier-wrap"><button type="button" class="identifier-copy addr" data-identifier="0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9" aria-label="Copy full identifier 0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9" onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()" onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()" onclick="copyIdentifier(event,this)">0xd91cDa...aFe9</button><a class="identifier-link" href="https://etherscan.io/address/0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9" target="_blank" rel="noopener noreferrer" title="Open in Etherscan" aria-label="Open 0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9 in Etherscan" onclick="event.stopPropagation()">&#8599;</a></span></td><td>uniswap v3</td><td><span class="identifier-wrap"><button type="button" class="identifier-copy addr" data-identifier="0x390661D13ACB3204419f9Bf7612aB072E944E8Cd" aria-label="Copy full identifier 0x390661D13ACB3204419f9Bf7612aB072E944E8Cd" onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()" onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()" onclick="copyIdentifier(event,this)">0x390661...E8Cd</button><a class="identifier-link" href="https://etherscan.io/address/0x390661D13ACB3204419f9Bf7612aB072E944E8Cd" target="_blank" rel="noopener noreferrer" title="Open in Etherscan" aria-label="Open 0x390661D13ACB3204419f9Bf7612aB072E944E8Cd in Etherscan" onclick="event.stopPropagation()">&#8599;</a></span>/<span class="identifier-wrap"><button type="button" class="identifier-copy addr" data-identifier="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" aria-label="Copy full identifier 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()" onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()" onclick="copyIdentifier(event,this)">0xC02aaA...6Cc2</button><a class="identifier-link" href="https://etherscan.io/address/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" target="_blank" rel="noopener noreferrer" title="Open in Etherscan" aria-label="Open 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 in Etherscan" onclick="event.stopPropagation()">&#8599;</a></span></td><td>0.0000 SPX</td><td>0.0000 SPX</td><td>0.00%</td><td>0.00%</td><td>No</td></tr></tbody></table></div>
     </div>
   </div>
 
   <div class="grid">
     <div class="card fw">
-      <h2>Pool TVL Timeline</h2>
+      <h2>Pool TVL Timeline (Total + Per Pool) <span class="method-badge method-unavailable">Source unavailable</span></h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">No reliable TVL lineage is available for this output. Bucket configuration: auto buckets.</p>
       <div class="chart-box"><canvas id="c4"></canvas></div>
+      <div id="tvl-details" class="point-details" style="display:none">
+        <div class="point-details-head">
+          <div id="tvl-detail-title" class="point-details-title"></div>
+          <button type="button" class="close-btn" onclick="closeTvlDetails()" aria-label="Close details">&times;</button>
+        </div>
+        <div id="tvl-detail-meta" class="point-details-meta"></div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Pool</th><th>Protocol / Version</th><th>TVL (SPX)</th><th>TVL Share</th><th>Price (USD)</th><th>Volume (SPX)</th><th>Volume (USD)</th></tr></thead>
+            <tbody id="tvl-detail-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fw">
+      <h2>Liquidity Withdrawals</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px">Removed amount is normalized to the target-token side of each pool (no token0 + token1 double counting). USD prefers Dune amount_usd, then stablecoin quote, then pool price.</p>
+
+      <div class="scroll"><table><thead><tr><th>Block</th><th>Pool</th><th>Actor / Scope</th><th>Removed (SPX)</th><th>Est. USD</th><th>% Pool TVL</th><th>Protocol</th></tr></thead><tbody><tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No liquidity removal events in this window.</td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -152,135 +222,163 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     &middot; Data sourced from Ethereum mainnet
   </div>
 </div>
+<div id="identifier-tooltip" class="identifier-tooltip" role="tooltip" hidden></div>
+<div id="copy-toast" class="copy-toast" role="status" aria-live="polite"></div>
 <script>
-const topH = [
-  {
-    "address": "0x0376b46804BE07379829bb321002EC170D52cBfc",
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "is_pool": false,
-    "pool_label": "",
-    "tx_count": 1,
-    "first_seen_block": 19000022,
-    "last_seen_block": 19000022,
-    "query_timestamp": 1784354861
-  },
-  {
-    "address": "0x2dfaDAB8266483beD9Fd9A292Ce56596a2D1378D",
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "is_pool": false,
-    "pool_label": "",
-    "tx_count": 2,
-    "first_seen_block": 19000022,
-    "last_seen_block": 19000022,
-    "query_timestamp": 1784354861
-  }
-];
-const poolH = [
-  {
-    "address": "0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39",
-    "balance_raw": "1292354257645358",
-    "balance_decimal": 12923542.576454,
-    "is_pool": true,
-    "pool_label": "UNISWAP V2",
-    "tx_count": 1,
-    "first_seen_block": 19000022,
-    "last_seen_block": 19000022,
-    "query_timestamp": 1784354861
-  }
-];
+const topH = [];
+const poolH = [];
 const poolI = [
   {
-    "pool_address": "0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39",
-    "protocol": "uniswap",
-    "version": "v2",
-    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": null,
-    "balance_raw": "1292354257645358",
-    "balance_decimal": 12923542.576454,
-    "in_holders_list": true
-  },
-  {
-    "pool_address": "0xEb8261A88eBF20f6fC6fd402a50e864FfcEFd4C6",
-    "protocol": "uniswap",
-    "version": "v2",
-    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": null,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "in_holders_list": false
-  },
-  {
-    "pool_address": "0xE60FbA68Aa34040a1da64Cc661d06920853C16CF",
+    "pool_address": "0xd91cDa90a79D424fC2Ce22bEEDbff4878a3faFe9",
     "protocol": "uniswap",
     "version": "v3",
-    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": 500,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "in_holders_list": false
-  },
-  {
-    "pool_address": "0x7C706586679Af2BA6D1A9fC2DA9C6aF59883fdD3",
-    "protocol": "uniswap",
-    "version": "v3",
-    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": 3000,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "in_holders_list": false
-  },
-  {
-    "pool_address": "0x00Ed26e794b949E18B142F9108429b74CE08aC99",
-    "protocol": "uniswap",
-    "version": "v3",
-    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": 10000,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "in_holders_list": false
-  },
-  {
-    "pool_address": "0x95b5Dc7efdc7b9CB5A1254dF176Bb526Ad1B7C72",
-    "protocol": "uniswap",
-    "version": "v3",
-    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": 100,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "in_holders_list": false
-  },
-  {
-    "pool_address": "0x14167b77c5bc79C16bb4493830B2fbb74f503665",
-    "protocol": "uniswap",
-    "version": "v3",
-    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": 3000,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
-    "in_holders_list": false
-  },
-  {
-    "pool_address": "0xa1532d04697cCB522E4EFC8FBa5daa75A412f7b8",
-    "protocol": "uniswap",
-    "version": "v3",
-    "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "token1": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-    "fee": 10000,
-    "balance_raw": "0",
-    "balance_decimal": 0.0,
+    "token0": "0x390661D13ACB3204419f9Bf7612aB072E944E8Cd",
+    "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "in_holders_list": false
   }
 ];
 const tvlD = [];
+const portfolioData = {};
+const tokenSymbol = "SPX";
+const chainId = 1;
+const tvlPointDetails = [];
+const topChartHolders = topH.slice(0, 10);
+
+function fmtNum(v, digits){
+  if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
+  return Number(v).toLocaleString(undefined,{maximumFractionDigits:digits});
+}
+function fmtUsd(v, digits){
+  if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
+  return '$' + Number(v).toLocaleString(undefined,{maximumFractionDigits:digits});
+}
+function escTxt(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function shortIdentifier(value){
+  var text = String(value == null ? '' : value);
+  return text.length > 14 ? text.slice(0, 8) + '...' + text.slice(-4) : (text || '-');
+}
+function isEthereumAddress(value){
+  return /^0x[0-9a-fA-F]{40}$/.test(String(value || ''));
+}
+function identifierHtml(value){
+  var full = String(value == null ? '' : value);
+  if (!full) return '<span class="muted">-</span>';
+  var safe = escTxt(full);
+  var result = '<span class="identifier-wrap">'
+    + '<button type="button" class="identifier-copy addr" data-identifier="' + safe + '"'
+    + ' aria-label="Copy full identifier ' + safe + '"'
+    + ' onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()"'
+    + ' onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()"'
+    + ' onclick="copyIdentifier(event,this)">' + escTxt(shortIdentifier(full)) + '</button>';
+  if (chainId === 1 && isEthereumAddress(full)) {
+    result += '<a class="identifier-link" href="https://etherscan.io/address/' + safe + '"'
+      + ' target="_blank" rel="noopener noreferrer" title="Open in Etherscan"'
+      + ' aria-label="Open ' + safe + ' in Etherscan" onclick="event.stopPropagation()">&#8599;</a>';
+  }
+  return result + '</span>';
+}
+function showIdentifierTooltip(button){
+  var tooltip = document.getElementById('identifier-tooltip');
+  if (!tooltip || !button) return;
+  tooltip.textContent = button.getAttribute('data-identifier') || '';
+  tooltip.hidden = false;
+  var rect = button.getBoundingClientRect();
+  var left = Math.max(12, Math.min(rect.left, window.innerWidth - tooltip.offsetWidth - 12));
+  var top = rect.top - tooltip.offsetHeight - 8;
+  if (top < 8) top = rect.bottom + 8;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+function hideIdentifierTooltip(){
+  var tooltip = document.getElementById('identifier-tooltip');
+  if (tooltip) tooltip.hidden = true;
+}
+function fallbackCopyIdentifier(value){
+  var textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  var copied = document.execCommand('copy');
+  document.body.removeChild(textarea);
+  return copied;
+}
+var copyToastTimer = null;
+function showCopyToast(message, failed){
+  var toast = document.getElementById('copy-toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.toggle('copy-toast-error', !!failed);
+  toast.classList.add('copy-toast-visible');
+  if (copyToastTimer) window.clearTimeout(copyToastTimer);
+  copyToastTimer = window.setTimeout(function(){
+    toast.classList.remove('copy-toast-visible');
+  }, 1800);
+}
+async function copyIdentifierValue(event, value){
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  value = String(value || '');
+  if (!value) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+    } else if (!fallbackCopyIdentifier(value)) {
+      throw new Error('copy unavailable');
+    }
+    showCopyToast('Copied: ' + shortIdentifier(value), false);
+  } catch (err) {
+    showCopyToast('Copy failed — full value is shown on hover', true);
+  }
+}
+async function copyIdentifier(event, button){
+  var value = button ? (button.getAttribute('data-identifier') || '') : '';
+  return copyIdentifierValue(event, value);
+}
+function renderTvlDetails(index){
+  var panel = document.getElementById('tvl-details');
+  var detail = (tvlPointDetails || [])[index];
+  if (!panel || !detail) return;
+  var blockLabel = (typeof detail.block === 'number')
+    ? ('Block ' + fmtNum(detail.block, 0))
+    : escTxt(detail.block);
+  document.getElementById('tvl-detail-title').innerHTML =
+    blockLabel + (detail.time_label ? (' &middot; ' + escTxt(detail.time_label)) : '');
+  var meta = '<div class="detail-summary">Total TVL <strong>' + fmtNum(detail.total_tvl, 4) + ' ' + escTxt(tokenSymbol) + '</strong></div>';
+  if (detail.volume_bucket_label) {
+    meta += '<span style="opacity:.85">Volume bucket: ' + escTxt(detail.volume_bucket_label) + '</span>';
+  }
+  document.getElementById('tvl-detail-meta').innerHTML = meta;
+  var rows = '';
+  for (var i = 0; i < detail.pools.length; i++) {
+    var p = detail.pools[i];
+    var share = (p.share_pct == null) ? '-' : Number(p.share_pct).toFixed(2) + '%';
+    rows += '<tr>'
+      + '<td>' + identifierHtml(p.address) + '</td>'
+      + '<td>' + escTxt(p.protocol) + '</td>'
+      + '<td>' + fmtNum(p.tvl, 4) + '</td>'
+      + '<td>' + share + '</td>'
+      + '<td>' + fmtUsd(p.price_usd, 4) + '</td>'
+      + '<td>' + fmtNum(p.volume_token, 4) + '</td>'
+      + '<td>' + fmtUsd(p.volume_usd, 2) + '</td>'
+      + '</tr>';
+  }
+  document.getElementById('tvl-detail-body').innerHTML = rows;
+  panel.style.display = '';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function closeTvlDetails(){
+  var panel = document.getElementById('tvl-details');
+  if (panel) panel.style.display = 'none';
+}
 
 (function(){
   function tc(id,cfg){ new Chart(document.getElementById(id),cfg); }
@@ -288,8 +386,8 @@ const tvlD = [];
   tc('c1',{
     type:'doughnut',
     data:{
-      labels:['Pool contracts','Wallets & other contracts'],
-      datasets:[{data:[1,2],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
+      labels:['Pools with positive balance','Non-pool positive holders'],
+      datasets:[{data:[0,0],backgroundColor:['#3b82f6','#64748b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
   });
@@ -298,7 +396,7 @@ const tvlD = [];
     type:'doughnut',
     data:{
       labels:['Main Pool Share','Other Pools'],
-      datasets:[{data:[97.5312,2.4688000000000017],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
+      datasets:[{data:[0,100],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
   });
@@ -306,13 +404,88 @@ const tvlD = [];
   tc('c3',{
     type:'bar',
     data:{
-      labels:topH.slice(0,10).map(function(d){return d.address.slice(0,8)+'...';}),
-      datasets:[{label:'Balance',data:topH.slice(0,10).map(function(d){return d.balance_decimal;}),backgroundColor:'#3b82f6',borderRadius:4}]
+      labels:topChartHolders.map(function(d){return shortIdentifier(d.address);}),
+      datasets:[{label:'Balance',data:topChartHolders.map(function(d){return d.balance_decimal;}),backgroundColor:'#3b82f6',borderRadius:4}]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:function(items){
+            var row = items && items.length ? topChartHolders[items[0].dataIndex] : null;
+            return row && row.address ? row.address : '-';
+          },
+          label:function(ctx){
+            var row = topChartHolders[ctx.dataIndex] || {};
+            var balance = Number(row.balance_decimal || 0).toLocaleString(undefined,{maximumFractionDigits:6});
+            return 'Balance: ' + balance + ' ' + tokenSymbol;
+          },
+          footer:function(){return 'Click bar to copy full address';}
+        }}
+      },
+      onHover:function(event,elements){
+        if (event && event.native && event.native.target) {
+          event.native.target.style.cursor = elements && elements.length ? 'pointer' : 'default';
+        }
+      },
+      onClick:function(event,elements){
+        if (!elements || !elements.length) return;
+        var row = topChartHolders[elements[0].index];
+        if (row && row.address) copyIdentifierValue(event.native || event, row.address);
+      },
+      scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}
+    }
   });
-  tc('c4',{type:'line',data:{labels:['No Data'],datasets:[{data:[0],backgroundColor:'#3b82f6',borderColor:'#3b82f6'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}}});
+  tc('c5',{"type": "line", "data": {"labels": ["No Data"], "datasets": [{"data": [0], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6"}]}, "options": {"responsive": true, "maintainAspectRatio": false, "plugins": {"legend": {"display": false}}, "scales": {"y": {"ticks": {"color": "#64748b"}, "grid": {"color": "#1e293b"}}, "x": {"ticks": {"color": "#64748b"}, "grid": {"display": false}}}}});
+  tc('c6',{"type": "bar", "data": {"labels": ["No Data"], "datasets": [{"data": [0], "backgroundColor": "#3b82f6"}]}, "options": {"responsive": true, "maintainAspectRatio": false, "plugins": {"legend": {"display": false}}, "scales": {"y": {"ticks": {"color": "#64748b"}, "grid": {"color": "#1e293b"}}, "x": {"ticks": {"color": "#64748b"}, "grid": {"display": false}}}}});
+  tc('c4',{"type": "line", "data": {"labels": ["No Data"], "datasets": [{"data": [0], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6"}]}, "options": {"onClick":function(evt,els,chart){var active=chart.getElementsAtEventForMode(evt,'index',{intersect:false},true);if(active&&active.length){renderTvlDetails(active[0].index);}},"responsive": true, "maintainAspectRatio": false, "plugins": {"legend": {"display": false}}, "scales": {"y": {"ticks": {"color": "#64748b"}, "grid": {"color": "#1e293b"}}, "x": {"ticks": {"color": "#64748b"}, "grid": {"display": false}}}}});
 })();
+
+function togglePortfolio(addr) {
+  var row = document.getElementById('portfolio-' + addr);
+  if (!row) return;
+  var holderRow = row.previousElementSibling;
+  var icon = holderRow ? holderRow.querySelector('.expand-icon') : null;
+  var open = row.style.display !== 'none';
+  if (open) {
+    row.style.display = 'none';
+    if (icon) icon.textContent = '+';
+    return;
+  }
+  row.style.display = '';
+  if (icon) icon.textContent = '-';
+  var inner = row.querySelector('.portfolio-inner');
+  if (!inner) return;
+  var key = (addr || '').toLowerCase();
+  var positions = (portfolioData && portfolioData[key]) || [];
+  if (!positions.length) {
+    inner.innerHTML = '<div style="color:#64748b;padding:8px 0">No LP positions with share &gt; 0 for this address in the analysis window.</div>';
+    return;
+  }
+  var html = '<table class="portfolio-table"><thead><tr>'
+    + '<th>Protocol</th><th>Pool</th><th>Share %</th><th>Liquidity</th><th>Token0</th><th>Token1</th><th>Ticks</th>'
+    + '</tr></thead><tbody>';
+  for (var i = 0; i < positions.length; i++) {
+    var p = positions[i];
+    var pool = (p.pool || '');
+    var ticks = (p.tick_lower != null && p.tick_upper != null)
+      ? (p.tick_lower + ' / ' + p.tick_upper) : '-';
+    var proto = ((p.protocol || '') + ' ' + (p.version || '')).trim() || '-';
+    html += '<tr>'
+      + '<td>' + proto + '</td>'
+      + '<td>' + identifierHtml(pool) + '</td>'
+      + '<td>' + (p.share_pct != null ? p.share_pct : '-') + '</td>'
+      + '<td>' + (p.liquidity || '-') + '</td>'
+      + '<td>' + (p.token0_amount || '-') + '</td>'
+      + '<td>' + (p.token1_amount || '-') + '</td>'
+      + '<td>' + ticks + '</td>'
+      + '</tr>';
+  }
+  html += '</tbody></table>';
+  inner.innerHTML = html;
+}
 
 </script>
 </body>

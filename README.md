@@ -102,8 +102,9 @@ python3 scripts/publish_site.py --serve  # preview
 
 The artifact-storage migration keeps JSON as the compatibility default. Use
 `--artifact-format both` to additionally write typed Parquet tables for swaps, transfers,
-liquidity events, holdings, positions, TVL, and volume rows under `tables/`. Parquet-only mode will be
-enabled after the remaining readers migrate. Parquet and DuckDB files are local artifacts and are not
+liquidity events, PositionManager evidence, holdings, positions, TVL, and volume rows under
+`tables/`. Large-table readers are now Parquet-first; Parquet-only/default switching remains
+a separate compatibility milestone. Parquet and DuckDB files are local artifacts and are not
 committed by default. See
 [`docs/ARTIFACT_STORAGE_DESIGN.md`](docs/ARTIFACT_STORAGE_DESIGN.md).
 
@@ -185,11 +186,10 @@ resolve + profile
 |------|----------|
 | `token_profile.json` | Symbol, decimals, flags |
 | `verified_pools.json` | Verified pools |
-| `swaps.json` / `liquidity_events.json` / `transfers.json` | Indexed events |
-| `events_all.json` | Combined stream |
+| Event tables (`swaps`, `liquidity_events`, `transfers`, `position_events`) | Indexed events as JSON and/or Parquet; combined in memory |
 | `positions.json` / `portfolios.json` | LP positions / by-owner |
 | `address_dex.json` | Per-address DEX protocols + LP/Swap roles |
-| `holdings.json` | Holders + pool flags |
+| `holdings_summary.json` + holdings table | Compact run metadata + holder rows; old `holdings.json` remains compatible |
 | `metrics.json` / `risk_assessment.json` | TVL, concentration, risk |
 | `report.md` / `dashboard.html` | Report + UI |
 
@@ -290,10 +290,12 @@ python3 scripts/publish_site.py
 tables/swaps.parquet
 tables/transfers.parquet
 tables/liquidity_events.parquet
+tables/position_events.parquet
 tables/holdings.parquet
 tables/positions.parquet
 tables/tvl_timeline.parquet
 tables/volume_timeline.parquet
+holdings_summary.json
 ```
 
 独立运行 `holdings` 命令时，`both` 模式只额外生成 `tables/holdings.parquet`。

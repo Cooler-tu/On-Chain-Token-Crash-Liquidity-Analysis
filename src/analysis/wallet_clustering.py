@@ -24,6 +24,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
+try:
+    from ..data.artifacts import ArtifactError, read_table
+except ImportError:  # Support direct execution from the repository root.
+    import sys
+
+    _PROJECT_ROOT = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(_PROJECT_ROOT))
+    from src.data.artifacts import ArtifactError, read_table
+
 
 # --- signal policy -----------------------------------------------------------
 
@@ -47,6 +56,17 @@ CLUSTER_GAS_COLUMNS = ("tx_hash", "gas_payer")
 REPEATED_MIN_COUNT = 3
 AMOUNT_SIM_TOL = 0.25  # relative deviation from mean
 SAME_TX_SUPPORT_MIN = 3
+
+
+def _read_artifact_rows(out_dir: Path, name: str) -> list[dict[str, Any]]:
+    """Read a canonical table Parquet-first with legacy JSON fallback."""
+    try:
+        return read_table(name, out_dir, prefer="parquet", legacy_rows=True)
+    except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+        try:
+            return read_table(name, out_dir, prefer="json", legacy_rows=True)
+        except (ArtifactError, FileNotFoundError, ImportError, OSError, ValueError):
+            return []
 
 
 @dataclass
@@ -611,11 +631,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.candidates:
         candidates = [c.strip() for c in args.candidates.split(",") if c.strip()]
     else:
-        holdings = {}
-        hp = out_dir / "holdings.json"
-        if hp.exists():
-            holdings = json.loads(hp.read_text())
-        for row in holdings.get("holdings") or []:
+        for row in _read_artifact_rows(out_dir, "holdings"):
             a = row.get("address")
             if a and not row.get("is_pool"):
                 candidates.append(str(a))
@@ -634,11 +650,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             token, candidates, fb, tb, cache_dir=out_dir / "dune_cache" / "cluster"
         )
     else:
-        # Offline: reuse indexed transfers.json reshaped to cluster columns
-        raw = []
-        tp = out_dir / "transfers.json"
-        if tp.exists():
-            raw = json.loads(tp.read_text())
+        # Offline: reuse the canonical transfer artifact and reshape columns.
+        raw = _read_artifact_rows(out_dir, "transfers")
         cand_set = {_norm(c) for c in candidates}
         for row in raw:
             fr = _norm(row.get("actor") or row.get("from"))
