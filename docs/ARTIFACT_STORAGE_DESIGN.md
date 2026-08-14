@@ -270,7 +270,29 @@ balance_source: string
 Run-level fields such as total candidate addresses, zero-fill count, and snapshot coverage
 belong in `manifest.json` or a small holdings summary JSON, not repeated on every row.
 
-### 7.5 Timeline tables
+### 7.5 `positions`
+
+```text
+pool_address: string
+owner: string
+lp_token_address: string nullable
+nft_token_id: string nullable
+liquidity: string
+share_pct: double
+beneficial_owner: string nullable
+resolution_method: string nullable
+confidence: double
+tick_lower: int32 nullable
+tick_upper: int32 nullable
+token0_amount: string nullable
+token1_amount: string nullable
+```
+
+`nft_token_id`, raw liquidity, and token amounts remain base-10 strings because V3/V4
+identifiers and Ethereum integer values can exceed signed 64-bit range. Nullable LP/NFT and
+tick fields let one table represent V1/V2, V3/V4, Curve, and Balancer positions.
+
+### 7.6 Timeline tables
 
 All price, volume, balance, and TVL timelines should share:
 
@@ -415,7 +437,10 @@ access layer.
 
 - [x] Migrate transfers and liquidity events.
 - [x] Migrate holdings rows while preserving the nested `holdings.json` summary.
-- [ ] Migrate positions and timelines.
+- [x] Migrate positions while preserving `positions.json` and `position_summary.json`.
+- [x] Verify 31-row real-output row-count parity, 54.7% smaller storage, and unchanged
+  dashboard `portfolios.json` output.
+- [ ] Migrate timelines.
 - [x] Separate the holdings run summary from its canonical Parquet row table.
 
 ### Phase 3 — readers and combined-event removal

@@ -18,6 +18,7 @@ from src.analysis.metrics import (
     calculate_volume_metrics,
 )
 from src.analysis.holdings import _write_holdings_artifacts
+from src.analysis.positions import analyze_positions, _write_position_artifacts
 from src.indexer.dune_index import index_events_from_dune
 from src.models import VerifiedPool
 
@@ -118,6 +119,24 @@ def _holding_row():
         "first_seen_block": 25_000_000,
         "last_seen_block": 25_000_100,
         "query_timestamp": 1_778_000_200,
+    }
+
+
+def _position_row():
+    return {
+        "pool_address": "0xAABBCC",
+        "owner": "0xDDEEFF",
+        "lp_token_address": None,
+        "nft_token_id": 2**200,
+        "liquidity": str(2**255 + 321),
+        "share_pct": 12.345678,
+        "beneficial_owner": "0x112233",
+        "resolution_method": "v4_dune_active_liquidity_share_at_to_block",
+        "confidence": 0.95,
+        "tick_lower": -887220,
+        "tick_upper": 887220,
+        "token0_amount": str(2**180),
+        "token1_amount": None,
     }
 
 
@@ -253,6 +272,73 @@ class ParquetArtifactTest(unittest.TestCase):
                 "holdings", out, prefer="parquet", legacy_rows=True
             )
             self.assertEqual(legacy[0]["query_timestamp"], 1_778_000_200)
+
+    def test_positions_dual_write_preserves_protocol_fields_and_summary(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            row = _position_row()
+            summary = {
+                "total_positions": 1,
+                "total_unique_holders": 1,
+                "snapshot_block": 25_000_100,
+                "top_5_holders": [],
+            }
+            _write_position_artifacts(out, [row], summary, "both")
+
+            json_rows = json.loads((out / "positions.json").read_text())
+            self.assertEqual(json_rows, [row])
+            document = json.loads((out / "position_summary.json").read_text())
+            self.assertEqual(document["artifact_format"], "both")
+            self.assertEqual(document["artifacts"]["positions"]["rows"], 1)
+
+            table = pq.read_table(out / "tables" / "positions.parquet")
+            stored = table.to_pylist()[0]
+            self.assertEqual(table.schema.metadata[b"artifact_name"], b"positions")
+            self.assertEqual(stored["pool_address"], "0xaabbcc")
+            self.assertEqual(stored["owner"], "0xddeeff")
+            self.assertEqual(stored["nft_token_id"], str(2**200))
+            self.assertEqual(stored["liquidity"], row["liquidity"])
+            self.assertEqual(stored["tick_lower"], -887220)
+            self.assertIsNone(stored["token1_amount"])
+
+    def test_empty_positions_table_keeps_cross_protocol_schema(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            meta = write_table("positions", [], tmp, "parquet")
+            table = pq.read_table(meta["paths"]["parquet"])
+            self.assertEqual(table.num_rows, 0)
+            self.assertEqual(
+                table.column_names,
+                [
+                    "pool_address", "owner", "lp_token_address", "nft_token_id",
+                    "liquidity", "share_pct", "beneficial_owner",
+                    "resolution_method", "confidence", "tick_lower", "tick_upper",
+                    "token0_amount", "token1_amount",
+                ],
+            )
+
+    def test_empty_allowlist_analyze_flow_writes_positions_parquet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            positions, summary = analyze_positions(
+                None,
+                [],
+                [],
+                TARGET,
+                25_000_000,
+                25_000_100,
+                output_dir=tmp,
+                owner_allowlist=[],
+                artifact_format="both",
+            )
+            self.assertEqual(positions, [])
+            self.assertEqual(summary["total_positions"], 0)
+            self.assertTrue((Path(tmp) / "positions.json").exists())
+            self.assertTrue(
+                (Path(tmp) / "tables" / "positions.parquet").exists()
+            )
 
     def test_existing_price_and_volume_metrics_match_parquet_rows(self):
         pool = VerifiedPool(

@@ -94,14 +94,14 @@ python3 scripts/publish_site.py --serve  # preview
 | `--fast-mode` | Skip heavy exhaustive indexing | `false` |
 | `--output-dir` | Artifacts directory | `output` |
 | `--pools-file` | Load pool candidates from a saved Dune pools JSON (skip live discovery) | (none) |
-| `--artifact-format` | `json` or `both` (JSON + Parquet event/holdings tables) | `json` |
+| `--artifact-format` | `json` or `both` (JSON + Parquet event/holdings/positions tables) | `json` |
 
 > Indexing is **resumable** via `event_indexer_checkpoint.json`. Change token/window or delete checkpoint to start clean.
 
 The artifact-storage migration keeps JSON as the compatibility default. Use
 `--artifact-format both` to additionally write typed Parquet tables for swaps, transfers,
-liquidity events, and holdings rows under `tables/`. Parquet-only mode will be enabled after
-the remaining readers migrate. Parquet and DuckDB files are local artifacts and are not
+liquidity events, holdings, and positions rows under `tables/`. Parquet-only mode will be
+enabled after the remaining readers migrate. Parquet and DuckDB files are local artifacts and are not
 committed by default. See
 [`docs/ARTIFACT_STORAGE_DESIGN.md`](docs/ARTIFACT_STORAGE_DESIGN.md).
 
@@ -274,7 +274,7 @@ python3 -m src.cli dashboard --output-dir output
 python3 scripts/publish_site.py
 ```
 
-大型事件与持仓表正在迁移到 Parquet。默认仍生成兼容 JSON；运行 `analyze` 或
+大型事件、持仓和 LP positions 表正在迁移到 Parquet。默认仍生成兼容 JSON；运行 `analyze` 或
 `holdings` 时增加 `--artifact-format both`，会额外生成：
 
 ```text
@@ -282,6 +282,7 @@ tables/swaps.parquet
 tables/transfers.parquet
 tables/liquidity_events.parquet
 tables/holdings.parquet
+tables/positions.parquet
 ```
 
 这些 Parquet/DuckDB 文件只作为本地分析数据，默认不提交到 Git。

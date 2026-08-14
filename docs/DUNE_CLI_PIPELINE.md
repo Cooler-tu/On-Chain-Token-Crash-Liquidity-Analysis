@@ -704,6 +704,7 @@ V4 slot0、active liquidity 等状态仍通过 RPC StateView 获取。
 ```text
 positions.json
 position_summary.json
+tables/positions.parquet        # --artifact-format both
 ```
 
 ---
@@ -929,6 +930,7 @@ index_source.json
 tables/swaps.parquet              # --artifact-format both
 tables/liquidity_events.parquet   # --artifact-format both
 tables/transfers.parquet          # --artifact-format both
+tables/positions.parquet          # --artifact-format both (written in Step 5)
 ```
 
 ---

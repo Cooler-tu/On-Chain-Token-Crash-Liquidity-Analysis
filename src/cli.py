@@ -162,8 +162,9 @@ def analyze(
         "json",
         help=(
             "Artifact storage: json (legacy default) | both (JSON + Parquet "
-            "dual-write for swaps, transfers, liquidity, and holdings rows). "
-            "Parquet-only becomes available after all readers migrate."
+            "dual-write for swaps, transfers, liquidity, holdings, and "
+            "positions rows). Parquet-only becomes available after all "
+            "readers migrate."
         ),
     ),
 ):
@@ -316,6 +317,7 @@ def analyze(
         from_block, to_block, output_dir=output_dir,
         allow_rpc_scan=False,
         owner_allowlist=owner_allowlist,
+        artifact_format=artifact_mode,
     )
     typer.echo("  {} position(s), {} unique holder(s)".format(
         len(positions), pos_summary.get("total_unique_holders", 0)

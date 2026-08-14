@@ -1,9 +1,9 @@
 """Typed artifact storage for large tables and small JSON summaries.
 
 The migration keeps legacy JSON as the default and supports JSON/Parquet
-dual-write for swaps, transfers, liquidity events, and holdings rows. Imports
-for optional analytical dependencies are lazy so existing JSON-only runs
-continue to work without PyArrow or DuckDB installed.
+dual-write for swaps, transfers, liquidity events, holdings, and positions
+rows. Imports for optional analytical dependencies are lazy so existing
+JSON-only runs continue to work without PyArrow or DuckDB installed.
 """
 from __future__ import annotations
 
@@ -397,6 +397,47 @@ def _normalize_holdings_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _positions_schema(pa):
+    return pa.schema(
+        [
+            pa.field("pool_address", pa.string(), nullable=False),
+            pa.field("owner", pa.string(), nullable=False),
+            pa.field("lp_token_address", pa.string(), nullable=True),
+            pa.field("nft_token_id", pa.string(), nullable=True),
+            pa.field("liquidity", pa.string(), nullable=False),
+            pa.field("share_pct", pa.float64(), nullable=False),
+            pa.field("beneficial_owner", pa.string(), nullable=True),
+            pa.field("resolution_method", pa.string(), nullable=True),
+            pa.field("confidence", pa.float64(), nullable=False),
+            pa.field("tick_lower", pa.int32(), nullable=True),
+            pa.field("tick_upper", pa.int32(), nullable=True),
+            pa.field("token0_amount", pa.string(), nullable=True),
+            pa.field("token1_amount", pa.string(), nullable=True),
+        ],
+        metadata=_schema_metadata("positions"),
+    )
+
+
+def _normalize_position_row(row: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        raise ArtifactSchemaError("positions rows must be dictionaries")
+    return {
+        "pool_address": _lower_hex(row.get("pool_address") or "") or "",
+        "owner": _lower_hex(row.get("owner") or "") or "",
+        "lp_token_address": _lower_hex(row.get("lp_token_address")),
+        "nft_token_id": _optional_raw(row.get("nft_token_id")),
+        "liquidity": _raw_string(row.get("liquidity")),
+        "share_pct": float(row.get("share_pct") or 0),
+        "beneficial_owner": _lower_hex(row.get("beneficial_owner")),
+        "resolution_method": str(row.get("resolution_method") or "") or None,
+        "confidence": float(row.get("confidence") or 0),
+        "tick_lower": _optional_int(row.get("tick_lower")),
+        "tick_upper": _optional_int(row.get("tick_upper")),
+        "token0_amount": _optional_raw(row.get("token0_amount")),
+        "token1_amount": _optional_raw(row.get("token1_amount")),
+    }
+
+
 def _table_schema(name: str, pa):
     if name == "swaps":
         return _swap_schema(pa), _normalize_swap_row
@@ -406,6 +447,8 @@ def _table_schema(name: str, pa):
         return _liquidity_schema(pa), _normalize_liquidity_row
     if name == "holdings":
         return _holdings_schema(pa), _normalize_holdings_row
+    if name == "positions":
+        return _positions_schema(pa), _normalize_position_row
     raise ArtifactSchemaError(
         "Parquet schema for table {!r} is not implemented yet".format(name)
     )

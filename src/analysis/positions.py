@@ -9,6 +9,7 @@ from typing import Any, Optional
 from web3 import Web3
 
 from ..client import get_contract
+from ..data.artifacts import validate_artifact_environment, write_table
 from ..discovery.log_utils import get_logs_chunked
 from ..models import Position, VerifiedPool
 from .v3_math import get_amounts_for_liquidity, value_in_token1_raw
@@ -1269,6 +1270,7 @@ def analyze_positions(
     *,
     allow_rpc_scan: bool = False,
     owner_allowlist: Optional[set[str] | list[str]] = None,
+    artifact_format: str = "json",
 ) -> tuple[list[Position], dict[str, Any]]:
     """Reconstruct LP positions as of ``to_block`` and write summary files.
 
@@ -1277,7 +1279,14 @@ def analyze_positions(
     ``allow_rpc_scan=False`` (default) never scans global PM / Pair Transfer
     logs — required for usable speed after Dune indexing.
     """
+    artifact_mode = validate_artifact_environment(artifact_format)
+    if artifact_mode == "parquet":
+        raise ValueError(
+            "positions still requires artifact_format='both' so legacy JSON "
+            "dashboard readers keep working"
+        )
     out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
     cache_dir = out / "indexer_cache"
     positions: list[Position] = []
     allow = {
@@ -1298,8 +1307,7 @@ def analyze_positions(
             "owner_allowlist_size": 0,
             "top_5_holders": [],
         }
-        _write_json(out / "positions.json", [])
-        _write_json(out / "position_summary.json", summary)
+        _write_position_artifacts(out, [], summary, artifact_mode)
         return [], summary
 
     events_by_pool: dict[str, list[dict]] = defaultdict(list)
@@ -1395,8 +1403,6 @@ def analyze_positions(
         )
 
     pos_dicts = [p.__dict__ for p in positions]
-    _write_json(out / "positions.json", pos_dicts)
-
     total_lp_holders = len(set(p.owner for p in positions))
     top_holders = sorted(positions, key=lambda x: x.share_pct, reverse=True)[:5]
     summary = {
@@ -1424,9 +1430,24 @@ def analyze_positions(
             for h in top_holders
         ],
     }
-    _write_json(out / "position_summary.json", summary)
+    _write_position_artifacts(out, pos_dicts, summary, artifact_mode)
 
     return positions, summary
+
+
+def _write_position_artifacts(
+    out: Path,
+    position_rows: list[dict[str, Any]],
+    summary: dict[str, Any],
+    artifact_mode: str,
+) -> None:
+    """Write legacy positions JSON and its optional typed Parquet twin."""
+    artifact = write_table(
+        "positions", position_rows, out, artifact_format=artifact_mode
+    )
+    summary["artifact_format"] = artifact_mode
+    summary["artifacts"] = {"positions": artifact}
+    _write_json(out / "position_summary.json", summary)
 
 
 def _write_json(path: Path, data):
