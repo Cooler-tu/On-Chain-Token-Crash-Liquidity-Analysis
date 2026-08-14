@@ -264,7 +264,7 @@ def index_events_from_dune(
     artifact_mode = validate_artifact_environment(artifact_format)
     if artifact_mode == "parquet":
         raise ValueError(
-            "Parquet-only analysis is not available during Phase 1; use "
+            "Parquet-only analysis is not available during migration; use "
             "artifact_format='both' so legacy JSON readers keep working"
         )
     out = Path(output_dir)
@@ -396,11 +396,17 @@ def index_events_from_dune(
         key=lambda e: (int(e.get("block_number") or 0), int(e.get("log_index") or 0)),
     )
 
-    swaps_artifact = write_table(
-        "swaps", swaps, out, artifact_format=artifact_mode
-    )
-    _write_json(out / "liquidity_events.json", liquidity)
-    _write_json(out / "transfers.json", transfers)
+    table_artifacts = {
+        "swaps": write_table(
+            "swaps", swaps, out, artifact_format=artifact_mode
+        ),
+        "liquidity_events": write_table(
+            "liquidity_events", liquidity, out, artifact_format=artifact_mode
+        ),
+        "transfers": write_table(
+            "transfers", transfers, out, artifact_format=artifact_mode
+        ),
+    }
     _write_json(out / "events_all.json", events_all)
     _write_json(
         out / "index_source.json",
@@ -410,7 +416,7 @@ def index_events_from_dune(
             "to_block": to_block,
             "token": token,
             "artifact_format": artifact_mode,
-            "artifacts": {"swaps": swaps_artifact},
+            "artifacts": table_artifacts,
             "dune_cache": str(dune_dir),
             "parallel_jobs": [label for label, _ in jobs],
             "counts": {

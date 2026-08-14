@@ -1,6 +1,6 @@
 # Artifact Storage Design
 
-> Status: Phase 1 in implementation (2026-08-13)
+> Status: Phase 2 partially implemented (2026-08-13)
 > Scope: local analysis artifacts produced by `python3 -m src.cli analyze`
 > Non-goal: this document does not change metric definitions, risk logic, or dashboard presentation.
 
@@ -326,7 +326,7 @@ Introduce one module, provisionally `src/data/artifacts.py`, as the only support
 for pipeline artifacts:
 
 ```python
-write_table(name, rows, output_dir, schema=None)
+write_table(name, rows, output_dir, artifact_format="json")
 read_table(name, output_dir, columns=None, filters=None)
 query_tables(sql, output_dir, params=None)
 write_summary(name, value, output_dir)
@@ -405,7 +405,7 @@ distributed. This design does not change that rule by itself.
 - [x] Add `src/data/artifacts.py`.
 - [x] Add `--artifact-format json|both`; default remains `json` initially.
 - [x] Dual-write `swaps.json` and `tables/swaps.parquet`.
-- Verify row-level and downstream metric parity.
+- [x] Verify row-level and downstream price/volume metric parity.
 
 Parquet-only output is intentionally rejected during Phase 1 because dashboard and legacy
 standalone commands still read JSON. It will be enabled after those readers use the artifact
@@ -413,9 +413,10 @@ access layer.
 
 ### Phase 2 — remaining large tables
 
-- Migrate transfers and liquidity events.
-- Migrate holdings, positions, and timelines.
-- Separate nested run summaries from table rows.
+- [x] Migrate transfers and liquidity events.
+- [x] Migrate holdings rows while preserving the nested `holdings.json` summary.
+- [ ] Migrate positions and timelines.
+- [x] Separate the holdings run summary from its canonical Parquet row table.
 
 ### Phase 3 — readers and combined-event removal
 

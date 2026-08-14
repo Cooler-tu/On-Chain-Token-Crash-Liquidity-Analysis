@@ -16,6 +16,7 @@ from typing import Any, Optional
 from web3 import Web3
 
 from ..client import get_contract, has_bytecode
+from ..data.artifacts import validate_artifact_environment, write_table
 from ..models import VerifiedPool
 
 _ZERO = "0x0000000000000000000000000000000000000000"
@@ -23,6 +24,29 @@ _ZERO = "0x0000000000000000000000000000000000000000"
 
 def _chunks(items: list, size: int = 500) -> list[list]:
     return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def _write_holdings_artifacts(
+    out: Path,
+    result: dict[str, Any],
+    holdings_rows: list[dict[str, Any]],
+    artifact_mode: str,
+) -> None:
+    """Preserve nested holdings JSON and optionally add the typed row table."""
+    holdings_artifact: dict[str, Any] = {
+        "name": "holdings",
+        "format": artifact_mode,
+        "rows": len(holdings_rows),
+        "paths": {"json": str(out / "holdings.json")},
+    }
+    if artifact_mode == "both":
+        parquet_artifact = write_table(
+            "holdings", holdings_rows, out, artifact_format="parquet"
+        )
+        holdings_artifact["paths"].update(parquet_artifact["paths"])
+    result["artifact_format"] = artifact_mode
+    result["artifacts"] = {"holdings": holdings_artifact}
+    _write_json(out / "holdings.json", result)
 
 
 def _ingest_transfer_events(
@@ -60,6 +84,7 @@ def analyze_holdings(
     to_block: int,
     output_dir: str | Path = "output",
     source: str = "auto",
+    artifact_format: str = "json",
     *,
     max_rpc_balances: int = 80,
     max_contract_checks: int = 80,
@@ -75,6 +100,12 @@ def analyze_holdings(
     RPC ``balanceOf`` / bytecode checks are capped so holdings cannot dominate
     analyze wall time.
     """
+    artifact_mode = validate_artifact_environment(artifact_format)
+    if artifact_mode == "parquet":
+        raise ValueError(
+            "Parquet-only holdings are not available during migration; use "
+            "artifact_format='both' so holdings.json remains available"
+        )
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -756,7 +787,7 @@ def analyze_holdings(
         "pool_identification": pool_rows,
     }
 
-    _write_json(out / "holdings.json", result)
+    _write_holdings_artifacts(out, result, holdings_rows, artifact_mode)
 
     csv_holdings_path = out / "holdings_table.csv"
     with open(csv_holdings_path, "w", newline="") as f:

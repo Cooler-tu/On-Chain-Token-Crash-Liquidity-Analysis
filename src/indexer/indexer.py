@@ -1482,7 +1482,7 @@ def index_events(
     artifact_mode = validate_artifact_environment(artifact_format)
     if artifact_mode == "parquet":
         raise ValueError(
-            "Parquet-only analysis is not available during Phase 1; use "
+            "Parquet-only analysis is not available during migration; use "
             "artifact_format='both' so legacy JSON readers keep working"
         )
 
@@ -1639,9 +1639,20 @@ def index_events(
     result = _flush_outputs(out, collected, from_block, to_block)
     from ..data.artifacts import write_table
 
-    swaps_artifact = write_table(
-        "swaps", result["swaps"], out, artifact_format=artifact_mode
-    )
+    table_artifacts = {
+        "swaps": write_table(
+            "swaps", result["swaps"], out, artifact_format=artifact_mode
+        ),
+        "liquidity_events": write_table(
+            "liquidity_events",
+            result["liquidity_events"],
+            out,
+            artifact_format=artifact_mode,
+        ),
+        "transfers": write_table(
+            "transfers", result["transfers"], out, artifact_format=artifact_mode
+        ),
+    }
     _write_json(
         out / "index_source.json",
         {
@@ -1650,7 +1661,7 @@ def index_events(
             "to_block": to_block,
             "token": target_token,
             "artifact_format": artifact_mode,
-            "artifacts": {"swaps": swaps_artifact},
+            "artifacts": table_artifacts,
             "counts": {
                 "swaps": len(result["swaps"]),
                 "liquidity_events": len(result["liquidity_events"]),

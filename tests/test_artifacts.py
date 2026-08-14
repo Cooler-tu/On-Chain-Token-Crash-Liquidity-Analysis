@@ -17,6 +17,7 @@ from src.analysis.metrics import (
     calculate_price_timeline_from_swaps,
     calculate_volume_metrics,
 )
+from src.analysis.holdings import _write_holdings_artifacts
 from src.indexer.dune_index import index_events_from_dune
 from src.models import VerifiedPool
 
@@ -50,6 +51,73 @@ def _swap_row():
         "source_event": "dex.trades",
         "verified": True,
         "nft_token_id": None,
+    }
+
+
+def _transfer_row():
+    return {
+        "block_number": 25_000_003,
+        "block_timestamp": 1_778_000_100,
+        "transaction_hash": "0xA1B2C3",
+        "log_index": 9,
+        "protocol": "",
+        "version": "",
+        "pool_address": "",
+        "event_type": "TOKEN_TRANSFER",
+        "actor": "0xAABB",
+        "recipient": "0xCCDD",
+        "token0_amount": str(2**255 + 456),
+        "token1_amount": "0",
+        "liquidity_delta": "0",
+        "source_event": "Transfer",
+        "verified": True,
+        "nft_token_id": None,
+    }
+
+
+def _liquidity_row():
+    return {
+        **_transfer_row(),
+        "event_type": "LIQUIDITY_REMOVE",
+        "protocol": "uniswap",
+        "version": "v4",
+        "pool_address": "0xEEFF",
+        "liquidity_delta": "-12345678901234567890",
+        "source_event": "ModifyLiquidity",
+        "tick_lower": -120,
+        "tick_upper": 120,
+        "salt": str(2**200),
+        "event_count": 4,
+        "aggregation_scope": "pool_block",
+    }
+
+
+def _holding_row():
+    return {
+        "address": "0xAABB",
+        "address_type": "EOA",
+        "is_contract": False,
+        "is_pool": False,
+        "pool_label": "",
+        "resolved_owner": "",
+        "resolution_method": "eoa",
+        "balance_raw": str(2**255 + 789),
+        "balance_decimal": 42.5,
+        "balance_start_raw": "100",
+        "balance_start_decimal": 1.0,
+        "balance_end_raw": str(2**255 + 789),
+        "net_change_raw": "25",
+        "net_change_decimal": 0.25,
+        "peak_balance_raw": str(2**255 + 789),
+        "peak_balance_decimal": 42.5,
+        "moved_in_raw": "",
+        "moved_out_raw": "",
+        "balance_source": "dune_historical",
+        "trajectory_source": "window_ledger",
+        "tx_count": 7,
+        "first_seen_block": 25_000_000,
+        "last_seen_block": 25_000_100,
+        "query_timestamp": 1_778_000_200,
     }
 
 
@@ -120,6 +188,71 @@ class ParquetArtifactTest(unittest.TestCase):
             table = pq.read_table(meta["paths"]["parquet"])
             self.assertEqual(table.num_rows, 0)
             self.assertIn("block_number", table.column_names)
+
+    def test_transfer_and_liquidity_schemas_preserve_raw_values(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            transfer_meta = write_table(
+                "transfers", [_transfer_row()], tmp, "both"
+            )
+            liquidity_meta = write_table(
+                "liquidity_events", [_liquidity_row()], tmp, "both"
+            )
+            transfer = pq.read_table(
+                transfer_meta["paths"]["parquet"]
+            ).to_pylist()[0]
+            liquidity = pq.read_table(
+                liquidity_meta["paths"]["parquet"]
+            ).to_pylist()[0]
+
+            self.assertEqual(transfer["actor"], "0xaabb")
+            self.assertIsNone(transfer["pool_address"])
+            self.assertEqual(
+                transfer["token0_amount"], _transfer_row()["token0_amount"]
+            )
+            self.assertEqual(liquidity["event_count"], 4)
+            self.assertEqual(liquidity["tick_lower"], -120)
+            self.assertEqual(
+                liquidity["liquidity_delta"], "-12345678901234567890"
+            )
+
+    def test_holdings_parquet_preserves_nested_json_summary(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            row = _holding_row()
+            result = {
+                "from_block": 25_000_000,
+                "to_block": 25_000_100,
+                "holdings_count": 1,
+                "holdings": [row],
+                "pool_identification": [],
+            }
+            _write_holdings_artifacts(out, result, [row], "both")
+
+            document = json.loads((out / "holdings.json").read_text())
+            self.assertEqual(document["from_block"], 25_000_000)
+            self.assertEqual(document["holdings"][0]["address"], "0xAABB")
+            self.assertEqual(document["artifact_format"], "both")
+            self.assertIn(
+                "parquet", document["artifacts"]["holdings"]["paths"]
+            )
+            json_rows = read_table("holdings", out, prefer="json")
+            self.assertEqual(len(json_rows), 1)
+            self.assertEqual(json_rows[0]["address"], "0xAABB")
+
+            table = pq.read_table(out / "tables" / "holdings.parquet")
+            stored = table.to_pylist()[0]
+            self.assertEqual(stored["address"], "0xaabb")
+            self.assertEqual(stored["balance_raw"], row["balance_raw"])
+            self.assertIsNone(stored["moved_in_raw"])
+
+            legacy = read_table(
+                "holdings", out, prefer="parquet", legacy_rows=True
+            )
+            self.assertEqual(legacy[0]["query_timestamp"], 1_778_000_200)
 
     def test_existing_price_and_volume_metrics_match_parquet_rows(self):
         pool = VerifiedPool(
@@ -214,9 +347,15 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertEqual(len(result["swaps"]), 1)
             self.assertTrue((Path(tmp) / "swaps.json").exists())
             self.assertTrue((Path(tmp) / "tables" / "swaps.parquet").exists())
+            self.assertTrue((Path(tmp) / "tables" / "transfers.parquet").exists())
+            self.assertTrue(
+                (Path(tmp) / "tables" / "liquidity_events.parquet").exists()
+            )
             source = json.loads((Path(tmp) / "index_source.json").read_text())
             self.assertEqual(source["artifact_format"], "both")
             self.assertEqual(source["artifacts"]["swaps"]["rows"], 1)
+            self.assertEqual(source["artifacts"]["transfers"]["rows"], 0)
+            self.assertEqual(source["artifacts"]["liquidity_events"]["rows"], 0)
 
 
 @unittest.skipUnless(

@@ -162,8 +162,8 @@ def analyze(
         "json",
         help=(
             "Artifact storage: json (legacy default) | both (JSON + Parquet "
-            "dual-write for swaps). Parquet-only becomes available after all "
-            "readers migrate."
+            "dual-write for swaps, transfers, liquidity, and holdings rows). "
+            "Parquet-only becomes available after all readers migrate."
         ),
     ),
 ):
@@ -284,6 +284,7 @@ def analyze(
         verified_pools, from_block, to_block,
         output_dir=output_dir,
         source="auto" if holdings_source == "auto" else holdings_source,
+        artifact_format=artifact_mode,
     )
     typer.echo("  source={}, balances={}".format(
         holdings_result.get("source", "rpc"),
@@ -466,6 +467,7 @@ def analyze(
             verified_pools, from_block, to_block,
             output_dir=output_dir,
             source=holdings_source,
+            artifact_format=artifact_mode,
         )
     eoa = holdings_result.get("real_holder_count", 0)
     typer.echo(
@@ -591,6 +593,13 @@ def holdings(
         "auto",
         help="Holdings address source: auto (Dune if DUNE_API_KEY set) | dune | rpc",
     ),
+    artifact_format: str = typer.Option(
+        "json",
+        help=(
+            "Artifact storage: json (legacy default) | both "
+            "(JSON + Parquet event/holdings tables)"
+        ),
+    ),
 ):
     """Step 1-2: Analyze token holdings & identify pool accounts.
 
@@ -608,6 +617,21 @@ def holdings(
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    from .data.artifacts import (
+        ArtifactDependencyError,
+        validate_artifact_environment,
+    )
+
+    try:
+        artifact_mode = validate_artifact_environment(artifact_format)
+    except (ValueError, ArtifactDependencyError) as exc:
+        raise typer.BadParameter(str(exc), param_hint="--artifact-format") from exc
+    if artifact_mode == "parquet":
+        raise typer.BadParameter(
+            "Parquet-only mode is not available during migration; use 'both'",
+            param_hint="--artifact-format",
+        )
 
     token_address = _resolve_or_exit(token, chain_id, pick)
 
@@ -653,6 +677,7 @@ def holdings(
     indexed = _index(
         w3, verified_pools, target_token, from_block, to_block,
         output_dir=output_dir, index_token_transfer=True, source="auto",
+        artifact_format=artifact_mode,
     )
     transfers = indexed["transfers"]
     typer.echo("  {} transfer events indexed".format(len(transfers)))
@@ -663,6 +688,7 @@ def holdings(
         verified_pools, from_block, to_block,
         output_dir=output_dir,
         source=holdings_source,
+        artifact_format=artifact_mode,
     )
     typer.echo("  source={}, balances={}".format(
         holdings_result.get("source", "rpc"),

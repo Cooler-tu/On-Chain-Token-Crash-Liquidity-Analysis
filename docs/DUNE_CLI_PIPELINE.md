@@ -559,6 +559,7 @@ Step 5 只检查这些排名靠前的地址是否持有 LP。
 holdings.json
 holdings_table.csv
 pool_identification_table.csv
+tables/holdings.parquet        # --artifact-format both
 ```
 
 ---
@@ -925,6 +926,9 @@ liquidity_events.json
 transfers.json
 events_all.json
 index_source.json
+tables/swaps.parquet              # --artifact-format both
+tables/liquidity_events.parquet   # --artifact-format both
+tables/transfers.parquet          # --artifact-format both
 ```
 
 ---
@@ -1471,4 +1475,3 @@ balances_ethereum.updates
 ```
 
 如果 API 返回 private / missing，holders 和 metrics 会进入各自 fallback。
-

@@ -25,6 +25,7 @@
 - **Data-lineage defense audit** (2026-08-12) — 审计 `structure.md → queries.sql → Python → dashboard`，新增 `docs/METHODOLOGY_DEFENSE.md`、`docs/ADVISOR_QA.md` 与可视化 Canvas；标记 holdings 时间混用、TVL 单边/2×、Risk 时间字段等答辩风险
 - **Reuse indexed swaps for volume/price** (2026-08-13) — charts no longer re-query `dex.trades`; Dune `volume_timeline` / `price_timeline` are fallbacks only. Holdings start/end/peak/moved from one `tokens_ethereum.balances` window query.
 - **Artifact storage Phase 1** (2026-08-13) — `docs/ARTIFACT_STORAGE_DESIGN.md` + `src/data/artifacts.py`; JSON compatibility default, optional `--artifact-format both` dual-writes typed `tables/swaps.parquet`, DuckDB local query helper, parity/dependency tests, and binary-artifact Git guardrails. Remaining tables/readers are later phases.
+- **Artifact storage Phase 2A** (2026-08-13) — extended typed Parquet dual-write to `transfers`, `liquidity_events`, and holdings rows on both Dune/RPC paths; preserved nested `holdings.json`; real output conversion reduced these tables by about 91–95% with exact row-count parity. Positions/timelines remain.
 
 ---
 
