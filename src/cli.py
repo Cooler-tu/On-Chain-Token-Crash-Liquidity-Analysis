@@ -162,8 +162,8 @@ def analyze(
         "json",
         help=(
             "Artifact storage: json (legacy default) | both (JSON + Parquet "
-            "dual-write for swaps, transfers, liquidity, holdings, and "
-            "positions rows). Parquet-only becomes available after all "
+            "dual-write for events, holdings, positions, and chart "
+            "timelines). Parquet-only becomes available after all "
             "readers migrate."
         ),
     ),
@@ -396,6 +396,7 @@ def analyze(
         from_block=from_block,
         to_block=to_block,
         chart_span=chart_span,
+        artifact_format=artifact_mode,
     )
     typer.echo(
         "  TVL timeline: {} points ({}); chart_span={} ({})".format(
@@ -599,7 +600,7 @@ def holdings(
         "json",
         help=(
             "Artifact storage: json (legacy default) | both "
-            "(JSON + Parquet event/holdings tables)"
+            "(JSON + Parquet holdings rows)"
         ),
     ),
 ):

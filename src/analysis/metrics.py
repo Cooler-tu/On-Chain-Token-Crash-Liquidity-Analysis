@@ -13,6 +13,11 @@ from typing import Any, Optional
 from web3 import Web3
 
 from ..client import get_contract
+from ..data.artifacts import (
+    flatten_volume_timeline,
+    validate_artifact_environment,
+    write_table,
+)
 from ..models import NormalizedEvent, Position, VerifiedPool
 
 _ZERO_ADDR = "0x0000000000000000000000000000000000000000"
@@ -1772,9 +1777,17 @@ def calculate_all_metrics(
     from_block: int = 0,
     to_block: int = 0,
     chart_span: str = "auto",
+    artifact_format: str = "json",
 ) -> dict[str, Any]:
     """Main entry point: compute all liquidity and risk metrics."""
+    artifact_mode = validate_artifact_environment(artifact_format)
+    if artifact_mode == "parquet":
+        raise ValueError(
+            "metrics still requires artifact_format='both' so legacy JSON "
+            "dashboard readers keep working"
+        )
     out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
     span = resolve_chart_span(from_block, to_block, chart_span)
     bucket = chart_bucket(span)
     bucket_seconds = chart_bucket_seconds(span)
@@ -1819,7 +1832,9 @@ def calculate_all_metrics(
             verified_pools, events_all, target_token, token_decimals
         )
         tvl_source = "event_accumulate"
-    _write_json(out / "tvl_timeline.json", timeline)
+    tvl_artifact = write_table(
+        "tvl_timeline", timeline, out, artifact_format=artifact_mode
+    )
 
     onchain_tvl = None
     snapshot_block: int | str = int(to_block) if to_block else "latest"
@@ -1895,7 +1910,9 @@ def calculate_all_metrics(
         volume["chart_span"] = span
         volume["bucket"] = bucket
         volume["source"] = volume.get("source") or "local_swaps_fallback"
-    _write_json(out / "volume_timeline.json", volume)
+    volume_artifact = _write_volume_timeline_artifacts(
+        out, volume, artifact_mode
+    )
 
     wallet_activity = calculate_wallet_activity(
         events_all,
@@ -1917,10 +1934,39 @@ def calculate_all_metrics(
         "chart_span": span,
         "chart_bucket": bucket,
         "chart_bucket_seconds": bucket_seconds,
+        "artifact_format": artifact_mode,
+        "artifacts": {
+            "tvl_timeline": tvl_artifact,
+            "volume_timeline": volume_artifact,
+        },
     }
     _write_json(out / "metrics.json", metrics)
 
     return metrics
+
+
+def _write_volume_timeline_artifacts(
+    out: Path,
+    volume: dict[str, Any],
+    artifact_mode: str,
+) -> dict[str, Any]:
+    """Preserve nested volume JSON and optionally add its flat Parquet table."""
+    rows = flatten_volume_timeline(volume)
+    artifact: dict[str, Any] = {
+        "name": "volume_timeline",
+        "format": artifact_mode,
+        "rows": len(rows),
+        "paths": {"json": str(out / "volume_timeline.json")},
+    }
+    if artifact_mode == "both":
+        parquet_artifact = write_table(
+            "volume_timeline", rows, out, artifact_format="parquet"
+        )
+        artifact["paths"].update(parquet_artifact["paths"])
+    volume["artifact_format"] = artifact_mode
+    volume["artifacts"] = {"volume_timeline": artifact}
+    _write_json(out / "volume_timeline.json", volume)
+    return artifact
 
 
 def _write_json(path: Path, data):

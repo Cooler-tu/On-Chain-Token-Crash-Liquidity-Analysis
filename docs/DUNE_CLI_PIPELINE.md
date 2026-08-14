@@ -1089,6 +1089,8 @@ block filter
 metrics.json
 tvl_timeline.json
 volume_timeline.json
+tables/tvl_timeline.parquet       # --artifact-format both
+tables/volume_timeline.parquet    # --artifact-format both; one bucket/pool per row
 ```
 
 ---

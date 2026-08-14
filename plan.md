@@ -27,6 +27,7 @@
 - **Artifact storage Phase 1** (2026-08-13) — `docs/ARTIFACT_STORAGE_DESIGN.md` + `src/data/artifacts.py`; JSON compatibility default, optional `--artifact-format both` dual-writes typed `tables/swaps.parquet`, DuckDB local query helper, parity/dependency tests, and binary-artifact Git guardrails. Remaining tables/readers are later phases.
 - **Artifact storage Phase 2A** (2026-08-13) — extended typed Parquet dual-write to `transfers`, `liquidity_events`, and holdings rows on both Dune/RPC paths; preserved nested `holdings.json`; real output conversion reduced these tables by about 91–95% with exact row-count parity. At this milestone, positions/timelines remained.
 - **Artifact storage Phase 2B** (2026-08-13) — added a cross-protocol positions schema and `tables/positions.parquet` dual-write while preserving `positions.json`, `position_summary.json`, and dashboard portfolio compatibility; timelines remain.
+- **Artifact storage Phase 2C** (2026-08-13) — added typed `tables/tvl_timeline.parquet` and flattened bucket/pool `tables/volume_timeline.parquet`; preserved existing JSON chart inputs and exact dashboard HTML; real output retained 5,885 TVL rows and 30 volume rows while reducing storage by 89.6% and 31.0% respectively.
 
 ---
 

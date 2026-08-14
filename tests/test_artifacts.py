@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from src.data.artifacts import (
     ArtifactDependencyError,
+    flatten_volume_timeline,
     normalize_artifact_format,
     query_tables,
     read_table,
@@ -14,6 +15,8 @@ from src.data.artifacts import (
     write_table,
 )
 from src.analysis.metrics import (
+    _write_volume_timeline_artifacts,
+    calculate_all_metrics,
     calculate_price_timeline_from_swaps,
     calculate_volume_metrics,
 )
@@ -137,6 +140,63 @@ def _position_row():
         "tick_upper": 887220,
         "token0_amount": str(2**180),
         "token1_amount": None,
+    }
+
+
+def _tvl_timeline_row():
+    return {
+        "block_number": 25_000_001,
+        "block_timestamp": 1_778_000_000,
+        "bucket": "hour",
+        "chart_span": "week",
+        "pool_address": "0xAABBCC",
+        "protocol": "uniswap",
+        "version": "v4",
+        "event_type": "SNAPSHOT",
+        "source_event": "balance_x_price",
+        "balance_raw": str(2**255 + 987),
+        "liquidity": None,
+        "reserve0": None,
+        "reserve1": None,
+        "token0_amount": None,
+        "token1_amount": None,
+        "tvl_in_token": str(2**255 + 987),
+        "tvl_usd": 98765.4321,
+        "price": 0.123456789,
+        "price_usd": 0.123457,
+        "quote_symbol": "USD",
+    }
+
+
+def _volume_timeline_document():
+    return {
+        "total_volume_in_token": 15.0,
+        "volume_by_pool": {
+            "0xAABB": {
+                "protocol": "uniswap",
+                "version": "v3",
+                "quote_symbol": "WETH",
+            },
+            "0xCCDD": {
+                "protocol": "curve",
+                "version": "v1",
+                "quote_symbol": "USDC",
+            },
+        },
+        "volume_timeline": [
+            {
+                "bucket_ts": 1_778_000_000,
+                "total_volume_in_token": 15.0,
+                "pools": {
+                    "0xAABB": {"volume_in_token": 10.0, "volume_usd": 25.0},
+                    "0xCCDD": {"volume_in_token": 5.0, "volume_usd": None},
+                },
+            }
+        ],
+        "bucket_seconds": 3600,
+        "chart_span": "week",
+        "bucket": "hour",
+        "source": "local_swaps",
     }
 
 
@@ -340,6 +400,92 @@ class ParquetArtifactTest(unittest.TestCase):
                 (Path(tmp) / "tables" / "positions.parquet").exists()
             )
 
+    def test_tvl_timeline_preserves_raw_values_and_typed_timestamp(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            row = _tvl_timeline_row()
+            meta = write_table("tvl_timeline", [row], tmp, "both")
+            json_rows = json.loads((Path(tmp) / "tvl_timeline.json").read_text())
+            self.assertEqual(json_rows, [row])
+
+            table = pq.read_table(meta["paths"]["parquet"])
+            stored = table.to_pylist()[0]
+            self.assertEqual(table.schema.metadata[b"artifact_name"], b"tvl_timeline")
+            self.assertEqual(stored["pool_address"], "0xaabbcc")
+            self.assertEqual(stored["balance_raw"], row["balance_raw"])
+            self.assertEqual(stored["tvl_in_token"], row["tvl_in_token"])
+            self.assertIsNone(stored["reserve0"])
+            self.assertEqual(table.schema.field("block_timestamp").type.tz, "UTC")
+
+    def test_volume_timeline_flattens_nested_json_for_parquet_and_fallback(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            document = _volume_timeline_document()
+            expected_rows = flatten_volume_timeline(document)
+            artifact = _write_volume_timeline_artifacts(out, document, "both")
+
+            saved = json.loads((out / "volume_timeline.json").read_text())
+            self.assertEqual(saved["volume_timeline"][0]["pools"]["0xAABB"], {
+                "volume_in_token": 10.0,
+                "volume_usd": 25.0,
+            })
+            self.assertEqual(saved["artifacts"]["volume_timeline"]["rows"], 2)
+
+            table = pq.read_table(artifact["paths"]["parquet"])
+            self.assertEqual(table.num_rows, 2)
+            rows = table.to_pylist()
+            self.assertEqual({row["pool_address"] for row in rows}, {
+                "0xaabb", "0xccdd",
+            })
+            curve = next(row for row in rows if row["pool_address"] == "0xccdd")
+            self.assertIsNone(curve["volume_usd"])
+            self.assertEqual(table.schema.field("bucket_timestamp").type.tz, "UTC")
+
+            json_rows = read_table("volume_timeline", out, prefer="json")
+            self.assertEqual(json_rows, expected_rows)
+            legacy_rows = read_table(
+                "volume_timeline", out, prefer="parquet", legacy_rows=True
+            )
+            self.assertEqual(legacy_rows[0]["bucket_timestamp"], 1_778_000_000)
+
+    def test_empty_timeline_tables_keep_schemas(self):
+        import pyarrow.parquet as pq
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tvl_meta = write_table("tvl_timeline", [], tmp, "parquet")
+            volume_meta = write_table("volume_timeline", [], tmp, "parquet")
+            tvl = pq.read_table(tvl_meta["paths"]["parquet"])
+            volume = pq.read_table(volume_meta["paths"]["parquet"])
+            self.assertEqual(tvl.num_rows, 0)
+            self.assertIn("tvl_in_token", tvl.column_names)
+            self.assertEqual(volume.num_rows, 0)
+            self.assertIn("bucket_timestamp", volume.column_names)
+
+    def test_metrics_flow_dual_writes_empty_timeline_tables(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            metrics = calculate_all_metrics(
+                [],
+                [],
+                [],
+                [],
+                TARGET,
+                18,
+                output_dir=tmp,
+                artifact_format="both",
+            )
+            self.assertEqual(metrics["artifact_format"], "both")
+            self.assertEqual(metrics["artifacts"]["tvl_timeline"]["rows"], 0)
+            self.assertEqual(metrics["artifacts"]["volume_timeline"]["rows"], 0)
+            self.assertTrue(
+                (Path(tmp) / "tables" / "tvl_timeline.parquet").exists()
+            )
+            self.assertTrue(
+                (Path(tmp) / "tables" / "volume_timeline.parquet").exists()
+            )
+
     def test_existing_price_and_volume_metrics_match_parquet_rows(self):
         pool = VerifiedPool(
             chain_id=1,
@@ -460,3 +606,18 @@ class DuckDbArtifactTest(unittest.TestCase):
             )
             self.assertEqual(rows[0]["pool_address"], "0xaabbcc")
             self.assertAlmostEqual(rows[0]["volume_usd"], 123.45)
+
+    def test_query_flat_volume_timeline_by_pool(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = flatten_volume_timeline(_volume_timeline_document())
+            write_table("volume_timeline", rows, tmp, "parquet")
+            result = query_tables(
+                "SELECT pool_address, SUM(volume_in_token) AS volume "
+                "FROM volume_timeline GROUP BY pool_address ORDER BY pool_address",
+                tmp,
+                table_names=["volume_timeline"],
+            )
+            self.assertEqual(result, [
+                {"pool_address": "0xaabb", "volume": 10.0},
+                {"pool_address": "0xccdd", "volume": 5.0},
+            ])

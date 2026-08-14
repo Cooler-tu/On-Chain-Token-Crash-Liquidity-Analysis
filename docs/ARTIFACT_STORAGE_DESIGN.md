@@ -1,6 +1,6 @@
 # Artifact Storage Design
 
-> Status: Phase 2 partially implemented (2026-08-13)
+> Status: Phase 2 implemented (2026-08-13)
 > Scope: local analysis artifacts produced by `python3 -m src.cli analyze`
 > Non-goal: this document does not change metric definitions, risk logic, or dashboard presentation.
 
@@ -292,21 +292,57 @@ token1_amount: string nullable
 identifiers and Ethereum integer values can exceed signed 64-bit range. Nullable LP/NFT and
 tick fields let one table represent V1/V2, V3/V4, Curve, and Balancer positions.
 
-### 7.6 Timeline tables
-
-All price, volume, balance, and TVL timelines should share:
+### 7.6 `tvl_timeline`
 
 ```text
-bucket_time: timestamp UTC
-bucket_size: string  # hour or day
+block_number: int64
+block_timestamp: timestamp UTC nullable
+bucket: string nullable
+chart_span: string nullable
 pool_address: string
-token_address: string
+protocol: string nullable
+version: string nullable
+event_type: string nullable
+source_event: string nullable
+balance_raw: string nullable
+liquidity: string nullable
+reserve0/reserve1: string nullable
+token0_amount/token1_amount: string nullable
+tvl_in_token: string
+tvl_usd: double nullable
+price: double nullable
+price_usd: double nullable
+quote_symbol: string nullable
 ```
 
-Metric-specific fields include `price_usd`, `volume_in_token`, `volume_usd`,
-`balance_raw`, `tvl_in_token`, and `tvl_usd`. Values derived from different temporal
-resolutions must record the source resolution and must not be described as exact hourly
-snapshots.
+The table supports both fixed balance×price snapshots and the legacy event-accumulation
+fallback. Raw balances, reserves, TVL, and token amounts remain decimal strings. The current
+price chart is represented by the `price` and `price_usd` columns rather than a separate
+physical price table.
+
+### 7.7 `volume_timeline`
+
+The compatibility JSON remains nested by bucket and pool. Parquet flattens it to one row per
+bucket and pool:
+
+```text
+bucket_timestamp: timestamp UTC
+pool_address: string
+protocol: string nullable
+version: string nullable
+volume_in_token: double
+volume_usd: double nullable
+total_volume_in_token: double
+quote_symbol: string nullable
+bucket_seconds: int64 nullable
+chart_span: string nullable
+bucket: string nullable
+source: string nullable
+```
+
+Values derived from different temporal resolutions record `bucket`, `bucket_seconds`, and
+`chart_span`; hourly rows must not be described as exact snapshots when the upstream balance
+ledger is daily.
 
 ## 8. Manifest contract
 
@@ -440,7 +476,9 @@ access layer.
 - [x] Migrate positions while preserving `positions.json` and `position_summary.json`.
 - [x] Verify 31-row real-output row-count parity, 54.7% smaller storage, and unchanged
   dashboard `portfolios.json` output.
-- [ ] Migrate timelines.
+- [x] Migrate TVL and nested volume timelines while preserving dashboard JSON inputs.
+- [x] Verify real-output parity: TVL 5,885 rows and volume 30 flattened rows; TVL storage
+  reduced 89.6%, volume storage reduced 31.0%, and dashboard HTML remained unchanged.
 - [x] Separate the holdings run summary from its canonical Parquet row table.
 
 ### Phase 3 — readers and combined-event removal

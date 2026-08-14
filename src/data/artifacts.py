@@ -1,9 +1,9 @@
 """Typed artifact storage for large tables and small JSON summaries.
 
 The migration keeps legacy JSON as the default and supports JSON/Parquet
-dual-write for swaps, transfers, liquidity events, holdings, and positions
-rows. Imports for optional analytical dependencies are lazy so existing
-JSON-only runs continue to work without PyArrow or DuckDB installed.
+dual-write for swaps, transfers, liquidity events, holdings, positions, and
+chart timeline rows. Imports for optional analytical dependencies are lazy so
+existing JSON-only runs continue to work without PyArrow or DuckDB installed.
 """
 from __future__ import annotations
 
@@ -438,6 +438,136 @@ def _normalize_position_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _tvl_timeline_schema(pa):
+    return pa.schema(
+        [
+            pa.field("block_number", pa.int64(), nullable=False),
+            pa.field("block_timestamp", pa.timestamp("s", tz="UTC"), nullable=True),
+            pa.field("bucket", pa.string(), nullable=True),
+            pa.field("chart_span", pa.string(), nullable=True),
+            pa.field("pool_address", pa.string(), nullable=False),
+            pa.field("protocol", pa.string(), nullable=True),
+            pa.field("version", pa.string(), nullable=True),
+            pa.field("event_type", pa.string(), nullable=True),
+            pa.field("source_event", pa.string(), nullable=True),
+            pa.field("balance_raw", pa.string(), nullable=True),
+            pa.field("liquidity", pa.string(), nullable=True),
+            pa.field("reserve0", pa.string(), nullable=True),
+            pa.field("reserve1", pa.string(), nullable=True),
+            pa.field("token0_amount", pa.string(), nullable=True),
+            pa.field("token1_amount", pa.string(), nullable=True),
+            pa.field("tvl_in_token", pa.string(), nullable=False),
+            pa.field("tvl_usd", pa.float64(), nullable=True),
+            pa.field("price", pa.float64(), nullable=True),
+            pa.field("price_usd", pa.float64(), nullable=True),
+            pa.field("quote_symbol", pa.string(), nullable=True),
+        ],
+        metadata=_schema_metadata("tvl_timeline"),
+    )
+
+
+def _normalize_tvl_timeline_row(row: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        raise ArtifactSchemaError("tvl_timeline rows must be dictionaries")
+    return {
+        "block_number": int(row.get("block_number") or 0),
+        "block_timestamp": _utc_datetime(row.get("block_timestamp")),
+        "bucket": str(row.get("bucket") or "") or None,
+        "chart_span": str(row.get("chart_span") or "") or None,
+        "pool_address": _lower_hex(row.get("pool_address") or "") or "",
+        "protocol": str(row.get("protocol") or "") or None,
+        "version": str(row.get("version") or "") or None,
+        "event_type": str(row.get("event_type") or "") or None,
+        "source_event": str(row.get("source_event") or "") or None,
+        "balance_raw": _optional_raw(row.get("balance_raw")),
+        "liquidity": _optional_raw(row.get("liquidity")),
+        "reserve0": _optional_raw(row.get("reserve0")),
+        "reserve1": _optional_raw(row.get("reserve1")),
+        "token0_amount": _optional_raw(row.get("token0_amount")),
+        "token1_amount": _optional_raw(row.get("token1_amount")),
+        "tvl_in_token": _raw_string(row.get("tvl_in_token")),
+        "tvl_usd": _optional_float(row.get("tvl_usd")),
+        "price": _optional_float(row.get("price")),
+        "price_usd": _optional_float(row.get("price_usd")),
+        "quote_symbol": str(row.get("quote_symbol") or "") or None,
+    }
+
+
+def _volume_timeline_schema(pa):
+    return pa.schema(
+        [
+            pa.field("bucket_timestamp", pa.timestamp("s", tz="UTC"), nullable=False),
+            pa.field("pool_address", pa.string(), nullable=False),
+            pa.field("protocol", pa.string(), nullable=True),
+            pa.field("version", pa.string(), nullable=True),
+            pa.field("volume_in_token", pa.float64(), nullable=False),
+            pa.field("volume_usd", pa.float64(), nullable=True),
+            pa.field("total_volume_in_token", pa.float64(), nullable=False),
+            pa.field("quote_symbol", pa.string(), nullable=True),
+            pa.field("bucket_seconds", pa.int64(), nullable=True),
+            pa.field("chart_span", pa.string(), nullable=True),
+            pa.field("bucket", pa.string(), nullable=True),
+            pa.field("source", pa.string(), nullable=True),
+        ],
+        metadata=_schema_metadata("volume_timeline"),
+    )
+
+
+def _normalize_volume_timeline_row(row: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        raise ArtifactSchemaError("volume_timeline rows must be dictionaries")
+    bucket_timestamp = _utc_datetime(row.get("bucket_timestamp"))
+    if bucket_timestamp is None:
+        bucket_timestamp = datetime.fromtimestamp(0, tz=timezone.utc)
+    return {
+        "bucket_timestamp": bucket_timestamp,
+        "pool_address": _lower_hex(row.get("pool_address") or "") or "",
+        "protocol": str(row.get("protocol") or "") or None,
+        "version": str(row.get("version") or "") or None,
+        "volume_in_token": float(row.get("volume_in_token") or 0),
+        "volume_usd": _optional_float(row.get("volume_usd")),
+        "total_volume_in_token": float(row.get("total_volume_in_token") or 0),
+        "quote_symbol": str(row.get("quote_symbol") or "") or None,
+        "bucket_seconds": _optional_int(row.get("bucket_seconds")),
+        "chart_span": str(row.get("chart_span") or "") or None,
+        "bucket": str(row.get("bucket") or "") or None,
+        "source": str(row.get("source") or "") or None,
+    }
+
+
+def flatten_volume_timeline(document: dict[str, Any]) -> list[dict[str, Any]]:
+    """Flatten nested volume buckets into one analytical row per pool/bucket."""
+    if not isinstance(document, dict):
+        raise ArtifactSchemaError("volume timeline document must be a dictionary")
+    pool_meta = document.get("volume_by_pool") or {}
+    common = {
+        "bucket_seconds": document.get("bucket_seconds"),
+        "chart_span": document.get("chart_span"),
+        "bucket": document.get("bucket"),
+        "source": document.get("source"),
+    }
+    rows: list[dict[str, Any]] = []
+    for bucket_row in document.get("volume_timeline") or []:
+        bucket_ts = bucket_row.get("bucket_ts")
+        total = bucket_row.get("total_volume_in_token") or 0
+        for pool_address, pool_row in (bucket_row.get("pools") or {}).items():
+            meta = pool_meta.get(pool_address) or pool_meta.get(
+                str(pool_address).lower(), {}
+            )
+            rows.append({
+                "bucket_timestamp": bucket_ts,
+                "pool_address": pool_address,
+                "protocol": meta.get("protocol"),
+                "version": meta.get("version"),
+                "volume_in_token": pool_row.get("volume_in_token") or 0,
+                "volume_usd": pool_row.get("volume_usd"),
+                "total_volume_in_token": total,
+                "quote_symbol": meta.get("quote_symbol"),
+                **common,
+            })
+    return rows
+
+
 def _table_schema(name: str, pa):
     if name == "swaps":
         return _swap_schema(pa), _normalize_swap_row
@@ -449,6 +579,10 @@ def _table_schema(name: str, pa):
         return _holdings_schema(pa), _normalize_holdings_row
     if name == "positions":
         return _positions_schema(pa), _normalize_position_row
+    if name == "tvl_timeline":
+        return _tvl_timeline_schema(pa), _normalize_tvl_timeline_row
+    if name == "volume_timeline":
+        return _volume_timeline_schema(pa), _normalize_volume_timeline_row
     raise ArtifactSchemaError(
         "Parquet schema for table {!r} is not implemented yet".format(name)
     )
@@ -535,6 +669,8 @@ def read_table(
                 rows = json.load(f)
             if name == "holdings" and isinstance(rows, dict):
                 rows = rows.get("holdings") or []
+            if name == "volume_timeline" and isinstance(rows, dict):
+                rows = flatten_volume_timeline(rows)
             if not isinstance(rows, list):
                 raise ArtifactSchemaError(
                     "JSON artifact {!r} does not contain a row list".format(name)
@@ -546,7 +682,11 @@ def read_table(
         rows = pq.read_table(path, columns=columns, filters=filters).to_pylist()
         if legacy_rows:
             for row in rows:
-                for key in ("block_timestamp", "query_timestamp"):
+                for key in (
+                    "block_timestamp",
+                    "query_timestamp",
+                    "bucket_timestamp",
+                ):
                     timestamp = row.get(key)
                     if isinstance(timestamp, datetime):
                         row[key] = int(timestamp.timestamp())
