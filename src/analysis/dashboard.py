@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,8 +44,8 @@ def _load_templates():
         return
 
     _JS_TEMPLATE = """const topH = {top_h_json};
-const poolH = {pool_h_json};
-const poolI = {pool_i_json};
+const poolReserveRows = {pool_reserve_json};
+const addressLabels = {address_labels_json};
 const tvlD = {tvl_json};
 const portfolioData = {portfolio_json};
 const tokenSymbol = "{symbol}";
@@ -52,7 +53,6 @@ const chainId = {chain_id};
 const tvlPointDetails = {tvl_detail_json};
 const chartSeriesColors = {chart_colors_json};
 const topChartHolders = topH.slice(0, 10);
-const poolReserveRows = poolH.filter(function(d){return Number(d.balance_decimal || 0) > 0;});
 
 function fmtNum(v, digits){
   if (v === null || v === undefined || isNaN(v)) return '<span class="muted">-</span>';
@@ -69,6 +69,13 @@ function shortIdentifier(value){
   var text = String(value == null ? '' : value);
   return text.length > 14 ? text.slice(0, 8) + '...' + text.slice(-4) : (text || '-');
 }
+function displayLabelFor(value){
+  var full = String(value == null ? '' : value);
+  if (!full) return '-';
+  var mapped = addressLabels && addressLabels[full.toLowerCase()];
+  if (mapped) return String(mapped);
+  return shortIdentifier(full);
+}
 function isEthereumAddress(value){
   return /^0x[0-9a-fA-F]{40}$/.test(String(value || ''));
 }
@@ -81,7 +88,7 @@ function identifierHtml(value){
     + ' aria-label="Copy full identifier ' + safe + '"'
     + ' onmouseenter="showIdentifierTooltip(this)" onmouseleave="hideIdentifierTooltip()"'
     + ' onfocus="showIdentifierTooltip(this)" onblur="hideIdentifierTooltip()"'
-    + ' onclick="copyIdentifier(event,this)">' + escTxt(shortIdentifier(full)) + '</button>';
+    + ' onclick="copyIdentifier(event,this)">' + escTxt(displayLabelFor(full)) + '</button>';
   if (chainId === 1 && isEthereumAddress(full)) {
     result += '<a class="identifier-link" href="https://etherscan.io/address/' + safe + '"'
       + ' target="_blank" rel="noopener noreferrer" title="Open in Etherscan"'
@@ -214,7 +221,7 @@ function closeTvlDetails(){
   tc('c3',{
     type:'bar',
     data:{
-      labels:topChartHolders.map(function(d){return shortIdentifier(d.address);}),
+      labels:topChartHolders.map(function(d){return displayLabelFor(d.address);}),
       datasets:[{label:'Balance',data:topChartHolders.map(function(d){return d.balance_decimal;}),backgroundColor:'#3b82f6',borderRadius:4}]
     },
     options:{
@@ -248,27 +255,30 @@ function closeTvlDetails(){
       scales:{y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#64748b'},grid:{display:false}}}
     }
   });
-  if (document.getElementById('c7') && poolReserveRows.length) {
+  if (document.getElementById('c7') && poolReserveRows && poolReserveRows.length) {
     tc('c7',{
       type:'pie',
       data:{
         labels:poolReserveRows.map(function(d){
-          return (d.pool_label || 'DEX custody') + ' · ' + shortIdentifier(d.address);
+          return d.pool_label || shortIdentifier(d.address);
         }),
         datasets:[{
           label:'Observed token reserve',
           data:poolReserveRows.map(function(d){return Number(d.balance_decimal || 0);}),
           backgroundColor:poolReserveRows.map(function(_,i){return chartSeriesColors[i % chartSeriesColors.length];}),
           borderColor:'#1e293b',
-          borderWidth:2,
-          hoverOffset:8
+          borderWidth:1,
+          hoverOffset:6
         }]
       },
       options:{
         responsive:true,
         maintainAspectRatio:false,
         plugins:{
-          legend:{position:'right',labels:{color:'#94a3b8',padding:14,boxWidth:14,font:{size:11}}},
+          legend:{
+            position:'bottom',
+            labels:{color:'#94a3b8',padding:8,boxWidth:10,font:{size:10}}
+          },
           tooltip:{callbacks:{
             title:function(items){
               var row = items && items.length ? poolReserveRows[items[0].dataIndex] : null;
@@ -279,11 +289,11 @@ function closeTvlDetails(){
               var total = poolReserveRows.reduce(function(sum,d){return sum + Number(d.balance_decimal || 0);},0);
               var value = Number(row.balance_decimal || 0);
               var share = total > 0 ? value / total * 100 : 0;
-              return (row.pool_label || 'DEX custody') + ': '
-                + value.toLocaleString(undefined,{maximumFractionDigits:6}) + ' ' + tokenSymbol
+              return (row.pool_label || 'Reserve') + ': '
+                + value.toLocaleString(undefined,{maximumFractionDigits:4}) + ' ' + tokenSymbol
                 + ' (' + share.toFixed(2) + '%)';
             },
-            footer:function(){return 'Click slice to copy full address';}
+            footer:function(){return 'Click slice to copy address';}
           }}
         },
         onHover:function(event,elements){
@@ -391,7 +401,14 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .fw{grid-column:1/-1}
 .chart-box{position:relative;height:260px;width:100%}
 .chart-box-sm{position:relative;height:200px;width:100%}
-.pool-reserve-chart{position:relative;height:300px;width:100%;max-width:900px;margin:0 auto}
+.pools-layout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start}
+@media (max-width:980px){.pools-layout{grid-template-columns:1fr}}
+.pool-reserve-side{border:1px solid var(--border);border-radius:8px;padding:12px;background:rgba(15,23,42,0.35)}
+.pool-reserve-side-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:8px}
+.pool-reserve-side-note{font-size:10px;color:var(--text-dim);line-height:1.4;margin-top:8px}
+.pool-reserve-mini{position:relative;height:190px;width:100%}
+.token-pair{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.token-pair .pair-sep{color:var(--text-dim);font-weight:600}
 .point-details{margin-top:14px;padding:14px;background:rgba(15,23,42,0.65);border:1px solid var(--border);border-radius:8px}
 .point-details-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .point-details-title{font-size:13px;font-weight:600;color:var(--text)}
@@ -462,7 +479,6 @@ tr:hover td{background:rgba(59,130,246,0.04)}
   <nav class="nav-bar">
     <div class="brand"><span class="brand-accent">On-Chain</span> Token Crash</div>
     <div class="nav-links">
-      <a href="../index.html">Home</a>
       <a href="#" class="active">Dashboard</a>
       <a href="https://github.com/Cooler-tu/On-Chain-Token-Crash-Liquidity-Analysis" target="_blank">GitHub</a>
     </div>
@@ -720,10 +736,41 @@ def generate_dashboard(
     pool_liquidity = _pool_liquidity_presentation(pool_ident, metrics)
     main_pool_share = pool_conc.get("main_pool_share", 0) * 100
     main_pool_addr = pool_conc.get("main_pool", "")
-    main_pool_label = _identifier_html(main_pool_addr, chain_id=chain_id)
     main_volume_addr = volume_metrics.get("main_volume_pool", "")
     main_volume_share = volume_metrics.get("main_volume_share", 0) * 100
-    main_volume_label = _identifier_html(main_volume_addr, chain_id=chain_id)
+    token_symbols = _resolve_token_symbol_map(
+        pool_ident,
+        target_address=token_addr,
+        target_symbol=symbol,
+    )
+    # Also pull tokens from verified_pools in case pool_ident is incomplete.
+    more_symbols = _resolve_token_symbol_map(
+        [
+            {
+                "token0": (p.get("token0") if isinstance(p, dict) else getattr(p, "token0", "")),
+                "token1": (p.get("token1") if isinstance(p, dict) else getattr(p, "token1", "")),
+            }
+            for p in (verified_pools or [])
+        ],
+        target_address=token_addr,
+        target_symbol=symbol,
+    )
+    token_symbols.update(more_symbols)
+    address_labels = _build_address_display_labels(
+        pool_ident or verified_pools,
+        token_symbols=token_symbols,
+        verified_pools=verified_pools,
+    )
+    main_pool_label = _identifier_html(
+        main_pool_addr,
+        chain_id=chain_id,
+        label=address_labels.get((main_pool_addr or "").lower()),
+    )
+    main_volume_label = _identifier_html(
+        main_volume_addr,
+        chain_id=chain_id,
+        label=address_labels.get((main_volume_addr or "").lower()),
+    )
     if main_pool_addr and main_volume_addr:
         pool_conc_summary = (
             "Main measured liquidity pool: {} ({:.2f}%) · Main volume pool: {} ({:.2f}%)".format(
@@ -760,21 +807,43 @@ def generate_dashboard(
     )
 
     # Build tables
-    table_top = _table_top_holders(top_holders, symbol, chain_id=chain_id)
-    table_ident = _table_pool_ident(
-        pool_ident, metrics, decimals, symbol, chain_id=chain_id
+    table_top = _table_top_holders(
+        top_holders, symbol, chain_id=chain_id, address_labels=address_labels
+    )
+    table_ident, reserve_pie_rows = _table_pool_ident(
+        pool_ident,
+        metrics,
+        decimals,
+        symbol,
+        chain_id=chain_id,
+        pool_holders=pool_holders,
+        verified_pools=verified_pools,
+        token_symbols=token_symbols,
+        address_labels=address_labels,
     )
     table_movers = _table_wallet_movers(
-        swaps_data, holdings_data, token_addr, decimals, symbol, chain_id=chain_id
+        swaps_data,
+        holdings_data,
+        token_addr,
+        decimals,
+        symbol,
+        chain_id=chain_id,
+        address_labels=address_labels,
     )
     table_withdrawals = _table_withdrawals(
-        metrics, decimals, symbol, chain_id=chain_id
+        metrics,
+        decimals,
+        symbol,
+        chain_id=chain_id,
+        address_labels=address_labels,
     )
     table_withdrawal_summary = _table_withdrawal_summary(
-        metrics, symbol, chain_id=chain_id
+        metrics, symbol, chain_id=chain_id, address_labels=address_labels
+    )
+    table_large = _table_large_wallets(
+        metrics, symbol, chain_id=chain_id, address_labels=address_labels
     )
     withdrawal_quantification_note = _withdrawal_quantification_note(metrics)
-    table_large = _table_large_wallets(metrics, symbol, chain_id=chain_id)
 
     balance_note_parts = []
     balance_start_block = holdings.get("balance_start_block") or from_block
@@ -874,18 +943,24 @@ def generate_dashboard(
             )
             large_wallet_note = prefix + " · ".join(note_parts) + "."
 
-    pool_reserve_section = _pool_reserve_section(pool_holders, symbol)
-    if pool_reserve_section:
-        pool_section_parts.append(pool_reserve_section)
     if table_ident:
+        reserve_pie_block = ""
+        if reserve_pie_rows:
+            reserve_pie_block = """<aside class="pool-reserve-side">
+        <div class="pool-reserve-side-title">Reserve share</div>
+        <div class="pool-reserve-mini"><canvas id="c7"></canvas></div>
+        <p class="pool-reserve-side-note">Observed target-token reserve mix across verified pools (same values as the Reserve column).</p>
+      </aside>"""
         pool_section_parts.append(f"""<div class="grid">
     <div class="card fw">
       <h2>All Verified Pools</h2>
       <div class="coverage-note"><strong>{pool_liquidity['coverage_title']}</strong>{pool_liquidity['comparison_note']}<br>{pool_liquidity['method_note']}</div>
-      <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>Estimated Pool Liquidity (in {html.escape(str(symbol))})</th><th>Volume ({symbol})</th><th>{pool_liquidity['share_header']}</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
+      <div class="pools-layout">
+        <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>Observed Token Reserve</th><th>Estimated Pool Liquidity (in {html.escape(str(symbol))})</th><th>Volume ({symbol})</th><th>{pool_liquidity['share_header']}</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
+        {reserve_pie_block}
+      </div>
     </div>
   </div>""")
-    pool_section = "\n".join(pool_section_parts)
 
     if table_movers:
         pool_section_parts.append(f"""<div class="grid">
@@ -922,18 +997,30 @@ def generate_dashboard(
         metrics.get("tvl_timeline_source"), tvl_data
     )
 
-    tvl_chart = _build_tvl_chart_js(tvl_data, token_decimals=decimals, symbol=symbol)
-    tvl_details = _build_tvl_details_data(
-        tvl_data, volume_metrics, token_decimals=decimals
+    tvl_chart = _build_tvl_chart_js(
+        tvl_data,
+        token_decimals=decimals,
+        symbol=symbol,
+        address_labels=address_labels,
     )
-    price_chart = _build_price_chart_js(tvl_data, symbol=symbol)
-    volume_chart = _build_volume_chart_js(volume_metrics, symbol=symbol)
+    tvl_details = _build_tvl_details_data(
+        tvl_data,
+        volume_metrics,
+        token_decimals=decimals,
+        address_labels=address_labels,
+    )
+    price_chart = _build_price_chart_js(
+        tvl_data, symbol=symbol, address_labels=address_labels
+    )
+    volume_chart = _build_volume_chart_js(
+        volume_metrics, symbol=symbol, address_labels=address_labels
+    )
 
     # Build JS
     js_vars = {
         "top_h_json": json.dumps(top_holders, indent=2),
-        "pool_h_json": json.dumps(pool_holders, indent=2),
-        "pool_i_json": json.dumps(pool_ident, indent=2),
+        "pool_reserve_json": json.dumps(reserve_pie_rows, indent=2),
+        "address_labels_json": json.dumps(address_labels, indent=2),
         "tvl_json": json.dumps(tvl_data, indent=2),
         "portfolio_json": portfolio_json,
         "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
@@ -959,7 +1046,11 @@ def generate_dashboard(
         "symbol": symbol,
         "token_name": token_name,
         "chain_id": chain_id,
-        "token_identifier": _identifier_html(token_addr, chain_id=chain_id),
+        "token_identifier": _identifier_html(
+            token_addr,
+            chain_id=chain_id,
+            label=address_labels.get((token_addr or "").lower()) or symbol,
+        ),
         "query_time": query_time or "N/A",
         "block_window": block_window,
         "decimals": decimals,
@@ -1032,21 +1123,43 @@ def _build_tvl_chart_js(
     tvl_data: list,
     token_decimals: int = 18,
     symbol: str = "TOKEN",
+    address_labels: Optional[dict[str, str]] = None,
 ) -> str:
     return _config_to_chart_js(
         "c4",
-        _build_tvl_chart_config(tvl_data, token_decimals=token_decimals, symbol=symbol),
+        _build_tvl_chart_config(
+            tvl_data,
+            token_decimals=token_decimals,
+            symbol=symbol,
+            address_labels=address_labels,
+        ),
         with_tvl_click=True,
     )
 
 
-def _build_price_chart_js(tvl_data: list, symbol: str = "TOKEN") -> str:
-    return _config_to_chart_js("c5", _build_price_chart_config(tvl_data, symbol=symbol))
-
-
-def _build_volume_chart_js(volume_metrics: dict, symbol: str = "TOKEN") -> str:
+def _build_price_chart_js(
+    tvl_data: list,
+    symbol: str = "TOKEN",
+    address_labels: Optional[dict[str, str]] = None,
+) -> str:
     return _config_to_chart_js(
-        "c6", _build_volume_chart_config(volume_metrics, symbol=symbol)
+        "c5",
+        _build_price_chart_config(
+            tvl_data, symbol=symbol, address_labels=address_labels
+        ),
+    )
+
+
+def _build_volume_chart_js(
+    volume_metrics: dict,
+    symbol: str = "TOKEN",
+    address_labels: Optional[dict[str, str]] = None,
+) -> str:
+    return _config_to_chart_js(
+        "c6",
+        _build_volume_chart_config(
+            volume_metrics, symbol=symbol, address_labels=address_labels
+        ),
     )
 
 
@@ -1270,6 +1383,7 @@ def _build_tvl_chart_config(
     tvl_data: list,
     token_decimals: int = 18,
     symbol: str = "TOKEN",
+    address_labels: Optional[dict[str, str]] = None,
 ) -> dict:
     if not tvl_data:
         return _empty_line_config()
@@ -1289,7 +1403,7 @@ def _build_tvl_chart_config(
     for i, pa in enumerate(pool_addresses):
         color = _CHART_SERIES_COLORS[i % len(_CHART_SERIES_COLORS)]
         datasets.append({
-            "label": _short_pool_label(pa),
+            "label": _address_display_label(pa, address_labels),
             "data": [
                 block_pools.get(block, {}).get(pa, {}).get("value", 0.0)
                 for block in labels
@@ -1357,6 +1471,7 @@ def _build_tvl_details_data(
     tvl_data: list,
     volume_metrics: Optional[dict],
     token_decimals: int = 18,
+    address_labels: Optional[dict[str, str]] = None,
 ) -> list:
     """Build per-time-point pool details for the TVL chart click handler."""
     if not tvl_data:
@@ -1399,7 +1514,7 @@ def _build_tvl_details_data(
                     tvl_token = value
             pools.append({
                 "address": pa,
-                "label": _short_pool_label(pa),
+                "label": _address_display_label(pa, address_labels),
                 "protocol": "{} {}".format(
                     entry.get("protocol") or "", entry.get("version") or ""
                 ).strip(),
@@ -1435,6 +1550,7 @@ def _build_tvl_details_data(
 def _build_price_chart_config(
     tvl_data: list,
     symbol: str = "TOKEN",
+    address_labels: Optional[dict[str, str]] = None,
 ) -> dict:
     by_pool: dict[str, list[dict]] = defaultdict(list)
     for t in tvl_data:
@@ -1451,7 +1567,7 @@ def _build_price_chart_config(
         vals_by_block = {t["block_number"]: t["price_usd"] for t in entries}
         color = _CHART_SERIES_COLORS[i % len(_CHART_SERIES_COLORS)]
         datasets.append({
-            "label": _short_pool_label(pa),
+            "label": _address_display_label(pa, address_labels),
             "data": [vals_by_block.get(b) for b in labels],
             "borderColor": color,
             "backgroundColor": color + "33",
@@ -1491,6 +1607,7 @@ def _build_price_chart_config(
 def _build_volume_chart_config(
     volume_metrics: dict,
     symbol: str = "TOKEN",
+    address_labels: Optional[dict[str, str]] = None,
 ) -> dict:
     timeline = (volume_metrics or {}).get("volume_timeline", [])
     pool_ids = sorted((volume_metrics or {}).get("volume_by_pool", {}).keys())
@@ -1534,7 +1651,7 @@ def _build_volume_chart_config(
                 bucket.get("pools", {}).get(pa, {}).get("volume_in_token", 0)
             )
         datasets.append({
-            "label": _short_pool_label(pa),
+            "label": _address_display_label(pa, address_labels),
             "data": data,
             "backgroundColor": color,
             "borderColor": color,
@@ -1574,6 +1691,29 @@ def _short_pool_label(addr: str) -> str:
     if len(addr) <= 14:
         return addr
     return addr[:8] + "..." + addr[-4:]
+
+
+def _address_display_label(
+    addr: Any, address_labels: Optional[dict[str, str]] = None
+) -> str:
+    full = str(addr or "")
+    if not full:
+        return "N/A"
+    mapped = (address_labels or {}).get(full.lower())
+    if mapped:
+        return str(mapped)
+    return _short_pool_label(full)
+
+
+def _labeled_identifier_html(
+    value: Any,
+    *,
+    chain_id: int = 1,
+    address_labels: Optional[dict[str, str]] = None,
+) -> str:
+    full = str(value or "")
+    label = (address_labels or {}).get(full.lower()) if full else None
+    return _identifier_html(full, chain_id=chain_id, label=label)
 
 
 def _short_addr(addr: str) -> str:
@@ -1721,13 +1861,16 @@ def _tvl_method_presentation(
     }
 
 
-def _identifier_html(value: Any, *, chain_id: int = 1) -> str:
+def _identifier_html(
+    value: Any, *, chain_id: int = 1, label: Optional[str] = None
+) -> str:
     """Render a compact, copyable identifier with an optional Etherscan link."""
     full = str(value or "")
     if not full:
         return _fmt_missing()
     safe_full = html.escape(full, quote=True)
-    safe_short = html.escape(_short_pool_label(full), quote=False)
+    display = str(label).strip() if label not in (None, "") else _short_pool_label(full)
+    safe_short = html.escape(display, quote=False)
     button = (
         '<button type="button" class="identifier-copy addr" '
         'data-identifier="{full}" aria-label="Copy full identifier {full}" '
@@ -1797,6 +1940,7 @@ def _table_wallet_movers(
     symbol: str,
     top_n: int = 20,
     chain_id: int = 1,
+    address_labels: Optional[dict[str, str]] = None,
 ) -> str:
     target = (target_token or "").lower()
     if not target:
@@ -1896,7 +2040,9 @@ def _table_wallet_movers(
             "<td>{}</td>"
             "</tr>".format(
                 i,
-                _identifier_html(addr, chain_id=chain_id),
+                _labeled_identifier_html(
+                    addr, chain_id=chain_id, address_labels=address_labels
+                ),
                 _fmt_bal(float(s["bought"]), symbol),
                 _fmt_bal(float(s["sold"]), symbol),
                 _fmt_bal(float(s["net"]), symbol),
@@ -1914,6 +2060,7 @@ def _table_large_wallets(
     symbol: str,
     top_n: int = 25,
     chain_id: int = 1,
+    address_labels: Optional[dict[str, str]] = None,
 ) -> str:
     """Render notable-wallet rows from metrics.wallet_activity."""
     activity = metrics.get("wallet_activity") or {}
@@ -1978,7 +2125,11 @@ def _table_large_wallets(
             "<td>{}</td>"
             "</tr>".format(
                 i,
-                _identifier_html(w.get("address", ""), chain_id=chain_id),
+                _labeled_identifier_html(
+                    w.get("address", ""),
+                    chain_id=chain_id,
+                    address_labels=address_labels,
+                ),
                 _fmt_usd(w.get("max_single_usd")),
                 _fmt_usd(w.get("bought_usd")),
                 _fmt_usd(w.get("sold_usd")),
@@ -2082,6 +2233,7 @@ def _table_withdrawal_summary(
     metrics: dict,
     symbol: str,
     chain_id: int = 1,
+    address_labels: Optional[dict[str, str]] = None,
 ) -> str:
     """Render a per-pool withdrawal summary table."""
     rows = metrics.get("withdrawal_severity", {}).get("per_pool_removals", []) or []
@@ -2098,7 +2250,11 @@ def _table_withdrawal_summary(
             "<td>{}</td>"
             "<td>{}</td>"
             "</tr>".format(
-                _identifier_html(r.get("pool_address", ""), chain_id=chain_id),
+                _labeled_identifier_html(
+                    r.get("pool_address", ""),
+                    chain_id=chain_id,
+                    address_labels=address_labels,
+                ),
                 int(r.get("num_withdrawals") or 0),
                 _fmt_bal(float(r.get("removed_target_decimal") or 0), symbol),
                 _fmt_usd(r.get("removed_usd")),
@@ -2119,6 +2275,7 @@ def _table_withdrawals(
     symbol: str,
     top_n: int = 20,
     chain_id: int = 1,
+    address_labels: Optional[dict[str, str]] = None,
 ) -> str:
     events = metrics.get("withdrawal_severity", {}).get("withdrawal_events", []) or []
     if not events:
@@ -2160,7 +2317,9 @@ def _table_withdrawals(
         actor_or_scope = (
             "Pool/block aggregate"
             if e.get("aggregation_scope") == "pool_block"
-            else _identifier_html(actor, chain_id=chain_id)
+            else _labeled_identifier_html(
+                actor, chain_id=chain_id, address_labels=address_labels
+            )
         )
         delta_raw = str(e.get("liquidity_delta") or "0")
         try:
@@ -2183,8 +2342,10 @@ def _table_withdrawals(
             "<td>{}</td>"
             "</tr>".format(
                 int(e.get("block_number") or 0),
-                _identifier_html(
-                    e.get("pool", e.get("pool_address", "")), chain_id=chain_id
+                _labeled_identifier_html(
+                    e.get("pool", e.get("pool_address", "")),
+                    chain_id=chain_id,
+                    address_labels=address_labels,
                 ),
                 int(e.get("event_count") or 1),
                 actor_or_scope,
@@ -2198,7 +2359,12 @@ def _table_withdrawals(
     return "\n".join(rows)
 
 
-def _table_top_holders(holders: list, symbol: str, chain_id: int = 1) -> str:
+def _table_top_holders(
+    holders: list,
+    symbol: str,
+    chain_id: int = 1,
+    address_labels: Optional[dict[str, str]] = None,
+) -> str:
     if not holders:
         return (
             '<tr><td colspan="10" style="text-align:center;padding:24px;color:#64748b">'
@@ -2222,7 +2388,7 @@ def _table_top_holders(holders: list, symbol: str, chain_id: int = 1) -> str:
         rows.append(
             f'<tr class="holder-row" onclick="togglePortfolio(\'{addr}\')" data-owner="{addr}">'
             f"<td>{i}</td>"
-            f'<td>{_identifier_html(addr, chain_id=chain_id)}</td>'
+            f'<td>{_labeled_identifier_html(addr, chain_id=chain_id, address_labels=address_labels)}</td>'
             f'<td><span class="badge-{banner}">{banner}</span></td>'
             f"<td>{dex_html}</td>"
             f"<td>{_fmt_bal(h.get('balance_decimal', 0), symbol)}</td>"
@@ -2446,18 +2612,60 @@ def _table_pool_holders(holders: list, symbol: str, chain_id: int = 1) -> str:
     return "\n".join(rows)
 
 
-def _pool_reserve_section(holders: list, symbol: str) -> str:
-    """Explain and render the target-token balance distribution for DEX custody rows."""
-    if not holders:
-        return ""
-    safe_symbol = html.escape(str(symbol or "TOKEN"))
-    return f"""<div class="grid">
-    <div class="card fw">
-      <h2>DEX Custody Token Reserve Distribution</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 12px;line-height:1.55">Share of the observed {safe_symbol} balance held by identified DEX pool or custody addresses at the balance snapshot. This is not LP count or full USD TVL. V2/V3 balances are generally pool-local; a V4 PoolManager address is shared custody and may aggregate multiple V4 pools. Hover for the full address, balance, and share &middot; Click a slice to copy.</p>
-      <div class="pool-reserve-chart"><canvas id="c7"></canvas></div>
-    </div>
-  </div>"""
+def _pool_custody_map(verified_pools: Optional[list] = None) -> dict[str, str]:
+    """Map pool_address / poolId → custody address used for token reserves."""
+    out: dict[str, str] = {}
+    for pool in verified_pools or []:
+        if isinstance(pool, dict):
+            pool_addr = (pool.get("pool_address") or "").lower()
+            custody = (pool.get("custody_address") or pool_addr).lower()
+        else:
+            pool_addr = (getattr(pool, "pool_address", None) or "").lower()
+            custody = (getattr(pool, "custody_address", None) or pool_addr).lower()
+        if pool_addr:
+            out[pool_addr] = custody or pool_addr
+    return out
+
+
+def _observed_token_reserves(
+    pools: list,
+    pool_holders: Optional[list] = None,
+    verified_pools: Optional[list] = None,
+) -> tuple[dict[str, float], dict[str, str], float]:
+    """Resolve per-pool observed target-token reserves and unique-custody total.
+
+    Returns (reserve_by_pool, custody_by_pool, total_unique_custody_reserve).
+    Share uses unique custody addresses so V4 PoolManager balances are not
+    double-counted across multiple poolIds.
+    """
+    holder_bal = {
+        (row.get("address") or "").lower(): float(row.get("balance_decimal") or 0)
+        for row in (pool_holders or [])
+        if (row.get("address") or "")
+    }
+    custody_by_pool = _pool_custody_map(verified_pools)
+    reserve_by_pool: dict[str, float] = {}
+    custody_reserve: dict[str, float] = {}
+
+    for pool in pools:
+        pool_addr = (pool.get("pool_address") or "").lower()
+        if not pool_addr:
+            continue
+        custody = custody_by_pool.get(pool_addr, pool_addr)
+        custody_by_pool[pool_addr] = custody
+        from_ident = float(pool.get("balance_decimal") or 0)
+        reserve = from_ident
+        if reserve <= 0:
+            reserve = float(holder_bal.get(pool_addr) or 0)
+        if reserve <= 0:
+            reserve = float(holder_bal.get(custody) or 0)
+        reserve_by_pool[pool_addr] = reserve
+        if custody not in custody_reserve or reserve > custody_reserve[custody]:
+            preferred = float(holder_bal.get(custody) or 0)
+            custody_reserve[custody] = preferred if preferred > 0 else reserve
+
+    total = sum(value for value in custody_reserve.values() if value > 0)
+    return reserve_by_pool, custody_by_pool, total
 
 
 def _pool_liquidity_presentation(pools: list, metrics: dict) -> dict[str, str]:
@@ -2527,7 +2735,10 @@ def _pool_liquidity_presentation(pools: list, metrics: dict) -> dict[str, str]:
     method_note = (
         method
         + ". Estimated pool liquidity is expressed in target-token units, not USD. "
-        + "“Not measured” does not mean zero liquidity."
+        + "“Not measured” does not mean zero liquidity. "
+        + "Observed Token Reserve is the target-token balance at the pool or "
+        + "custody address (not LP count or full USD TVL); V4 may use a shared "
+        + "PoolManager balance."
     )
     return {
         "coverage_title": coverage_title,
@@ -2539,13 +2750,196 @@ def _pool_liquidity_presentation(pools: list, metrics: dict) -> dict[str, str]:
     }
 
 
+def _known_token_symbols() -> dict[str, str]:
+    return {
+        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": "WETH",
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": "USDC",
+        "0xdac17f958d2ee523a2206206994597c13d831ec7": "USDT",
+        "0x6b175474e89094c44da98b954eedeac495271d0f": "DAI",
+        "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": "WBTC",
+        "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee": "ETH",
+    }
+
+
+def _decode_maybe_bytes32_symbol(raw: Any) -> str:
+    if isinstance(raw, (bytes, bytearray)):
+        text = bytes(raw).split(b"\x00", 1)[0].decode("utf-8", errors="ignore")
+        return text.strip()
+    if isinstance(raw, str):
+        return raw.strip()
+    return ""
+
+
+def _fetch_erc20_symbol(w3: Any, address: str) -> str:
+    checksum = Web3.to_checksum_address(address)
+    string_abi = [
+        {
+            "constant": True,
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [{"name": "", "type": "string"}],
+            "type": "function",
+        }
+    ]
+    bytes_abi = [
+        {
+            "constant": True,
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [{"name": "", "type": "bytes32"}],
+            "type": "function",
+        }
+    ]
+    try:
+        contract = w3.eth.contract(address=checksum, abi=string_abi)
+        return _decode_maybe_bytes32_symbol(contract.functions.symbol().call())
+    except Exception:
+        pass
+    try:
+        contract = w3.eth.contract(address=checksum, abi=bytes_abi)
+        return _decode_maybe_bytes32_symbol(contract.functions.symbol().call())
+    except Exception:
+        return ""
+
+
+def _resolve_token_symbol_map(
+    pools: list,
+    *,
+    target_address: str = "",
+    target_symbol: str = "",
+    rpc_url: str = "",
+) -> dict[str, str]:
+    """Map token addresses → symbols for pool pair labels."""
+    symbols = dict(_known_token_symbols())
+    target = (target_address or "").lower()
+    if target and target_symbol:
+        symbols[target] = str(target_symbol)
+
+    addresses: list[str] = []
+    seen: set[str] = set()
+    for pool in pools or []:
+        for key in ("token0", "token1"):
+            addr = (pool.get(key) or "").lower()
+            if addr.startswith("0x") and addr not in seen:
+                seen.add(addr)
+                addresses.append(addr)
+
+    missing = [addr for addr in addresses if addr not in symbols]
+    if not missing:
+        return symbols
+
+    url = (rpc_url or os.environ.get("ETH_RPC_URL") or os.environ.get("RPC_URL") or "").strip()
+    if not url:
+        return symbols
+    try:
+        w3 = Web3(Web3.HTTPProvider(url, request_kwargs={"timeout": 20}))
+        for addr in missing:
+            if not Web3.is_address(addr):
+                continue
+            sym = _fetch_erc20_symbol(w3, addr)
+            if sym:
+                symbols[addr] = sym
+    except Exception:
+        return symbols
+    return symbols
+
+
+def _token_pair_text(
+    token0: str,
+    token1: str,
+    token_symbols: Optional[dict[str, str]] = None,
+) -> str:
+    symbols = token_symbols or {}
+    t0 = (token0 or "").lower()
+    t1 = (token1 or "").lower()
+    sym0 = symbols.get(t0) or _short_pool_label(token0)
+    sym1 = symbols.get(t1) or _short_pool_label(token1)
+    return "{}/{}".format(sym0, sym1)
+
+
+def _build_address_display_labels(
+    pools: list,
+    *,
+    token_symbols: Optional[dict[str, str]] = None,
+    verified_pools: Optional[list] = None,
+) -> dict[str, str]:
+    """Map token + pool addresses to human labels (symbols / pair names)."""
+    labels: dict[str, str] = {}
+    symbols = dict(token_symbols or {})
+    for addr, sym in symbols.items():
+        if addr and sym:
+            labels[str(addr).lower()] = str(sym)
+
+    rows = list(pools or [])
+    for pool in verified_pools or []:
+        if isinstance(pool, dict):
+            rows.append(pool)
+        else:
+            rows.append(
+                {
+                    "pool_address": getattr(pool, "pool_address", ""),
+                    "protocol": getattr(pool, "protocol", ""),
+                    "version": getattr(pool, "version", ""),
+                    "token0": getattr(pool, "token0", ""),
+                    "token1": getattr(pool, "token1", ""),
+                    "custody_address": getattr(pool, "custody_address", ""),
+                }
+            )
+
+    for pool in rows:
+        if not isinstance(pool, dict):
+            continue
+        pool_addr = (pool.get("pool_address") or "").lower()
+        if not pool_addr:
+            continue
+        pair = _token_pair_text(
+            pool.get("token0", ""), pool.get("token1", ""), symbols
+        )
+        proto = "{} {}".format(
+            pool.get("protocol", "") or "", pool.get("version", "") or ""
+        ).strip()
+        label = "{} · {}".format(proto, pair) if proto else pair
+        # Prefer the first non-empty label; keep existing if already set.
+        labels.setdefault(pool_addr, label)
+        custody = (pool.get("custody_address") or "").lower()
+        # Only label shared custody when it equals the pool address (V2/V3).
+        # V4 PoolManager stays unlabeled as a pair to avoid multi-pool ambiguity.
+        if custody and custody == pool_addr:
+            labels.setdefault(custody, label)
+    return labels
+
+
+def _token_pair_html(
+    token0: str,
+    token1: str,
+    token_symbols: Optional[dict[str, str]] = None,
+    chain_id: int = 1,
+) -> str:
+    symbols = token_symbols or {}
+    t0 = (token0 or "").lower()
+    t1 = (token1 or "").lower()
+    label0 = symbols.get(t0) or None
+    label1 = symbols.get(t1) or None
+    left = _identifier_html(token0, chain_id=chain_id, label=label0)
+    right = _identifier_html(token1, chain_id=chain_id, label=label1)
+    return (
+        '<span class="token-pair">'
+        f"{left}<span class=\"pair-sep\">/</span>{right}"
+        "</span>"
+    )
+
+
 def _table_pool_ident(
     pools: list,
     metrics: dict,
     token_decimals: int = 18,
     symbol: str = "TOKEN",
     chain_id: int = 1,
-) -> str:
+    pool_holders: Optional[list] = None,
+    verified_pools: Optional[list] = None,
+    token_symbols: Optional[dict[str, str]] = None,
+    address_labels: Optional[dict[str, str]] = None,
+) -> tuple[str, list[dict[str, Any]]]:
     pool_conc = metrics.get("pool_concentration", {})
     per_pool_tvl = pool_conc.get("per_pool_tvl", {}) or {}
     volume_by_pool = metrics.get("volume", {}).get("volume_by_pool", {}) or {}
@@ -2554,12 +2948,27 @@ def _table_pool_ident(
     tvl_lookup = {str(k).lower(): v for k, v in per_pool_tvl.items()}
     vol_lookup = {str(k).lower(): v for k, v in volume_by_pool.items()}
     scale = 10 ** max(0, int(token_decimals or 18))
+    reserve_by_pool, custody_by_pool, total_reserve = _observed_token_reserves(
+        pools, pool_holders=pool_holders, verified_pools=verified_pools
+    )
+    custody_counts: dict[str, int] = defaultdict(int)
+    for pool in pools:
+        pool_addr = (pool.get("pool_address") or "").lower()
+        if pool_addr:
+            custody_counts[custody_by_pool.get(pool_addr, pool_addr)] += 1
+    symbols = token_symbols or {}
 
     rows = []
+    pie_rows: list[dict[str, Any]] = []
     for p in pools:
         pa = (p.get("pool_address") or "").lower()
-        t0 = _identifier_html(p.get("token0", ""), chain_id=chain_id)
-        t1 = _identifier_html(p.get("token1", ""), chain_id=chain_id)
+        t0 = p.get("token0", "")
+        t1 = p.get("token1", "")
+        pair_cell = _token_pair_html(t0, t1, symbols, chain_id=chain_id)
+        sym0 = symbols.get((t0 or "").lower()) or _short_pool_label(t0)
+        sym1 = symbols.get((t1 or "").lower()) or _short_pool_label(t1)
+        pair_label = "{}/{}".format(sym0, sym1)
+        proto = "{} {}".format(p.get("protocol", "") or "", p.get("version", "") or "").strip()
         in_list = "Yes" if p.get("in_holders_list") else "No"
         measured = pa in tvl_lookup and int(tvl_lookup.get(pa, 0) or 0) > 0
         raw_tvl = int(tvl_lookup.get(pa, 0) or 0) if measured else 0
@@ -2568,6 +2977,25 @@ def _table_pool_ident(
         vol_decimal = float(vol_info.get("volume_in_token", 0) or 0)
         tvl_share = raw_tvl / total_tvl * 100 if total_tvl > 0 and measured else 0.0
         vol_share = vol_decimal / total_volume * 100 if total_volume > 0 else 0.0
+        custody = custody_by_pool.get(pa, pa)
+        reserve = float(reserve_by_pool.get(pa, 0) or 0)
+        reserve_share = reserve / total_reserve * 100 if total_reserve > 0 and reserve > 0 else 0.0
+        if reserve > 0:
+            share_label = (
+                "&lt;0.1%" if 0 < reserve_share < 0.1 else "{:.2f}%".format(reserve_share)
+            )
+            reserve_cell = "{} ({})".format(_fmt_bal(reserve, symbol), share_label)
+            if custody_counts.get(custody, 0) > 1:
+                reserve_cell += ' <small class="muted">shared custody</small>'
+            pie_rows.append(
+                {
+                    "address": p.get("pool_address") or custody,
+                    "pool_label": "{} · {}".format(proto or "pool", pair_label),
+                    "balance_decimal": reserve,
+                }
+            )
+        else:
+            reserve_cell = '<span class="muted">0</span>'
         if measured:
             tvl_cell = _fmt_bal(tvl_decimal, symbol)
             share_label = (
@@ -2592,16 +3020,17 @@ def _table_pool_ident(
                 safe_note
             )
         rows.append(
-            f"<tr><td>{_identifier_html(p.get('pool_address', ''), chain_id=chain_id)}</td>"
-            f"<td>{p.get('protocol','')} {p.get('version','')}</td>"
-            f"<td>{t0}/{t1}</td>"
+            f"<tr><td>{_labeled_identifier_html(p.get('pool_address', ''), chain_id=chain_id, address_labels=address_labels)}</td>"
+            f"<td>{html.escape(proto)}</td>"
+            f"<td>{pair_cell}</td>"
+            f"<td>{reserve_cell}</td>"
             f"<td>{tvl_cell}</td>"
             f"<td>{_fmt_bal(vol_decimal, symbol)}</td>"
             f"<td>{share_cell}</td>"
             f"<td>{vol_share:.2f}%</td>"
             f"<td>{in_list}</td></tr>"
         )
-    return "\n".join(rows)
+    return "\n".join(rows), pie_rows
 
 
 def _fmt_bal(bal: float, symbol: str) -> str:

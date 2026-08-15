@@ -13,11 +13,11 @@ from src.analysis.dashboard import (
     _holder_semantics,
     _identifier_html,
     _pool_liquidity_presentation,
-    _pool_reserve_section,
     _rank_non_pool_holders,
     _table_withdrawals,
     _table_pool_ident,
     _table_large_wallets,
+    _token_pair_html,
     _tvl_method_presentation,
     _withdrawal_quantification_note,
 )
@@ -176,19 +176,88 @@ class IdentifierUxTest(unittest.TestCase):
         self.assertIn("Top {top_chart_holder_count} Non-Pool Holders", template)
         self.assertIn("Top {top_table_holder_count} Non-Pool Holders by End Balance", template)
 
-    def test_dex_custody_reserves_use_explained_pie_chart(self):
+    def test_observed_token_reserve_column_replaces_custody_pie(self):
         dashboard._load_templates()
         script = dashboard._JS_TEMPLATE or ""
-        section = _pool_reserve_section([{"balance_decimal": 1}], "TST")
+        pools = [
+            {
+                "pool_address": "0x" + "11" * 20,
+                "protocol": "uniswap",
+                "version": "v3",
+                "token0": "0x" + "33" * 20,
+                "token1": "0x" + "44" * 20,
+                "balance_decimal": 90.0,
+                "in_holders_list": True,
+            },
+            {
+                "pool_address": "0x" + "22" * 32,
+                "protocol": "uniswap",
+                "version": "v4",
+                "token0": "0x" + "33" * 20,
+                "token1": "0x" + "44" * 20,
+                "balance_decimal": 0.0,
+                "in_holders_list": False,
+            },
+        ]
+        metrics = {
+            "pool_concentration": {
+                "source": "onchain",
+                "snapshot_block": 123456,
+                "total_tvl": 100 * 10**18,
+                "per_pool_tvl": {pools[0]["pool_address"]: 100 * 10**18},
+            },
+            "volume": {},
+        }
+        pool_holders = [
+            {"address": pools[0]["pool_address"], "balance_decimal": 90.0},
+            {
+                "address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+                "balance_decimal": 10.0,
+            },
+        ]
+        verified = [
+            {
+                "pool_address": pools[0]["pool_address"],
+                "custody_address": pools[0]["pool_address"],
+            },
+            {
+                "pool_address": pools[1]["pool_address"],
+                "custody_address": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+            },
+        ]
+
+        rendered, pie_rows = _table_pool_ident(
+            pools,
+            metrics,
+            symbol="TST",
+            pool_holders=pool_holders,
+            verified_pools=verified,
+            token_symbols={
+                pools[0]["token0"].lower(): "AAA",
+                pools[0]["token1"].lower(): "BBB",
+            },
+        )
 
         self.assertIn("const poolReserveRows", script)
         self.assertIn("tc('c7'", script)
-        self.assertIn("type:'pie'", script)
-        self.assertIn("Click slice to copy full address", script)
-        self.assertIn("DEX Custody Token Reserve Distribution", section)
-        self.assertIn("This is not LP count or full USD TVL", section)
-        self.assertIn("V4 PoolManager address is shared custody", section)
-        self.assertEqual(_pool_reserve_section([], "TST"), "")
+        self.assertIn("pool-reserve-mini", dashboard._HTML_TEMPLATE or "")
+        self.assertIn("90.0000 TST (90.00%)", rendered)
+        self.assertIn("10.0000 TST (10.00%)", rendered)
+        self.assertIn("AAA", rendered)
+        self.assertIn("BBB", rendered)
+        self.assertEqual(len(pie_rows), 2)
+        self.assertIn("Observed Token Reserve", _pool_liquidity_presentation(pools, metrics)["method_note"])
+
+    def test_token_pair_prefers_symbol_labels(self):
+        html = _token_pair_html(
+            "0x" + "11" * 20,
+            "0x" + "22" * 20,
+            {"0x" + "11" * 20: "pepecoin", "0x" + "22" * 20: "WETH"},
+            chain_id=1,
+        )
+        self.assertIn("pepecoin", html)
+        self.assertIn("WETH", html)
+        self.assertIn("token-pair", html)
 
 
 class DashboardMetricSemanticsTest(unittest.TestCase):
@@ -279,7 +348,7 @@ class DashboardMetricSemanticsTest(unittest.TestCase):
         }
 
         presentation = _pool_liquidity_presentation(pools, metrics)
-        rendered = _table_pool_ident(pools, metrics, symbol="TST")
+        rendered, _pie = _table_pool_ident(pools, metrics, symbol="TST")
 
         self.assertIn("1 of 2 verified pools measured (50.0%)", presentation["coverage_title"])
         self.assertEqual(presentation["share_header"], "Share Among Measured Pools (1/2)")
@@ -289,6 +358,7 @@ class DashboardMetricSemanticsTest(unittest.TestCase):
         self.assertIn("of measured liquidity", rendered)
         self.assertIn("Not measured", rendered)
         self.assertNotIn('<span class="measured-share">0.0%', rendered)
+        self.assertIn("Observed Token Reserve", presentation["method_note"])
 
     def test_notable_wallet_table_uses_adaptive_labels_and_volume_share(self):
         metrics = {
