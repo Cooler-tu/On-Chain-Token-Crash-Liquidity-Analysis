@@ -213,7 +213,7 @@ function closeTvlDetails(){
     type:'doughnut',
     data:{
       labels:['Main measured pool','Other measured pools'],
-      datasets:[{data:[{pool_share},{pool_other}],backgroundColor:['#f59e0b','#1e293b'],borderWidth:0}]
+      datasets:[{data:[{pool_share},{pool_other}],backgroundColor:['#f59e0b','#64748b'],borderColor:'#1e293b',borderWidth:2}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}}}}
   });
@@ -515,6 +515,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     <div class="card glow">
       <div class="stat-value"><span class="badge bg-{risk_lvl_class}">{risk_level}</span></div>
       <div class="stat-label">Risk Index &middot; Score <span style="color:{risk_color}">{risk_score}</span></div>
+      <div class="stat-note">raw = 0.15·pool + 0.15·lp + 0.20·withdrawal + 0.15·temporal + 0.15·role + 0.15·impact + 0.05·activity</div>
+      <div class="stat-note">final = clamp(raw − migration, 0, 1) × confidence · not a crash probability · LOW &lt; 0.40 · MEDIUM 0.40–0.70 · HIGH ≥ 0.70</div>
     </div>
   </div>
 
@@ -685,6 +687,26 @@ def generate_dashboard(
     tvl_data = metrics.get("tvl_timeline", [])
     pool_conc = metrics.get("pool_concentration", {})
     volume_metrics = metrics.get("volume", {})
+
+    # Month windows should chart ~daily ticks even when TVL fell back to
+    # per-swap event points (event_accumulate_fallback).
+    from .metrics import chart_bucket_seconds, resample_tvl_timeline
+
+    chart_span_resolved = str(
+        metrics.get("chart_span") or volume_metrics.get("chart_span") or "month"
+    )
+    bucket_seconds = int(
+        volume_metrics.get("bucket_seconds")
+        or chart_bucket_seconds(chart_span_resolved)
+        or 0
+    )
+    if tvl_data and bucket_seconds > 0:
+        tvl_data = resample_tvl_timeline(
+            tvl_data,
+            bucket_seconds,
+            chart_span=chart_span_resolved,
+            chart_bucket=str(metrics.get("chart_bucket") or ""),
+        )
 
     risk_score = risk.get("final_score", 0)
     risk_level = risk.get("risk_level", "N/A")
@@ -1002,6 +1024,7 @@ def generate_dashboard(
         token_decimals=decimals,
         symbol=symbol,
         address_labels=address_labels,
+        bucket_seconds=bucket_seconds,
     )
     tvl_details = _build_tvl_details_data(
         tvl_data,
@@ -1009,8 +1032,19 @@ def generate_dashboard(
         token_decimals=decimals,
         address_labels=address_labels,
     )
+    price_rows = _price_series_for_chart(
+        tvl_data,
+        swaps=swaps_data,
+        verified_pools=verified_pools,
+        target_token=token_addr,
+        token_decimals=decimals,
+        bucket_seconds=bucket_seconds,
+    )
     price_chart = _build_price_chart_js(
-        tvl_data, symbol=symbol, address_labels=address_labels
+        price_rows,
+        symbol=symbol,
+        address_labels=address_labels,
+        bucket_seconds=bucket_seconds,
     )
     volume_chart = _build_volume_chart_js(
         volume_metrics, symbol=symbol, address_labels=address_labels
@@ -1124,6 +1158,7 @@ def _build_tvl_chart_js(
     token_decimals: int = 18,
     symbol: str = "TOKEN",
     address_labels: Optional[dict[str, str]] = None,
+    bucket_seconds: int = 0,
 ) -> str:
     return _config_to_chart_js(
         "c4",
@@ -1132,6 +1167,7 @@ def _build_tvl_chart_js(
             token_decimals=token_decimals,
             symbol=symbol,
             address_labels=address_labels,
+            bucket_seconds=bucket_seconds,
         ),
         with_tvl_click=True,
     )
@@ -1141,11 +1177,15 @@ def _build_price_chart_js(
     tvl_data: list,
     symbol: str = "TOKEN",
     address_labels: Optional[dict[str, str]] = None,
+    bucket_seconds: int = 0,
 ) -> str:
     return _config_to_chart_js(
         "c5",
         _build_price_chart_config(
-            tvl_data, symbol=symbol, address_labels=address_labels
+            tvl_data,
+            symbol=symbol,
+            address_labels=address_labels,
+            bucket_seconds=bucket_seconds,
         ),
     )
 
@@ -1317,6 +1357,78 @@ def _build_chart_span_views(
     return views
 
 
+def _price_series_for_chart(
+    tvl_data: list,
+    *,
+    swaps: Optional[list] = None,
+    verified_pools: Optional[list] = None,
+    target_token: str = "",
+    token_decimals: int = 18,
+    bucket_seconds: int = 0,
+) -> list[dict]:
+    """Prefer swap-derived USD prices so V2 event-TVL rows without price_usd still chart."""
+    from .metrics import calculate_price_timeline_from_swaps
+
+    seconds = int(bucket_seconds or 0) or 3_600
+    pool_models = []
+    for row in verified_pools or []:
+        if isinstance(row, VerifiedPool):
+            if row.verified:
+                pool_models.append(row)
+            continue
+        if not isinstance(row, dict) or not row.get("verified", True):
+            continue
+        allowed = set(VerifiedPool.__dataclass_fields__)
+        try:
+            pool_models.append(
+                VerifiedPool(**{k: v for k, v in row.items() if k in allowed})
+            )
+        except TypeError:
+            continue
+
+    if swaps and pool_models and target_token:
+        local = calculate_price_timeline_from_swaps(
+            swaps,
+            pool_models,
+            target_token,
+            token_decimals,
+            bucket_seconds=seconds,
+        )
+        if local:
+            return [
+                {
+                    "block_number": int(row["bucket_ts"]),
+                    "block_timestamp": int(row["bucket_ts"]),
+                    "pool_address": row.get("pool_address") or "",
+                    "price_usd": float(row.get("price_usd") or 0),
+                    "protocol": row.get("protocol") or "",
+                    "version": row.get("version") or "",
+                }
+                for row in local
+                if float(row.get("price_usd") or 0) > 0
+            ]
+
+    return [
+        row
+        for row in (tvl_data or [])
+        if float(row.get("price_usd") or 0) > 0
+    ]
+
+
+def _chart_axis_label(value: Any, bucket_seconds: int = 0) -> str:
+    """Format TVL/price chart x ticks: unix buckets as dates, else block numbers."""
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        return str(value or "")
+    if v > 1_000_000_000:
+        dt = datetime.fromtimestamp(v, tz=timezone.utc)
+        if int(bucket_seconds or 0) >= 86_400:
+            return dt.strftime("%m-%d")
+        return dt.strftime("%m-%d %H:%M")
+    return "{:,}".format(v)
+
+
 def _tvl_series(
     tvl_data: list,
     token_decimals: int = 18,
@@ -1384,11 +1496,15 @@ def _build_tvl_chart_config(
     token_decimals: int = 18,
     symbol: str = "TOKEN",
     address_labels: Optional[dict[str, str]] = None,
+    bucket_seconds: int = 0,
 ) -> dict:
     if not tvl_data:
         return _empty_line_config()
 
     labels, total_values, block_pools, use_usd = _tvl_series(tvl_data, token_decimals)
+    display_labels = [
+        _chart_axis_label(block, bucket_seconds) for block in labels
+    ]
     unit = "USD" if use_usd else (symbol or "token")
     datasets = [{
         "label": "Total ({})".format(unit),
@@ -1420,7 +1536,7 @@ def _build_tvl_chart_config(
 
     return {
         "type": "line",
-        "data": {"labels": labels, "datasets": datasets},
+        "data": {"labels": display_labels, "datasets": datasets},
         "options": {
             "responsive": True,
             "maintainAspectRatio": False,
@@ -1435,7 +1551,7 @@ def _build_tvl_chart_config(
                     "grid": {"color": "#1e293b"},
                 },
                 "x": {
-                    "ticks": {"color": "#64748b"},
+                    "ticks": {"color": "#64748b", "maxRotation": 45},
                     "grid": {"display": False},
                 },
             },
@@ -1551,6 +1667,7 @@ def _build_price_chart_config(
     tvl_data: list,
     symbol: str = "TOKEN",
     address_labels: Optional[dict[str, str]] = None,
+    bucket_seconds: int = 0,
 ) -> dict:
     by_pool: dict[str, list[dict]] = defaultdict(list)
     for t in tvl_data:
@@ -1562,6 +1679,9 @@ def _build_price_chart_config(
         return _empty_line_config()
 
     labels = sorted({t["block_number"] for entries in by_pool.values() for t in entries})
+    display_labels = [
+        _chart_axis_label(block, bucket_seconds) for block in labels
+    ]
     datasets = []
     for i, (pa, entries) in enumerate(sorted(by_pool.items())):
         vals_by_block = {t["block_number"]: t["price_usd"] for t in entries}
@@ -1581,7 +1701,7 @@ def _build_price_chart_config(
 
     return {
         "type": "line",
-        "data": {"labels": labels, "datasets": datasets},
+        "data": {"labels": display_labels, "datasets": datasets},
         "options": {
             "responsive": True,
             "maintainAspectRatio": False,
@@ -1596,7 +1716,7 @@ def _build_price_chart_config(
                     "grid": {"color": "#1e293b"},
                 },
                 "x": {
-                    "ticks": {"color": "#64748b"},
+                    "ticks": {"color": "#64748b", "maxRotation": 45},
                     "grid": {"display": False},
                 },
             },

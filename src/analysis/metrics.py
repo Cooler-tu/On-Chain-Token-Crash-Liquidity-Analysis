@@ -61,6 +61,69 @@ def chart_bucket_seconds(chart_span: str) -> int:
     return int(_SPAN_BUCKET_SECONDS.get(chart_span, 3_600))
 
 
+def resample_tvl_timeline(
+    timeline: list[dict],
+    bucket_seconds: int,
+    *,
+    chart_span: str = "",
+    chart_bucket: str = "",
+) -> list[dict]:
+    """Collapse TVL points to one last observation per pool per time bucket.
+
+    Month windows should chart ~one x-tick per day. Event-accumulate fallbacks
+    otherwise emit one point per swap block and flood the axis.
+    """
+    rows = list(timeline or [])
+    seconds = int(bucket_seconds or 0)
+    if not rows or seconds <= 0:
+        return rows
+
+    ordered = sorted(
+        rows,
+        key=lambda r: (
+            int(r.get("block_timestamp") or 0),
+            int(r.get("block_number") or 0),
+            str(r.get("pool_address") or ""),
+        ),
+    )
+    last: dict[tuple[int, str], dict] = {}
+    for row in ordered:
+        try:
+            ts = int(row.get("block_timestamp") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        pa = str(row.get("pool_address") or "").lower()
+        if not pa:
+            continue
+        if ts > 1_000_000_000:
+            bucket = (ts // seconds) * seconds
+            out = dict(row)
+            out["block_timestamp"] = bucket
+            out["block_number"] = bucket
+            if chart_bucket:
+                out["bucket"] = chart_bucket
+            if chart_span:
+                out["chart_span"] = chart_span
+            last[(bucket, pa)] = out
+            continue
+        # No unix timestamp — keep the raw block point (cannot day-bucket safely).
+        try:
+            bn = int(row.get("block_number") or 0)
+        except (TypeError, ValueError):
+            continue
+        if bn <= 0:
+            continue
+        last[(bn, pa)] = dict(row)
+
+    return sorted(
+        last.values(),
+        key=lambda r: (
+            int(r.get("block_number") or 0),
+            str(r.get("pool_address") or ""),
+        ),
+    )
+
+
 def _choose_tvl_bucket(
     from_block: int,
     to_block: int,
@@ -772,6 +835,14 @@ def build_tvl_timeline(
                 price, quote = estimate_price_v2(
                     pool, target_token, reserve0, reserve1, 18, 18
                 )
+                price_usd = 0.0
+                if etype == "SWAP":
+                    amount_usd = float(evt.get("amount_usd") or 0)
+                    target_raw = abs(a0) if target_is_t0 else abs(a1)
+                    if amount_usd > 0 and target_raw > 0:
+                        price_usd = amount_usd / (
+                            target_raw / (10 ** max(0, int(token_decimals or 18)))
+                        )
                 timeline.append({
                     "block_number": bn,
                     "block_timestamp": ts,
@@ -785,6 +856,7 @@ def build_tvl_timeline(
                     "tvl_in_token": str(tvl_in_token),
                     "price": round(price, 18),
                     "quote_symbol": quote,
+                    "price_usd": round(price_usd, 6) if price_usd > 0 else None,
                 })
 
         elif pool.version in ("v3", "v4"):
@@ -2028,6 +2100,19 @@ def calculate_all_metrics(
             verified_pools, events_all, target_token, token_decimals
         )
         tvl_source = "event_accumulate"
+    if timeline:
+        before = len(timeline)
+        timeline = resample_tvl_timeline(
+            timeline,
+            bucket_seconds,
+            chart_span=span,
+            chart_bucket=bucket,
+        )
+        if len(timeline) != before:
+            print(
+                "  [metrics] resampled TVL timeline {} → {} row(s) "
+                "({}/{} buckets)".format(before, len(timeline), bucket, span)
+            )
     tvl_artifact = write_table(
         "tvl_timeline", timeline, out, artifact_format=artifact_mode
     )

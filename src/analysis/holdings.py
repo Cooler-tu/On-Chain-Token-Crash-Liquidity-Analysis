@@ -440,7 +440,38 @@ def analyze_holdings(
     # Always RPC-check pool custody at to_block (historical accuracy).
     pool_missing = [a for a in missing if a.lower() in pool_addrs_l]
     other_missing = [a for a in missing if a.lower() not in pool_addrs_l]
-    to_query = (pool_missing + other_missing)[:rpc_budget]
+    # Reserve slots for non-pool holders so Top Holders is not empty when a
+    # token has many pools (pool-first packing used to consume the whole cap).
+    if rpc_budget <= 0:
+        pool_slots = 0
+        other_slots = 0
+    else:
+        other_floor = min(
+            len(other_missing),
+            max(rpc_budget // 2, min(50, rpc_budget)),
+        )
+        # Expand pool balanceOf when many verified pools (custody pie).
+        pool_cap = max(
+            rpc_budget - other_floor,
+            min(len(pool_missing), max(rpc_budget, 100)),
+        )
+        pool_slots = min(len(pool_missing), pool_cap)
+        # Leftover base budget after pools also goes to non-pools.
+        other_slots = min(
+            len(other_missing),
+            max(other_floor, rpc_budget - min(pool_slots, rpc_budget)),
+        )
+    to_query = pool_missing[:pool_slots] + other_missing[:other_slots]
+    if pool_missing or other_missing:
+        print(
+            "  [holdings] RPC balance budget: {} pool + {} non-pool "
+            "(of {} pool / {} non-pool missing)".format(
+                pool_slots,
+                other_slots,
+                len(pool_missing),
+                len(other_missing),
+            )
+        )
     skipped_balances = [a for a in missing if a not in to_query]
     for addr in to_query:
         try:
