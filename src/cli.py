@@ -396,6 +396,8 @@ def analyze(
         to_block=to_block,
         chart_span=chart_span,
         artifact_format=artifact_mode,
+        token_symbol=profile.symbol,
+        chain_id=profile.chain_id,
     )
     typer.echo(
         "  TVL timeline: {} points ({}); chart_span={} ({})".format(
@@ -714,6 +716,201 @@ def holdings(
         typer.echo("  tables/holdings.parquet - Typed holdings rows")
     typer.echo("  holdings_table.csv   - Holdings table (CSV)")
     typer.echo("  pool_identification_table.csv - Pool identification table (CSV)")
+
+
+@app.command("research-series")
+def research_series(
+    output_dir: str = typer.Option(
+        "output", help="Existing analysis output directory"
+    ),
+    bucket_seconds: int = typer.Option(
+        0,
+        help=(
+            "Research bucket size in seconds; 0 reuses the analysis chart bucket"
+        ),
+    ),
+    refresh_tvl: bool = typer.Option(
+        False,
+        "--refresh-tvl",
+        help="Refresh research TVL/reserve proxies from historical RPC balances",
+    ),
+    rpc_url: str = typer.Option("", envvar="ETH_RPC_URL", help="RPC URL"),
+    from_block: int = typer.Option(
+        0, help="Snapshot start block; 0 infers it from local events"
+    ),
+    to_block: int = typer.Option(
+        0, help="Snapshot end block; 0 infers it from local events"
+    ),
+):
+    """Build analysis_series.parquet from existing local analysis artifacts.
+
+    By default this is local-only and reuses the existing TVL timeline. Pass
+    ``--refresh-tvl`` to replace that timeline with historical RPC target-side
+    reserve snapshots before rebuilding the research table.
+    """
+    from .analysis.series import (
+        build_analysis_series,
+        write_analysis_series_human_outputs,
+    )
+    from .data.artifacts import (
+        ArtifactDependencyError,
+        validate_artifact_environment,
+        write_table,
+    )
+
+    out = Path(output_dir)
+    profile_path = out / "token_profile.json"
+    pools_path = out / "verified_pools.json"
+    metrics_path = out / "metrics.json"
+    required = [profile_path, pools_path, metrics_path]
+    missing = [str(path) for path in required if not path.exists()]
+    if missing:
+        typer.echo(
+            "Cannot build research series; missing: {}".format(", ".join(missing)),
+            err=True,
+        )
+        raise typer.Exit(1)
+    try:
+        validate_artifact_environment("parquet")
+    except ArtifactDependencyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+    profile = json.loads(profile_path.read_text())
+    metrics = json.loads(metrics_path.read_text())
+    pools = [
+        VerifiedPool(**dict(row))
+        for row in json.loads(pools_path.read_text())
+    ]
+    try:
+        swaps = read_table("swaps", out, prefer="parquet", legacy_rows=True)
+    except FileNotFoundError:
+        swaps = []
+    try:
+        liquidity = read_table(
+            "liquidity_events", out, prefer="parquet", legacy_rows=True
+        )
+    except FileNotFoundError:
+        liquidity = []
+
+    seconds = int(
+        bucket_seconds
+        or metrics.get("chart_bucket_seconds")
+        or (metrics.get("volume") or {}).get("bucket_seconds")
+        or 3_600
+    )
+    if seconds <= 0:
+        raise typer.BadParameter(
+            "bucket_seconds must be positive", param_hint="--bucket-seconds"
+        )
+    tvl = []
+    if refresh_tvl:
+        from .analysis.metrics import (
+            build_tvl_timeline_rpc_snapshots,
+            calculate_price_timeline_from_swaps,
+        )
+
+        event_rows = list(swaps) + list(liquidity)
+        event_blocks = sorted({
+            int(row.get("block_number") or 0)
+            for row in event_rows
+            if int(row.get("block_number") or 0) > 0
+        })
+        snapshot_from = int(from_block or (event_blocks[0] if event_blocks else 0))
+        snapshot_to = int(to_block or (event_blocks[-1] if event_blocks else 0))
+        if snapshot_from <= 0 or snapshot_to < snapshot_from:
+            typer.echo(
+                "Cannot infer a valid snapshot block window from local events.",
+                err=True,
+            )
+            raise typer.Exit(1)
+        local_prices = calculate_price_timeline_from_swaps(
+            swaps,
+            pools,
+            str(profile.get("address") or ""),
+            int(profile.get("decimals") or 18),
+            bucket_seconds=seconds,
+        )
+        w3 = get_web3(rpc_url or None)
+        tvl = build_tvl_timeline_rpc_snapshots(
+            w3,
+            pools,
+            str(profile.get("address") or ""),
+            int(profile.get("decimals") or 18),
+            snapshot_from,
+            snapshot_to,
+            chart_span=str(metrics.get("chart_span") or "auto"),
+            bucket_seconds=seconds,
+            price_rows=local_prices,
+            reference_events=event_rows,
+        )
+        if not tvl:
+            typer.echo(
+                "Historical RPC returned no attributable TVL/reserve snapshots.",
+                err=True,
+            )
+            raise typer.Exit(1)
+        tvl_artifact = write_table(
+            "tvl_timeline", tvl, out, artifact_format="both"
+        )
+        metrics["tvl_timeline_length"] = len(tvl)
+        metrics["tvl_timeline_source"] = "rpc_target_balance_local_price"
+        metrics["tvl_timeline"] = []
+        artifacts = dict(metrics.get("artifacts") or {})
+        artifacts["tvl_timeline"] = tvl_artifact
+        metrics["artifacts"] = artifacts
+        typer.echo(
+            "Refreshed TVL proxy: {} rows, blocks {}–{}".format(
+                len(tvl), snapshot_from, snapshot_to
+            )
+        )
+    else:
+        try:
+            tvl = read_table(
+                "tvl_timeline", out, prefer="parquet", legacy_rows=True
+            )
+        except FileNotFoundError:
+            tvl = []
+    rows = build_analysis_series(
+        swaps,
+        liquidity,
+        tvl,
+        pools,
+        str(profile.get("address") or ""),
+        int(profile.get("decimals") or 18),
+        token_symbol=str(profile.get("symbol") or ""),
+        chain_id=int(profile.get("chain_id") or 1),
+        bucket_seconds=seconds,
+        tvl_source=str(metrics.get("tvl_timeline_source") or ""),
+    )
+    artifact = write_table(
+        "analysis_series", rows, out, artifact_format="parquet"
+    )
+    human_outputs = write_analysis_series_human_outputs(rows, out)
+    artifact["paths"].update({
+        "csv_preview": human_outputs["csv_preview"],
+        "summary_md": human_outputs["summary_md"],
+    })
+    metrics["analysis_series_length"] = len(rows)
+    artifacts = dict(metrics.get("artifacts") or {})
+    artifacts["analysis_series"] = artifact
+    metrics["artifacts"] = artifacts
+    _write_json(metrics_path, metrics)
+
+    pool_count = len({
+        row["pool_identifier"]
+        for row in rows
+        if row.get("scope") == "pool" and row.get("pool_identifier")
+    })
+    total_count = sum(row.get("scope") == "token_total" for row in rows)
+    typer.echo(
+        "Research series: {} rows, {} pools, {} token-total buckets".format(
+            len(rows), pool_count, total_count
+        )
+    )
+    typer.echo("Saved: {}".format(artifact["paths"]["parquet"]))
+    typer.echo("Preview: {}".format(human_outputs["csv_preview"]))
+    typer.echo("Summary: {}".format(human_outputs["summary_md"]))
 
 
 @app.command()

@@ -1,0 +1,40 @@
+{
+  "mode": "matched_pool_rpc",
+  "token": "0x44b28991B167582F18BA0259e0173176ca125505",
+  "pool": "0xdc893995d488e5be8ec8ca1db92cbec2a1ab0775",
+  "from_block": 25033767,
+  "to_block": 25083999,
+  "bucket_seconds": 3600,
+  "swaps": 4105,
+  "liquidity_events": 0,
+  "liquidity_event_coverage": "not_collected_in_swaps_only_run",
+  "tvl_rows": 169,
+  "analysis_series_rows": 338,
+  "price_units": [
+    "WETH"
+  ],
+  "tvl_source": "rpc_target_balance_local_quote_price",
+  "artifacts": {
+    "tvl_timeline": {
+      "name": "tvl_timeline",
+      "format": "both",
+      "rows": 169,
+      "paths": {
+        "json": "output-upeg-v3-7d/tvl_timeline.json",
+        "parquet": "output-upeg-v3-7d/tables/tvl_timeline.parquet"
+      }
+    },
+    "analysis_series": {
+      "name": "analysis_series",
+      "format": "parquet",
+      "rows": 338,
+      "paths": {
+        "parquet": "output-upeg-v3-7d/tables/analysis_series.parquet",
+        "csv_preview": "output-upeg-v3-7d/analysis_series_preview.csv",
+        "summary_md": "output-upeg-v3-7d/analysis_series_summary.md",
+        "preview_rows": 169
+      }
+    }
+  },
+  "interpretation": "Price is the pool quote-token execution price, not USD. TVL is target-token-side attributable reserve, not full two-sided TVL."
+}

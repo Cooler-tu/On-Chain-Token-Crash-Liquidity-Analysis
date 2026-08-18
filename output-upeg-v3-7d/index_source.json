@@ -1,0 +1,51 @@
+{
+  "source": "rpc",
+  "from_block": 25033767,
+  "to_block": 25083999,
+  "token": "0x44b28991B167582F18BA0259e0173176ca125505",
+  "artifact_format": "both",
+  "artifacts": {
+    "swaps": {
+      "name": "swaps",
+      "format": "both",
+      "rows": 4105,
+      "paths": {
+        "json": "output-upeg-v3-7d/swaps.json",
+        "parquet": "output-upeg-v3-7d/tables/swaps.parquet"
+      }
+    },
+    "liquidity_events": {
+      "name": "liquidity_events",
+      "format": "both",
+      "rows": 0,
+      "paths": {
+        "json": "output-upeg-v3-7d/liquidity_events.json",
+        "parquet": "output-upeg-v3-7d/tables/liquidity_events.parquet"
+      }
+    },
+    "transfers": {
+      "name": "transfers",
+      "format": "both",
+      "rows": 0,
+      "paths": {
+        "json": "output-upeg-v3-7d/transfers.json",
+        "parquet": "output-upeg-v3-7d/tables/transfers.parquet"
+      }
+    },
+    "position_events": {
+      "name": "position_events",
+      "format": "both",
+      "rows": 0,
+      "paths": {
+        "json": "output-upeg-v3-7d/position_events.json",
+        "parquet": "output-upeg-v3-7d/tables/position_events.parquet"
+      }
+    }
+  },
+  "counts": {
+    "swaps": 4105,
+    "liquidity_events": 0,
+    "transfers": 0,
+    "position_events": 0
+  }
+}

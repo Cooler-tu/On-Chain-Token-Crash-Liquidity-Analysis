@@ -1,0 +1,126 @@
+{
+  "scope": "pool",
+  "pool": "0xdc893995d488e5be8ec8ca1db92cbec2a1ab0775",
+  "bucket_count": 169,
+  "bucket_seconds": 3600,
+  "features": [
+    "price_return",
+    "tvl_change",
+    "log1p_volume_token"
+  ],
+  "max_lag": 24,
+  "min_pairs": 48,
+  "correlations": [
+    {
+      "x": "price_return",
+      "y": "tvl_change",
+      "method": "pearson",
+      "lag": 0,
+      "correlation": -0.6841201654722969,
+      "n": 168
+    },
+    {
+      "x": "price_return",
+      "y": "tvl_change",
+      "method": "spearman",
+      "lag": 0,
+      "correlation": -0.7756541017710985,
+      "n": 168
+    },
+    {
+      "x": "price_return",
+      "y": "log1p_volume_token",
+      "method": "pearson",
+      "lag": 0,
+      "correlation": -0.04727590083910789,
+      "n": 168
+    },
+    {
+      "x": "price_return",
+      "y": "log1p_volume_token",
+      "method": "spearman",
+      "lag": 0,
+      "correlation": -0.01233289971198769,
+      "n": 168
+    },
+    {
+      "x": "tvl_change",
+      "y": "log1p_volume_token",
+      "method": "pearson",
+      "lag": 0,
+      "correlation": 0.0036759274425992596,
+      "n": 168
+    },
+    {
+      "x": "tvl_change",
+      "y": "log1p_volume_token",
+      "method": "spearman",
+      "lag": 0,
+      "correlation": -0.06002702962629264,
+      "n": 168
+    }
+  ],
+  "lead_lag": [
+    {
+      "x": "price_return",
+      "y": "tvl_change",
+      "method": "pearson",
+      "lag": 0,
+      "correlation": -0.6841201654722969,
+      "n": 168,
+      "zero_lag_correlation": -0.6841201654722969,
+      "absolute_improvement": 0.0
+    },
+    {
+      "x": "price_return",
+      "y": "tvl_change",
+      "method": "spearman",
+      "lag": 0,
+      "correlation": -0.7756541017710985,
+      "n": 168,
+      "zero_lag_correlation": -0.7756541017710985,
+      "absolute_improvement": 0.0
+    },
+    {
+      "x": "price_return",
+      "y": "log1p_volume_token",
+      "method": "pearson",
+      "lag": 12,
+      "correlation": 0.1455082169637816,
+      "n": 156,
+      "zero_lag_correlation": -0.04727590083910789,
+      "absolute_improvement": 0.09823231612467372
+    },
+    {
+      "x": "price_return",
+      "y": "log1p_volume_token",
+      "method": "spearman",
+      "lag": 12,
+      "correlation": 0.1455390305195113,
+      "n": 156,
+      "zero_lag_correlation": -0.01233289971198769,
+      "absolute_improvement": 0.1332061308075236
+    },
+    {
+      "x": "tvl_change",
+      "y": "log1p_volume_token",
+      "method": "pearson",
+      "lag": -16,
+      "correlation": -0.17576731005880333,
+      "n": 153,
+      "zero_lag_correlation": 0.0036759274425992596,
+      "absolute_improvement": 0.17209138261620407
+    },
+    {
+      "x": "tvl_change",
+      "y": "log1p_volume_token",
+      "method": "spearman",
+      "lag": -16,
+      "correlation": -0.2306736091565813,
+      "n": 153,
+      "zero_lag_correlation": -0.06002702962629264,
+      "absolute_improvement": 0.17064657953028867
+    }
+  ],
+  "warning": "Correlation and lag selection remain exploratory and do not establish causality."
+}

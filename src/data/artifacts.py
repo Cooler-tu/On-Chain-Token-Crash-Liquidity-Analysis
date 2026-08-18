@@ -552,6 +552,7 @@ def _tvl_timeline_schema(pa):
         [
             pa.field("block_number", pa.int64(), nullable=False),
             pa.field("block_timestamp", pa.timestamp("s", tz="UTC"), nullable=True),
+            pa.field("snapshot_block", pa.int64(), nullable=True),
             pa.field("bucket", pa.string(), nullable=True),
             pa.field("chart_span", pa.string(), nullable=True),
             pa.field("pool_address", pa.string(), nullable=False),
@@ -581,6 +582,7 @@ def _normalize_tvl_timeline_row(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "block_number": int(row.get("block_number") or 0),
         "block_timestamp": _utc_datetime(row.get("block_timestamp")),
+        "snapshot_block": _optional_int(row.get("snapshot_block")),
         "bucket": str(row.get("bucket") or "") or None,
         "chart_span": str(row.get("chart_span") or "") or None,
         "pool_address": _lower_hex(row.get("pool_address") or "") or "",
@@ -642,6 +644,117 @@ def _normalize_volume_timeline_row(row: dict[str, Any]) -> dict[str, Any]:
         "bucket": str(row.get("bucket") or "") or None,
         "source": str(row.get("source") or "") or None,
     }
+
+
+def _analysis_series_schema(pa):
+    return pa.schema(
+        [
+            pa.field("chain_id", pa.int64(), nullable=False),
+            pa.field("token_address", pa.string(), nullable=False),
+            pa.field("token_symbol", pa.string(), nullable=False),
+            pa.field("scope", pa.string(), nullable=False),
+            pa.field("pool_identifier", pa.string(), nullable=True),
+            pa.field("custody_address", pa.string(), nullable=True),
+            pa.field("protocol", pa.string(), nullable=True),
+            pa.field("version", pa.string(), nullable=True),
+            pa.field("bucket_start", pa.timestamp("s", tz="UTC"), nullable=False),
+            pa.field("bucket_end", pa.timestamp("s", tz="UTC"), nullable=False),
+            pa.field("bucket_seconds", pa.int64(), nullable=False),
+            pa.field("price_open", pa.float64(), nullable=True),
+            pa.field("price_high", pa.float64(), nullable=True),
+            pa.field("price_low", pa.float64(), nullable=True),
+            pa.field("price_close", pa.float64(), nullable=True),
+            pa.field("price_vwap", pa.float64(), nullable=True),
+            pa.field("price_unit", pa.string(), nullable=True),
+            pa.field("price_source", pa.string(), nullable=True),
+            pa.field("price_trade_count", pa.int64(), nullable=False),
+            pa.field("price_staleness_seconds", pa.int64(), nullable=True),
+            pa.field("price_is_carried_forward", pa.bool_(), nullable=False),
+            pa.field("tvl_token_close", pa.float64(), nullable=True),
+            pa.field("tvl_usd_close", pa.float64(), nullable=True),
+            pa.field("tvl_source", pa.string(), nullable=True),
+            pa.field("tvl_snapshot_block", pa.int64(), nullable=True),
+            pa.field("tvl_is_carried_forward", pa.bool_(), nullable=False),
+            pa.field("volume_token", pa.float64(), nullable=False),
+            pa.field("volume_usd", pa.float64(), nullable=True),
+            pa.field("swap_count", pa.int64(), nullable=False),
+            pa.field("active_trader_count", pa.int64(), nullable=False),
+            pa.field("liquidity_added_token", pa.float64(), nullable=True),
+            pa.field("liquidity_removed_token", pa.float64(), nullable=True),
+            pa.field("net_lp_flow_token", pa.float64(), nullable=True),
+            pa.field("lp_add_event_count", pa.int64(), nullable=False),
+            pa.field("lp_remove_event_count", pa.int64(), nullable=False),
+            pa.field("active_lp_count", pa.int64(), nullable=True),
+            pa.field("lp_identity_coverage", pa.float64(), nullable=True),
+            pa.field("liquidity_add_amount_coverage", pa.float64(), nullable=True),
+            pa.field("withdrawal_amount_coverage", pa.float64(), nullable=True),
+            pa.field("measured_pool_count", pa.int64(), nullable=False),
+            pa.field("verified_pool_count", pa.int64(), nullable=False),
+            pa.field("price_return", pa.float64(), nullable=True),
+            pa.field("tvl_change", pa.float64(), nullable=True),
+            pa.field("net_lp_flow_ratio", pa.float64(), nullable=True),
+            pa.field("withdrawal_ratio", pa.float64(), nullable=True),
+            pa.field("volume_turnover", pa.float64(), nullable=True),
+            pa.field("close_vwap_gap", pa.float64(), nullable=True),
+            pa.field("data_coverage", pa.string(), nullable=False),
+            pa.field("is_imputed", pa.bool_(), nullable=False),
+        ],
+        metadata=_schema_metadata("analysis_series"),
+    )
+
+
+def _normalize_analysis_series_row(row: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        raise ArtifactSchemaError("analysis_series rows must be dictionaries")
+    bucket_start = _utc_datetime(row.get("bucket_start"))
+    bucket_end = _utc_datetime(row.get("bucket_end"))
+    if bucket_start is None or bucket_end is None:
+        raise ArtifactSchemaError(
+            "analysis_series requires bucket_start and bucket_end"
+        )
+    optional_floats = (
+        "price_open", "price_high", "price_low", "price_close", "price_vwap",
+        "tvl_token_close", "tvl_usd_close", "volume_usd",
+        "liquidity_added_token", "liquidity_removed_token", "net_lp_flow_token",
+        "lp_identity_coverage", "liquidity_add_amount_coverage",
+        "withdrawal_amount_coverage", "price_return",
+        "tvl_change", "net_lp_flow_ratio", "withdrawal_ratio",
+        "volume_turnover", "close_vwap_gap",
+    )
+    optional_ints = (
+        "price_staleness_seconds", "active_lp_count", "tvl_snapshot_block"
+    )
+    normalized = {
+        "chain_id": int(row.get("chain_id") or 0),
+        "token_address": _lower_hex(row.get("token_address") or "") or "",
+        "token_symbol": str(row.get("token_symbol") or ""),
+        "scope": str(row.get("scope") or ""),
+        "pool_identifier": _lower_hex(row.get("pool_identifier")),
+        "custody_address": _lower_hex(row.get("custody_address")),
+        "protocol": str(row.get("protocol") or "") or None,
+        "version": str(row.get("version") or "") or None,
+        "bucket_start": bucket_start,
+        "bucket_end": bucket_end,
+        "bucket_seconds": int(row.get("bucket_seconds") or 0),
+        "price_trade_count": int(row.get("price_trade_count") or 0),
+        "price_is_carried_forward": bool(row.get("price_is_carried_forward", False)),
+        "price_unit": str(row.get("price_unit") or "") or None,
+        "price_source": str(row.get("price_source") or "") or None,
+        "tvl_source": str(row.get("tvl_source") or "") or None,
+        "tvl_is_carried_forward": bool(row.get("tvl_is_carried_forward", False)),
+        "volume_token": float(row.get("volume_token") or 0),
+        "swap_count": int(row.get("swap_count") or 0),
+        "active_trader_count": int(row.get("active_trader_count") or 0),
+        "lp_add_event_count": int(row.get("lp_add_event_count") or 0),
+        "lp_remove_event_count": int(row.get("lp_remove_event_count") or 0),
+        "measured_pool_count": int(row.get("measured_pool_count") or 0),
+        "verified_pool_count": int(row.get("verified_pool_count") or 0),
+        "data_coverage": str(row.get("data_coverage") or ""),
+        "is_imputed": bool(row.get("is_imputed", False)),
+    }
+    normalized.update({key: _optional_float(row.get(key)) for key in optional_floats})
+    normalized.update({key: _optional_int(row.get(key)) for key in optional_ints})
+    return normalized
 
 
 def flatten_volume_timeline(document: dict[str, Any]) -> list[dict[str, Any]]:
@@ -732,6 +845,8 @@ def _table_schema(name: str, pa):
         return _tvl_timeline_schema(pa), _normalize_tvl_timeline_row
     if name == "volume_timeline":
         return _volume_timeline_schema(pa), _normalize_volume_timeline_row
+    if name == "analysis_series":
+        return _analysis_series_schema(pa), _normalize_analysis_series_row
     raise ArtifactSchemaError(
         "Parquet schema for table {!r} is not implemented yet".format(name)
     )
@@ -835,6 +950,8 @@ def read_table(
                     "block_timestamp",
                     "query_timestamp",
                     "bucket_timestamp",
+                    "bucket_start",
+                    "bucket_end",
                 ):
                     timestamp = row.get(key)
                     if isinstance(timestamp, datetime):

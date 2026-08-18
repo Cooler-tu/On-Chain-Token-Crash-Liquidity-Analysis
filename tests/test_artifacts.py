@@ -161,6 +161,7 @@ def _tvl_timeline_row():
     return {
         "block_number": 25_000_001,
         "block_timestamp": 1_778_000_000,
+        "snapshot_block": 25_000_001,
         "bucket": "hour",
         "chart_span": "week",
         "pool_address": "0xAABBCC",
@@ -547,6 +548,7 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertEqual(stored["pool_address"], "0xaabbcc")
             self.assertEqual(stored["balance_raw"], row["balance_raw"])
             self.assertEqual(stored["tvl_in_token"], row["tvl_in_token"])
+            self.assertEqual(stored["snapshot_block"], row["snapshot_block"])
             self.assertIsNone(stored["reserve0"])
             self.assertEqual(table.schema.field("block_timestamp").type.tz, "UTC")
 
@@ -617,11 +619,15 @@ class ParquetArtifactTest(unittest.TestCase):
             self.assertEqual(metrics["artifact_format"], "both")
             self.assertEqual(metrics["artifacts"]["tvl_timeline"]["rows"], 0)
             self.assertEqual(metrics["artifacts"]["volume_timeline"]["rows"], 0)
+            self.assertEqual(metrics["artifacts"]["analysis_series"]["rows"], 0)
             self.assertTrue(
                 (Path(tmp) / "tables" / "tvl_timeline.parquet").exists()
             )
             self.assertTrue(
                 (Path(tmp) / "tables" / "volume_timeline.parquet").exists()
+            )
+            self.assertTrue(
+                (Path(tmp) / "tables" / "analysis_series.parquet").exists()
             )
 
     def test_metrics_both_keeps_runtime_timelines_but_trims_metrics_json(self):
@@ -642,7 +648,14 @@ class ParquetArtifactTest(unittest.TestCase):
                 output_dir=tmp,
                 artifact_format="both",
             )
-            self.assertEqual(metrics["tvl_timeline"], [tvl_row])
+            self.assertEqual(len(metrics["tvl_timeline"]), 1)
+            runtime_tvl = metrics["tvl_timeline"][0]
+            expected_bucket = (
+                tvl_row["block_timestamp"] // 3_600
+            ) * 3_600
+            self.assertEqual(runtime_tvl["block_timestamp"], expected_bucket)
+            self.assertEqual(runtime_tvl["block_number"], expected_bucket)
+            self.assertEqual(runtime_tvl["pool_address"], tvl_row["pool_address"])
             self.assertEqual(len(metrics["volume"]["volume_timeline"]), 1)
 
             saved = json.loads((Path(tmp) / "metrics.json").read_text())

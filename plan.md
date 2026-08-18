@@ -37,27 +37,34 @@
 - **Measured pool-liquidity share semantics** (2026-08-14) — disclosed the measured/verified denominator, snapshot method, and coverage beside pool shares; renamed the columns in user-facing language and rendered unavailable V4 per-pool estimates as `Not measured` instead of `0%`.
 - **Non-pool holder ranking semantics** (2026-08-14) — renamed the chart/table as Top 10/20 by end balance, explicitly excluded pool/custody and zero-balance rows, enforced dashboard-side descending order, and disclosed that EOAs/contracts and partial balance coverage remain in scope.
 - **Withdrawal quantification semantics** (2026-08-14) — separated measured token amounts from V4 liquidity-delta-only signals and unmapped events; Dashboard preserves real measured zeroes while rendering missing inputs as `Token amount not returned` and dependent fields as `Cannot calculate`, with detected/known/missing coverage counts.
+- **Post-meeting partner handover** (2026-08-14) — updated `HANDOVER.md` with implemented changes, current uPEG figures, validation commands, interpretation guardrails, key files, and prioritized follow-up work.
+- **Time-series correlation research design** (2026-08-17) — established the next research direction in `docs/TIME_SERIES_CORRELATION_RESEARCH.md`: unified `analysis_series.parquet`, OHLC/VWAP, state-vs-flow aggregation, correlation/lead-lag, anomaly transaction evidence, and cross-case validation.
+- **Analysis series Phase 1A** (2026-08-18) — added `src/analysis/series.py`, typed `tables/analysis_series.parquet`, local `research-series` rebuild command, automatic `both`-mode generation, and tests for last-state TVL, OHLC/VWAP, stale price, unknown withdrawals, derived ratios, and Parquet parity. Existing uPEG artifacts produce 278 unique rows across 25 hourly token-total buckets.
+- **Historical RPC reserve snapshots** (2026-08-18) — `research-series --refresh-tvl` now reads target-token `balanceOf` at each hourly bucket's last indexed block, records `tvl_snapshot_block`, and excludes shared V4 PoolManager custody instead of duplicating it across poolIds. The refreshed uPEG table has 161 rows, all 3,174 swaps in token-total curves, and 50 historical reserve observations across 2 attributable V2/V3 pools; same-pair V4 swaps are no longer assigned arbitrarily.
+- **Matched-pool correlation pilot** (2026-08-18) — added `scripts/time_series_correlation.py` for Pearson/Spearman and explicit lead-lag scans directly from `analysis_series.parquet`. The 25-hour complete V3 subset runs end to end and writes Markdown/CSV/JSON results with short-window and non-causality warnings.
+- **uPEG matched V3 seven-day panel** (2026-08-18) — added an RPC-only matched-pool builder and batched timestamp/log retrieval; `output-upeg-v3-7d/` covers blocks 25033767–25083999 with 4,105 swaps, 169 hourly WETH-quoted price buckets, and 169 historical target-reserve snapshots. Price-return versus target-reserve change remains strongly negative (Pearson -0.6841, Spearman -0.7757, N=168), while contemporaneous volume and all ±24h lag candidates remain weak. LP events were intentionally not collected and are explicitly marked unavailable rather than zero.
+- **uPEG directional-flow audited hour** (2026-08-18) — added `scripts/directional_swap_flow.py` and `tests/test_directional_swap_flow.py`; the verified block window 25043020–25043311 contains 119 Swap events (48 sells / 71 buys), 39.5356 uPEG gross sell volume, 30.2685 gross buy volume, and 9.2671 net signed Swap flow into the pool. Target-token Transfer logs reconcile the 10.106754360913178103 uPEG historical balance increase exactly and expose a 0.83964 uPEG Transfer-minus-Swap residual. Evidence: `research-notes/upeg-directional-flow-audit.md`; local outputs: `output-upeg-v3-7d/research-directional-flow/2026-05-07T12/`.
 
 ---
 
 ## 🎯 Current
 
-- **Dune SQL → pipeline wiring (dashboard features)** — parallel discovery (`pools`+`pools_v4`), parallel index (swaps/liq/transfers), snapshot TVL via `pool_balance_timeline` × local swap prices; dashboard Month/Week/Day chart toggles (`--chart-span`)
-- Still **not** on dashboard path: `holders` primary discovery, wallet clustering UI, Sim balance timeline
+- **Directional flow full-window expansion** — add persistent block/transaction metadata caching, then extend signed Swap, actual target-token Transfer, residual, sender-concentration, and price-impact features across all 169 matched V3 hourly buckets. Keep LP identity and V4 liquidity amount metrics excluded until coverage is recovered.
 
 ---
 
 ## 📋 Backlog (ordered by priority)
 
-1. **Dashboard pool identity / custody cleanup** — remove the misleading custody-reserve pie from the main analysis flow; rename `Pool Address` to `Pool Identifier`, expose `Contract Address` vs `V4 Pool ID`, and explain the many-to-one V4 Pool ID → shared PoolManager mapping.
-2. **Real token crash analysis** — known drain / rug windows with `--incident-block`
-3. **Mass-scan utility** — batch tokens → comparison table
-4. **Historical crash pattern research** — common LP-withdrawal signatures
-5. **Deep holder unwrap** — routers / aggregators / beneficial owners beyond surface EOA label
-6. **Multi-chain** — Arbitrum, Base, Polygon
-7. **TVL timeline in USD** — needs price oracle (related to next-week TVL ranking, but full USD oracle is later)
-8. **Real-time monitoring** — alert on sudden liquidity changes
-9. **High-coverage holder/TVL mode (deferred)** — expand historical balance coverage and key-block TVL snapshots only when a real crash case requires it; keep optional because of Dune/RPC cost and quota risk
+1. **Correlation & lead-lag Phase 2** — Pearson/Spearman, transformed features, lag scans, confidence intervals, multiple-testing control, and multi-bucket robustness.
+2. **Anomaly transaction forensics Phase 3** — detect counterintuitive divergences, then trace swaps, liquidity events, pools, LPs, and wallets into evidence bundles.
+3. **Real token crash + matched-control research Phase 4** — known drain/rug windows with `--incident-block`; test which LP-withdrawal and market-structure patterns repeat outside a single token.
+4. **Dune data-path completion for research** — retain parallel discovery/indexing; finish reliable `pool_balance_timeline` × local price snapshot TVL and clearly separate it from event-reconstructed proxy data.
+5. **Mass-scan utility** — batch tokens → comparison table and cross-case feature panel.
+6. **Dashboard pool identity / custody cleanup** — rename `Pool Address` to `Pool Identifier`, expose `Contract Address` vs `V4 Pool ID`, and explain the many-to-one V4 Pool ID → shared PoolManager mapping; defer further UI work unless required by research evidence.
+7. **Deep holder unwrap** — routers / aggregators / beneficial owners beyond surface EOA label.
+8. **Multi-chain** — Arbitrum, Base, Polygon.
+9. **Real-time monitoring** — alert on sudden liquidity changes.
+10. **High-coverage holder/TVL mode (deferred)** — expand historical balance coverage and key-block TVL snapshots only when a real crash case requires it; keep optional because of Dune/RPC cost and quota risk.
 
 ---
 

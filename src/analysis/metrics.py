@@ -19,6 +19,7 @@ from ..data.artifacts import (
     write_table,
 )
 from ..models import NormalizedEvent, Position, VerifiedPool
+from .series import build_analysis_series, write_analysis_series_human_outputs
 
 _ZERO_ADDR = "0x0000000000000000000000000000000000000000"
 # structure.md: month → daily 00:00; week/day → hourly.
@@ -576,6 +577,33 @@ def _pool_balance_key(pool: VerifiedPool) -> Optional[str]:
     return None
 
 
+def _unique_custody_pools(
+    verified_pools: list[VerifiedPool],
+) -> tuple[list[VerifiedPool], dict[str, str]]:
+    """Return pools whose target-token custody can be attributed uniquely.
+
+    V2/V3 pools normally custody assets at their pool address. Uniswap V4
+    poolIds share one PoolManager, so a plain ERC-20 ``balanceOf`` cannot split
+    that balance among fee tiers or hooks. Those shared-custody pools must not
+    be duplicated into separate TVL series.
+    """
+    pools = [p for p in verified_pools if p.verified and p.pool_address]
+    custody_users: dict[str, list[str]] = defaultdict(list)
+    for pool in pools:
+        key = _pool_balance_key(pool)
+        if key:
+            custody_users[key].append(pool.pool_address.lower())
+    balance_key_by_pool = {
+        identifiers[0]: key
+        for key, identifiers in custody_users.items()
+        if len(identifiers) == 1
+    }
+    return (
+        [p for p in pools if p.pool_address.lower() in balance_key_by_pool],
+        balance_key_by_pool,
+    )
+
+
 def build_tvl_timeline_snapshots(
     verified_pools: list[VerifiedPool],
     target_token: str,
@@ -599,18 +627,10 @@ def build_tvl_timeline_snapshots(
     if not configured():
         raise RuntimeError("DUNE_API_KEY is not set")
 
-    pools = [p for p in verified_pools if p.verified and p.pool_address]
-    # Balance ledger is address-keyed — never pass V4 bytes32 poolIds.
-    bal_addrs: list[str] = []
-    bal_key_by_pool: dict[str, str] = {}
-    for p in pools:
-        key = _pool_balance_key(p)
-        if not key:
-            continue
-        bal_key_by_pool[p.pool_address.lower()] = key
-        if key not in bal_addrs:
-            bal_addrs.append(key)
-    if not pools or from_block <= 0 or to_block < from_block:
+    all_pools = [p for p in verified_pools if p.verified and p.pool_address]
+    pools, bal_key_by_pool = _unique_custody_pools(verified_pools)
+    bal_addrs = sorted(set(bal_key_by_pool.values()))
+    if not all_pools or from_block <= 0 or to_block < from_block:
         return []
 
     meta = {p.pool_address.lower(): p for p in pools}
@@ -741,7 +761,7 @@ def build_tvl_timeline_snapshots(
             price_usd = 0.0
         if price_usd <= 0:
             continue
-        bal_key = bal_key_by_pool.get(pa) or _eth_address(pa)
+        bal_key = bal_key_by_pool.get(pa)
         bal_raw = _balance_for_addr(ts, bal_key) if bal_key else 0
         if bal_raw <= 0:
             continue
@@ -767,6 +787,151 @@ def build_tvl_timeline_snapshots(
 
     timeline.sort(key=lambda e: (e["block_number"], str(e.get("pool_address") or "")))
     return timeline
+
+
+def build_tvl_timeline_rpc_snapshots(
+    w3: Web3,
+    verified_pools: list[VerifiedPool],
+    target_token: str,
+    token_decimals: int,
+    from_block: int,
+    to_block: int,
+    *,
+    chart_span: str = "auto",
+    bucket_seconds: int = 0,
+    price_rows: Optional[list[dict]] = None,
+    reference_events: Optional[list[dict]] = None,
+) -> list[dict]:
+    """Build historical target-side reserve snapshots from an archive RPC.
+
+    Each bucket uses the last locally indexed block in that bucket. The value
+    is the target token's historical ``balanceOf(custody)`` combined with the
+    most recent local swap-implied USD price for that exact pool. This is an
+    attributable reserve proxy, not full two-sided TVL. Shared V4 PoolManager
+    custody is deliberately excluded because ``balanceOf`` is not poolId-aware.
+    """
+    if from_block <= 0 or to_block < from_block:
+        return []
+    pools, balance_key_by_pool = _unique_custody_pools(verified_pools)
+    if not pools:
+        return []
+
+    span = resolve_chart_span(from_block, to_block, chart_span)
+    bucket_name = chart_bucket(span)
+    seconds = int(bucket_seconds or chart_bucket_seconds(span))
+    if seconds <= 0:
+        raise ValueError("bucket_seconds must be positive")
+    pool_by_address = {p.pool_address.lower(): p for p in pools}
+
+    # Preserve the exact observed chain block behind every wall-clock bucket.
+    bucket_blocks: dict[int, tuple[int, int, int]] = {}
+    for row in list(reference_events or []) + list(price_rows or []):
+        try:
+            bn = int(row.get("block_number") or 0)
+            ts = int(row.get("block_timestamp") or row.get("bucket_ts") or 0)
+            log_index = int(row.get("log_index") or 0)
+        except (TypeError, ValueError):
+            continue
+        if bn < from_block or bn > to_block or ts <= 0:
+            continue
+        bucket_ts = (ts // seconds) * seconds
+        candidate = (bn, log_index, ts)
+        if candidate >= bucket_blocks.get(bucket_ts, (0, 0, 0)):
+            bucket_blocks[bucket_ts] = candidate
+    if not bucket_blocks:
+        return []
+
+    # Price observations are exact-pool only; carry the last observation
+    # forward, but never borrow a price from another pool or ambiguous V4 pair.
+    prices_by_pool: dict[str, list[tuple[int, float, str]]] = defaultdict(list)
+    for row in price_rows or []:
+        pa = str(row.get("pool_address") or "").lower()
+        if pa not in pool_by_address:
+            continue
+        ts = _parse_bucket_ts(row.get("bucket_ts"))
+        try:
+            value = float(row.get("price_usd") or row.get("price") or 0)
+        except (TypeError, ValueError):
+            continue
+        if ts > 0 and value > 0:
+            unit = str(
+                row.get("price_unit")
+                or ("USD" if row.get("price_usd") else row.get("quote_symbol"))
+                or ""
+            )
+            prices_by_pool[pa].append((ts, value, unit))
+    for observations in prices_by_pool.values():
+        observations.sort()
+
+    token = get_contract(w3, Web3.to_checksum_address(target_token), "erc20")
+    scale = 10 ** max(0, int(token_decimals or 18))
+
+    jobs: list[tuple[int, int, VerifiedPool, str, float, str]] = []
+    for bucket_ts, (block_number, _, _) in sorted(bucket_blocks.items()):
+        for pool in pools:
+            pa = pool.pool_address.lower()
+            observations = prices_by_pool.get(pa) or []
+            price_times = [item[0] for item in observations]
+            idx = bisect.bisect_right(price_times, bucket_ts) - 1
+            if idx < 0:
+                continue
+            jobs.append((
+                bucket_ts,
+                block_number,
+                pool,
+                balance_key_by_pool[pa],
+                observations[idx][1],
+                observations[idx][2],
+            ))
+
+    def _read_balance(job):
+        bucket_ts, block_number, pool, custody, price_value, price_unit = job
+        if pool.creation_block and block_number < int(pool.creation_block):
+            return None
+        try:
+            balance_raw = int(
+                token.functions.balanceOf(
+                    Web3.to_checksum_address(custody)
+                ).call(block_identifier=block_number)
+            )
+        except Exception:
+            return None
+        if balance_raw <= 0:
+            return None
+        reserve_token = balance_raw / scale
+        is_usd = price_unit.upper() == "USD"
+        return {
+            "block_number": block_number,
+            "block_timestamp": bucket_ts,
+            "snapshot_block": block_number,
+            "bucket": bucket_name,
+            "chart_span": span,
+            "pool_address": pool.pool_address,
+            "protocol": pool.protocol or "",
+            "version": pool.version or "",
+            "event_type": "SNAPSHOT",
+            "source_event": "rpc_target_balance_x_local_price",
+            "balance_raw": str(balance_raw),
+            "tvl_in_token": str(balance_raw),
+            "tvl_usd": round(reserve_token * price_value, 6) if is_usd else None,
+            "price": round(price_value, 18),
+            "price_usd": round(price_value, 6) if is_usd else None,
+            "quote_symbol": price_unit or None,
+        }
+
+    timeline: list[dict] = []
+    # Historical calls are independent and dominate runtime for longer windows.
+    with ThreadPoolExecutor(max_workers=min(8, max(1, len(jobs)))) as executor:
+        for row in executor.map(_read_balance, jobs):
+            if row is not None:
+                timeline.append(row)
+    return sorted(
+        timeline,
+        key=lambda row: (
+            int(row.get("block_timestamp") or 0),
+            str(row.get("pool_address") or ""),
+        ),
+    )
 
 
 def build_tvl_timeline(
@@ -921,6 +1086,28 @@ def build_tvl_timeline(
     return sorted(timeline, key=lambda e: (e["block_number"], e.get("log_index", 0)))
 
 
+def _resolve_swap_pool(
+    evt: dict[str, Any],
+    pool_meta: dict[str, dict[str, Any]],
+) -> tuple[str, Optional[dict[str, Any]]]:
+    """Resolve a swap to one pool without guessing among same-pair V4 pools."""
+    raw_address = str(evt.get("pool_address") or "").lower()
+    if raw_address in pool_meta:
+        return raw_address, pool_meta[raw_address]
+    if not (evt.get("token0_address") and evt.get("token1_address")):
+        return raw_address, None
+    candidates = [
+        (candidate_address, candidate_meta)
+        for candidate_address, candidate_meta in pool_meta.items()
+        if _event_matches_pool(
+            evt, candidate_meta["token0"], candidate_meta["token1"]
+        )
+    ]
+    if len(candidates) == 1:
+        return candidates[0]
+    return raw_address, None
+
+
 def calculate_price_timeline_from_swaps(
     events_all: list[dict],
     verified_pools: list[VerifiedPool],
@@ -928,10 +1115,12 @@ def calculate_price_timeline_from_swaps(
     token_decimals: int,
     bucket_seconds: int = 3600,
 ) -> list[dict[str, Any]]:
-    """Last swap-implied USD price per pool per bucket (same as ``price_timeline`` SQL).
+    """Last swap-implied price per pool per bucket.
 
-    ``price_usd = amount_usd / target_token_amount``; bucket value is the last
-    swap in that bucket (``MAX_BY`` equivalent).
+    Prefer ``amount_usd / target_token_amount``. RPC swaps do not contain USD,
+    so known quote tokens fall back to quote-token/target-token execution price.
+    The bucket value is the last swap (``MAX_BY`` equivalent), and every row
+    records ``price_unit`` plus ``price_source``.
     """
     pool_meta: dict[str, dict[str, Any]] = {}
     for pool in verified_pools:
@@ -951,23 +1140,8 @@ def calculate_price_timeline_from_swaps(
     for evt in events_all or []:
         if (evt.get("event_type") or "").upper() != "SWAP":
             continue
-        pa = (evt.get("pool_address") or "").lower()
-        evt_has_tokens = bool(evt.get("token0_address") and evt.get("token1_address"))
-        meta = None
-        if evt_has_tokens:
-            for candidate_pa, candidate_meta in pool_meta.items():
-                if _event_matches_pool(
-                    evt, candidate_meta["token0"], candidate_meta["token1"]
-                ):
-                    meta = candidate_meta
-                    pa = candidate_pa
-                    break
-        else:
-            meta = pool_meta.get(pa)
+        pa, meta = _resolve_swap_pool(evt, pool_meta)
         if not meta or not pa:
-            continue
-        amount_usd = float(evt.get("amount_usd") or 0)
-        if amount_usd <= 0:
             continue
         side_info = _resolve_target_side(
             evt, meta["token0"], meta["token1"], target_token, token_decimals
@@ -985,6 +1159,22 @@ def calculate_price_timeline_from_swaps(
         token_amount = target_raw / (10 ** max(0, int(token_decimals or 18)))
         if token_amount <= 0:
             continue
+        amount_usd = float(evt.get("amount_usd") or 0)
+        if amount_usd > 0:
+            price_value = amount_usd / token_amount
+            price_unit = "USD"
+            price_source = "amount_usd"
+        else:
+            quote_raw = a1 if side_info[0] == "0" else a0
+            quote_decimals = int(side_info[2])
+            quote_symbol = _guess_quote_symbol(side_info[1])
+            if quote_raw <= 0 or quote_symbol == "???":
+                continue
+            price_value = (
+                quote_raw / (10 ** quote_decimals)
+            ) / token_amount
+            price_unit = quote_symbol
+            price_source = "pool_swap_ratio"
         try:
             ts = int(evt.get("block_timestamp") or 0)
         except (TypeError, ValueError):
@@ -992,7 +1182,6 @@ def calculate_price_timeline_from_swaps(
         if ts <= 0:
             continue
         bucket_ts = (ts // bucket_seconds) * bucket_seconds
-        price_usd = amount_usd / token_amount
         try:
             bn = int(evt.get("block_number") or 0)
         except (TypeError, ValueError):
@@ -1014,7 +1203,10 @@ def calculate_price_timeline_from_swaps(
             "pool_address": pa,
             "protocol": meta.get("protocol") or evt.get("protocol") or "",
             "version": meta.get("version") or evt.get("version") or "",
-            "price_usd": price_usd,
+            "price": price_value,
+            "price_usd": price_value if price_unit == "USD" else None,
+            "price_unit": price_unit,
+            "price_source": price_source,
             "_bn": bn,
             "_log": log_index,
             "_ts": ts,
@@ -1024,10 +1216,15 @@ def calculate_price_timeline_from_swaps(
     for row in sorted(last.values(), key=lambda r: (r["bucket_ts"], r["pool_address"])):
         out.append({
             "bucket_ts": row["bucket_ts"],
+            "block_number": row["_bn"],
+            "block_timestamp": row["_ts"],
             "pool_address": row["pool_address"],
             "protocol": row["protocol"],
             "version": row["version"],
+            "price": row["price"],
             "price_usd": row["price_usd"],
+            "price_unit": row["price_unit"],
+            "price_source": row["price_source"],
         })
     return out
 
@@ -1211,20 +1408,9 @@ def calculate_volume_metrics(
     for evt in events_all or []:
         if (evt.get("event_type") or "").upper() != "SWAP":
             continue
-        meta = None
-        pa = (evt.get("pool_address") or "").lower()
-        evt_has_tokens = bool(evt.get("token0_address") and evt.get("token1_address"))
-        if evt_has_tokens:
-            for candidate_pa, candidate_meta in pool_meta.items():
-                if _event_matches_pool(
-                    evt, candidate_meta["token0"], candidate_meta["token1"]
-                ):
-                    meta = candidate_meta
-                    pa = candidate_pa
-                    break
-        else:
-            meta = pool_meta.get(pa)
+        pa, meta = _resolve_swap_pool(evt, pool_meta)
         if not meta:
+            ambiguous_events += 1
             continue
         try:
             a0 = abs(int(evt.get("token0_amount", "0") or "0"))
@@ -2046,6 +2232,8 @@ def calculate_all_metrics(
     to_block: int = 0,
     chart_span: str = "auto",
     artifact_format: str = "json",
+    token_symbol: str = "",
+    chain_id: int = 1,
 ) -> dict[str, Any]:
     """Main entry point: compute all liquidity and risk metrics."""
     artifact_mode = validate_artifact_environment(artifact_format)
@@ -2090,7 +2278,34 @@ def calculate_all_metrics(
             else:
                 tvl_source = "dune_snapshot_empty"
         except Exception as exc:
-            print(f"  [metrics] snapshot TVL failed ({exc}); falling back to event timeline")
+            print(
+                f"  [metrics] Dune snapshot TVL failed ({exc}); "
+                "trying historical RPC balances"
+            )
+            timeline = []
+        if not timeline and w3 is not None:
+            try:
+                timeline = build_tvl_timeline_rpc_snapshots(
+                    w3,
+                    verified_pools,
+                    target_token,
+                    token_decimals,
+                    from_block=from_block,
+                    to_block=to_block,
+                    chart_span=span,
+                    price_rows=local_prices,
+                    reference_events=events_all,
+                )
+            except Exception as exc:
+                print(f"  [metrics] historical RPC snapshot TVL failed ({exc})")
+                timeline = []
+            if timeline:
+                tvl_source = "rpc_target_balance_local_price"
+        if not timeline:
+            print(
+                "  [metrics] historical snapshot TVL unavailable; "
+                "falling back to event timeline"
+            )
             timeline = build_tvl_timeline(
                 verified_pools, events_all, target_token, token_decimals
             )
@@ -2195,6 +2410,40 @@ def calculate_all_metrics(
         out, volume, artifact_mode
     )
 
+    analysis_series_rows: list[dict[str, Any]] = []
+    analysis_series_artifact: dict[str, Any] = {
+        "name": "analysis_series",
+        "format": "not_written",
+        "rows": 0,
+        "paths": {},
+    }
+    if artifact_mode == "both":
+        analysis_series_rows = build_analysis_series(
+            events_all,
+            events_liquidity,
+            timeline,
+            verified_pools,
+            target_token,
+            token_decimals,
+            token_symbol=token_symbol,
+            chain_id=chain_id,
+            bucket_seconds=bucket_seconds,
+            tvl_source=tvl_source,
+        )
+        analysis_series_artifact = write_table(
+            "analysis_series",
+            analysis_series_rows,
+            out,
+            artifact_format="parquet",
+        )
+        human_outputs = write_analysis_series_human_outputs(
+            analysis_series_rows, out
+        )
+        analysis_series_artifact["paths"].update({
+            "csv_preview": human_outputs["csv_preview"],
+            "summary_md": human_outputs["summary_md"],
+        })
+
     wallet_activity = calculate_wallet_activity(
         events_all,
         verified_pools,
@@ -2210,6 +2459,7 @@ def calculate_all_metrics(
         "volume": volume,
         "wallet_activity": wallet_activity,
         "tvl_timeline_length": len(timeline),
+        "analysis_series_length": len(analysis_series_rows),
         "tvl_timeline": timeline,
         "tvl_timeline_source": tvl_source,
         "chart_span": span,
@@ -2219,6 +2469,7 @@ def calculate_all_metrics(
         "artifacts": {
             "tvl_timeline": tvl_artifact,
             "volume_timeline": volume_artifact,
+            "analysis_series": analysis_series_artifact,
         },
     }
     metrics_document = metrics

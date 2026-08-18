@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from src.models import VerifiedPool
 from src.analysis.metrics import (
+    build_tvl_timeline_rpc_snapshots,
     calculate_price_timeline_from_swaps,
     calculate_volume_metrics,
     calculate_wallet_activity,
@@ -46,6 +48,12 @@ def _v4_pool() -> VerifiedPool:
         token1=WETH,
         verified=True,
     )
+
+
+def _second_v4_pool() -> VerifiedPool:
+    pool = _v4_pool()
+    pool.pool_address = "0x" + "cd" * 32
+    return pool
 
 
 class WithdrawalNormalizationTest(unittest.TestCase):
@@ -365,6 +373,150 @@ class LocalSwapAggregatesTest(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["pool_address"], pool.pool_address.lower())
         self.assertEqual(rows[0]["price_usd"], 4.0)
+
+    def test_same_pair_v4_swap_is_not_assigned_to_arbitrary_pool(self):
+        pools = [_v4_pool(), _second_v4_pool()]
+        event = {
+            "event_type": "SWAP",
+            "block_number": 10,
+            "block_timestamp": 1_700_000_000,
+            "pool_address": pools[0].custody_address,
+            "token0_address": TARGET,
+            "token1_address": WETH,
+            "token0_amount": "1000000000000000000",
+            "token1_amount": "2000000000000000000",
+            "amount_usd": 10.0,
+        }
+
+        prices = calculate_price_timeline_from_swaps(
+            [event], pools, TARGET, 18, bucket_seconds=3600
+        )
+        volume = calculate_volume_metrics(
+            [event], pools, TARGET, 18, bucket_seconds=3600
+        )
+
+        self.assertEqual(prices, [])
+        self.assertEqual(volume["total_volume_in_token"], 0)
+        self.assertEqual(volume["ambiguous_events"], 1)
+
+    def test_exact_pool_address_wins_even_when_token_pair_is_duplicated(self):
+        direct = _pool()
+        event = {
+            "event_type": "SWAP",
+            "block_number": 10,
+            "log_index": 1,
+            "block_timestamp": 1_700_000_000,
+            "pool_address": direct.pool_address,
+            "token0_address": TARGET,
+            "token1_address": WETH,
+            "token0_amount": "1000000000000000000",
+            "token1_amount": "2000000000000000000",
+            "amount_usd": 10.0,
+        }
+
+        rows = calculate_price_timeline_from_swaps(
+            [event], [direct, _v4_pool()], TARGET, 18, bucket_seconds=3600
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["pool_address"], direct.pool_address.lower())
+        self.assertEqual(rows[0]["block_number"], 10)
+        self.assertEqual(rows[0]["block_timestamp"], 1_700_000_000)
+
+    def test_rpc_swap_price_falls_back_to_weth_quote(self):
+        direct = _pool()
+        event = {
+            "event_type": "SWAP",
+            "block_number": 10,
+            "log_index": 1,
+            "block_timestamp": 1_700_000_000,
+            "pool_address": direct.pool_address,
+            "token0_amount": "1000000000000000000",
+            "token1_amount": "2000000000000000000",
+            "amount_usd": None,
+        }
+
+        rows = calculate_price_timeline_from_swaps(
+            [event], [direct], TARGET, 18, bucket_seconds=3600
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["price"], 2.0)
+        self.assertIsNone(rows[0]["price_usd"])
+        self.assertEqual(rows[0]["price_unit"], "WETH")
+        self.assertEqual(rows[0]["price_source"], "pool_swap_ratio")
+
+
+class HistoricalRpcTvlTest(unittest.TestCase):
+    def test_uses_bucket_block_and_excludes_shared_v4_custody(self):
+        direct = _pool()
+        v4_a = _v4_pool()
+        v4_b = _second_v4_pool()
+
+        class Call:
+            def __init__(self, address):
+                self.address = address
+
+            def call(self, *, block_identifier):
+                return block_identifier * 10**18
+
+        class Functions:
+            def balanceOf(self, address):
+                return Call(address)
+
+        class Token:
+            functions = Functions()
+
+        price_rows = [
+            {
+                "bucket_ts": 1_700_000_000 // 3600 * 3600,
+                "block_number": 11,
+                "block_timestamp": 1_700_000_100,
+                "pool_address": direct.pool_address,
+                "price_usd": 2.0,
+            },
+            {
+                "bucket_ts": 1_700_000_000 // 3600 * 3600,
+                "block_number": 11,
+                "block_timestamp": 1_700_000_100,
+                "pool_address": v4_a.pool_address,
+                "price_usd": 9.0,
+            },
+        ]
+        events = [
+            {
+                "block_number": 11,
+                "log_index": 1,
+                "block_timestamp": 1_700_000_100,
+            },
+            {
+                "block_number": 20,
+                "log_index": 2,
+                "block_timestamp": 1_700_003_700,
+            },
+        ]
+
+        with patch("src.analysis.metrics.get_contract", return_value=Token()):
+            rows = build_tvl_timeline_rpc_snapshots(
+                object(),
+                [direct, v4_a, v4_b],
+                TARGET,
+                18,
+                1,
+                100,
+                price_rows=price_rows,
+                reference_events=events,
+            )
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(
+            {row["pool_address"] for row in rows}, {direct.pool_address}
+        )
+        self.assertEqual([row["snapshot_block"] for row in rows], [11, 20])
+        self.assertEqual([row["tvl_in_token"] for row in rows], [
+            str(11 * 10**18), str(20 * 10**18)
+        ])
+        self.assertEqual([row["tvl_usd"] for row in rows], [22.0, 40.0])
 
 
 if __name__ == "__main__":

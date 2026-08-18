@@ -225,34 +225,24 @@ WHERE token_address = {{token}}
 
 
 -- === name: pool_balance_timeline ===
--- Historical pool/custody balances via balances_ethereum.daily_updates.
--- Sparse intervals expanded to one row per day (utils.days). Local TVL = bal × price.
+-- Historical end-of-day pool/custody balances via the current curated table.
+-- Local TVL = target-token balance × local swap-derived price.
 WITH bounds AS (
   SELECT
-    DATE((SELECT time FROM ethereum.blocks WHERE number = {{from_block}})) AS d0,
-    DATE((SELECT time FROM ethereum.blocks WHERE number = {{to_block}})) AS d1
-),
-days AS (
-  SELECT CAST(timestamp AS DATE) AS day
-  FROM utils.days
-  CROSS JOIN bounds
-  WHERE CAST(timestamp AS DATE) BETWEEN bounds.d0 AND bounds.d1
+    CAST((SELECT time FROM ethereum.blocks WHERE number = {{from_block}}) AS DATE) AS d0,
+    CAST((SELECT time FROM ethereum.blocks WHERE number = {{to_block}}) AS DATE) AS d1
 )
 SELECT
-  CAST(d.day AS varchar) AS bucket_ts,
-  CAST(i.address AS varchar) AS pool_address,
-  CAST(i.balance_raw AS varchar) AS balance_raw
-FROM balances_ethereum.daily_updates AS i
-JOIN days AS d
-  ON d.day >= i.valid_from
- AND d.day < i.valid_to
+  CAST(b.block_date AS varchar) AS bucket_ts,
+  CAST(b.address AS varchar) AS pool_address,
+  CAST(b.balance_raw AS varchar) AS balance_raw
+FROM balances.erc20_daily AS b
 CROSS JOIN bounds
-WHERE i.token_address = {{token}}
-  AND i.token_standard = 'erc20'
-  AND i.address IN ({{pool_list}})
-  AND i.valid_from <= bounds.d1
-  AND i.valid_to > bounds.d0
-  AND i.balance_raw > 0
+WHERE b.blockchain = '{{chain}}'
+  AND b.block_date BETWEEN bounds.d0 AND bounds.d1
+  AND b.token_address = {{token}}
+  AND b.address IN ({{pool_list}})
+  AND b.balance_raw > 0
 ORDER BY 1, 2
 
 

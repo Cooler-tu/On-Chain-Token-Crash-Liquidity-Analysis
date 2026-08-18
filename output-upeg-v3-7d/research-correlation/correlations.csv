@@ -1,0 +1,7 @@
+correlation,lag,method,n,x,y
+-0.6841201654722969,0,pearson,168,price_return,tvl_change
+-0.7756541017710985,0,spearman,168,price_return,tvl_change
+-0.04727590083910789,0,pearson,168,price_return,log1p_volume_token
+-0.01233289971198769,0,spearman,168,price_return,log1p_volume_token
+0.0036759274425992596,0,pearson,168,tvl_change,log1p_volume_token
+-0.06002702962629264,0,spearman,168,tvl_change,log1p_volume_token

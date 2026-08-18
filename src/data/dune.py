@@ -345,9 +345,25 @@ def _execute_remote(
                     f"{attempt}/7 in {delay}s"
                 )
                 time.sleep(delay)
-        raise DuneError(f"{label}: network/API error: {last}") from last
+        detail = ""
+        try:
+            response = getattr(last, "response", None)
+            if response is not None and response.text:
+                detail = " — {}".format(response.text[:1000].strip())
+        except Exception:
+            detail = ""
+        raise DuneError(
+            f"{label}: network/API error: {last}{detail}"
+        ) from last
 
-    start = req("POST", f"{_DUNE_API}/sql/execute", 120, {"sql": sql})
+    # Dune's raw-SQL endpoint now expects an explicit current-engine tier.
+    # Omitting it can route requests to the deprecated query engine.
+    start = req(
+        "POST",
+        f"{_DUNE_API}/sql/execute",
+        120,
+        {"sql": sql, "performance": "medium"},
+    )
     execution_id = start.json().get("execution_id")
     if not execution_id:
         raise DuneError("Dune SQL execute returned no execution_id")

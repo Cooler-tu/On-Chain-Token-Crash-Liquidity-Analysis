@@ -25,12 +25,14 @@ End-to-end **Ethereum mainnet** tool for token liquidity / crash analysis: disco
 
 | Token | Window | Pools | Holders | Risk | Date | Dir |
 |-------|--------|-------|---------|------|------|-----|
+| uPEG directional audit | 25043020–25043311 | 1 V3 | 99 tx senders | Research | 2026-08-18 | `output-upeg-v3-7d/research-directional-flow/2026-05-07T12/` |
 | uPEG | 25003546–25004000 | 10 (V2/V3/V4) | ~231 EOA | 0.4364 MEDIUM | 2026-07-28 | `output/` |
 | SPX | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 LOW | 2026-07-18 | `output/` (superseded) / `output-spx-demo/` |
 | USDC | 19000000–19000050 | — | — | 0.0000 LOW | — | `output-test/` |
 
 ### Recent Findings (uPEG)
 
+- Directional audit of the verified `2026-05-07 12:00 UTC` V3 bucket found 48 sell-side and 71 buy-side Swap events: 39.5356 uPEG gross sells, 30.2685 gross buys, and 9.2671 net signed Swap flow into the pool. Actual uPEG Transfer net flow and the historical balance delta both equal 10.106754360913178103 uPEG exactly; the 0.83964 Transfer-minus-Swap residual proves that Swap amounts alone are not a complete cash-flow ledger for this token/window. Evidence and guardrails are in `research-notes/upeg-directional-flow-audit.md`.
 - Window `25003546–25004000`: **10** verified Uniswap pools (1 V2 / 3 V3 / 6 V4). Curve/Balancer enabled in config; this token’s liquidity in-window was Uniswap-only.
 - **36** LP positions reconstructed (V3/V4 tick math; V4 share = in-range `L / StateView.getLiquidity`).
 - Holdings via Dune address discovery + RPC `balanceOf`; dashboard tags **EOA / contract / pool**.
@@ -85,11 +87,16 @@ open output/dashboard.html
 | `holdings` | Rebuild holdings / pool-ID tables |
 | `dune` | Query Dune directly: `pools` / `swaps` / `tvl` / `data-map` |
 | `dashboard` | Regenerate `dashboard.html`; optionally refresh adaptive wallet selection locally |
+| `research-series` | Build typed `analysis_series.parquet`; optionally refresh attributable reserve snapshots with `--refresh-tvl` |
 
 ```bash
 python3 -m src.cli dashboard --output-dir output
 # Recompute adaptive Notable Wallets from local swaps, then rebuild dashboard
 python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity
+# Build the bucket-aligned OHLC/VWAP/TVL/volume/LP research feature table
+python3 -m src.cli research-series --output-dir output
+# Recommended before formal TVL research (requires an archive-capable RPC):
+python3 -m src.cli research-series --output-dir output --refresh-tvl
 python3 scripts/publish_site.py          # rebuild public site/
 python3 scripts/publish_site.py --serve  # preview
 ```
@@ -246,12 +253,14 @@ See `SUPPORTED_PROTOCOLS.md` for contract addresses and notes.
 
 | Token | 窗口 | 池子 | 持有者 | 风险 | 日期 | 目录 |
 |-------|------|------|--------|------|------|------|
+| uPEG 方向审计 | 25043020–25043311 | 1 V3 | 99 个交易发起地址 | 研究 | 2026-08-18 | `output-upeg-v3-7d/research-directional-flow/2026-05-07T12/` |
 | uPEG | 25003546–25004000 | 10 (V2/V3/V4) | ~231 EOA | 0.4364 中 | 2026-07-28 | `output/` |
 | SPX | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 低 | 2026-07-18 | `output-spx-demo/` 等 |
 | USDC | 19000000–19000050 | — | — | 0.0000 低 | — | `output-test/` |
 
 ### 近期发现（uPEG）
 
+- 对已人工核验的 `2026-05-07 12:00 UTC` V3 小时桶做方向审计：48 个卖出侧、71 个买入侧 Swap，卖出总量 39.5356 uPEG、买入总量 30.2685 uPEG，带符号 Swap 净流入池 9.2671 uPEG。实际 uPEG Transfer 净流入与历史池余额增加都精确等于 10.106754360913178103 uPEG；0.83964 uPEG 的“Transfer 减 Swap”残差证明该代币/窗口不能只用 Swap 数量作为完整资金流账本。证据与解释边界见 `research-notes/upeg-directional-flow-audit.md`。
 - 窗口内验证 **10** 个 Uniswap 池（1 V2 / 3 V3 / 6 V4）。配置已开 Curve/Balancer，但该代币本窗口流动性主要在 Uniswap。
 - 重建 **36** 个 LP 仓位（V3/V4 tick；V4 份额 = 区间内 `L / StateView.getLiquidity`）。
 - 持仓：Dune 发现地址 + RPC `balanceOf`；看板区分 **EOA / 合约 / 池账户**。
@@ -286,11 +295,16 @@ export ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR_API_KEY"
 | `discover-only` | 只发现/验证池 |
 | `holdings` | 重跑持仓 |
 | `dashboard` | 用已有数据重生成看板；可在本地刷新自适应钱包筛选 |
+| `research-series` | 生成 typed `analysis_series.parquet`；可用 `--refresh-tvl` 刷新可归因的历史储备快照 |
 
 ```bash
 python3 -m src.cli dashboard --output-dir output
 # 只读本地 swaps，重算 P99 Notable Wallets，不请求 Dune/RPC
 python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity
+# 生成按时间桶对齐的 OHLC/VWAP/TVL/成交量/LP 研究特征表
+python3 -m src.cli research-series --output-dir output
+# 正式研究 TVL 前建议执行（RPC 需支持历史区块）：
+python3 -m src.cli research-series --output-dir output --refresh-tvl
 python3 scripts/publish_site.py
 ```
 

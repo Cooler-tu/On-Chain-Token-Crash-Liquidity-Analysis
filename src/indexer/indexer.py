@@ -10,11 +10,13 @@ last completed block. Ctrl+C is safe.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+import requests
 from web3 import Web3
 from web3.types import EventData
 
@@ -28,7 +30,42 @@ def _fetch_block_timestamps(
 ) -> dict[int, int]:
     if cache is None:
         cache = {}
-    for bn in sorted(block_numbers):
+    missing = [bn for bn in sorted(block_numbers) if bn not in cache]
+    endpoint = getattr(w3.provider, "endpoint_uri", "")
+    if endpoint and missing:
+        try:
+            batch_size = max(
+                1, int(os.environ.get("ETH_BLOCK_BATCH_SIZE") or 500)
+            )
+        except (TypeError, ValueError):
+            batch_size = 500
+        for offset in range(0, len(missing), batch_size):
+            chunk = missing[offset:offset + batch_size]
+            payload = [
+                {
+                    "jsonrpc": "2.0",
+                    "id": bn,
+                    "method": "eth_getBlockByNumber",
+                    "params": [hex(bn), False],
+                }
+                for bn in chunk
+            ]
+            try:
+                response = requests.post(endpoint, json=payload, timeout=60)
+                response.raise_for_status()
+                body = response.json()
+                if not isinstance(body, list):
+                    continue
+                for item in body:
+                    result = item.get("result") or {}
+                    bn = int(item.get("id") or 0)
+                    timestamp = result.get("timestamp")
+                    if bn and timestamp is not None:
+                        cache[bn] = int(timestamp, 16)
+            except Exception:
+                # Providers without JSON-RPC batch support use the safe path below.
+                break
+    for bn in missing:
         if bn in cache:
             continue
         try:
@@ -613,12 +650,18 @@ class _StreamIndexer:
 
         # Start large; adaptive logic shrinks (and caps) if the RPC rejects the range.
         # Free-tier Alchemy often falls to ~10; Infura/paid nodes can stay at 2k+.
+        try:
+            configured_chunk_size = int(
+                os.environ.get("ETH_LOG_CHUNK_SIZE") or DEFAULT_CHUNK_SIZE
+            )
+        except (TypeError, ValueError):
+            configured_chunk_size = DEFAULT_CHUNK_SIZE
         get_logs_chunked(
             event_obj,
             start,
             self.to_block,
             argument_filters=self.argument_filters,
-            chunk_size=DEFAULT_CHUNK_SIZE,
+            chunk_size=max(1, configured_chunk_size),
             on_chunk=on_chunk,
         )
         self.checkpoint["streams"][self.key] = self.to_block
@@ -1152,10 +1195,11 @@ def index_v3_pool_events(
     checkpoint_path: Path,
     cache_dir: Path,
     ts_cache: dict[int, int],
+    event_names: tuple[str, ...] = ("Swap", "Mint", "Burn", "Collect"),
 ) -> list[dict]:
     contract = get_contract(w3, pool.pool_address, "uniswap_v3_pool")
     events: list[dict] = []
-    for evt_name in ("Swap", "Mint", "Burn", "Collect"):
+    for evt_name in event_names:
         key = _stream_key("v3", pool.pool_address, evt_name)
 
         def make_norm(name=evt_name):
@@ -1465,6 +1509,7 @@ def index_events(
     source: str = "auto",
     force_dune_refresh: bool = False,
     artifact_format: str = "json",
+    pool_event_types: Optional[set[str]] = None,
 ) -> dict[str, list]:
     """Index swaps / liquidity / transfers.
 
@@ -1583,8 +1628,22 @@ def index_events(
         _flush_outputs(out, collected, from_block, to_block)
 
     for pool in v3_pools:
+        v3_event_names = ("Swap", "Mint", "Burn", "Collect")
+        if pool_event_types is not None:
+            requested = {str(name).strip().upper() for name in pool_event_types}
+            v3_event_names = tuple(
+                name for name in v3_event_names if name.upper() in requested
+            )
         evts = index_v3_pool_events(
-            w3, pool, from_block, to_block, checkpoint, cp_path, cache_dir, ts_cache
+            w3,
+            pool,
+            from_block,
+            to_block,
+            checkpoint,
+            cp_path,
+            cache_dir,
+            ts_cache,
+            event_names=v3_event_names,
         )
         collected.extend(evts)
         _flush_outputs(out, collected, from_block, to_block)
