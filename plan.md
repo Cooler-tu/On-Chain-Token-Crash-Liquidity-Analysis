@@ -44,12 +44,15 @@
 - **Matched-pool correlation pilot** (2026-08-18) — added `scripts/time_series_correlation.py` for Pearson/Spearman and explicit lead-lag scans directly from `analysis_series.parquet`. The 25-hour complete V3 subset runs end to end and writes Markdown/CSV/JSON results with short-window and non-causality warnings.
 - **uPEG matched V3 seven-day panel** (2026-08-18) — added an RPC-only matched-pool builder and batched timestamp/log retrieval; `output-upeg-v3-7d/` covers blocks 25033767–25083999 with 4,105 swaps, 169 hourly WETH-quoted price buckets, and 169 historical target-reserve snapshots. Price-return versus target-reserve change remains strongly negative (Pearson -0.6841, Spearman -0.7757, N=168), while contemporaneous volume and all ±24h lag candidates remain weak. LP events were intentionally not collected and are explicitly marked unavailable rather than zero.
 - **uPEG directional-flow audited hour** (2026-08-18) — added `scripts/directional_swap_flow.py` and `tests/test_directional_swap_flow.py`; the verified block window 25043020–25043311 contains 119 Swap events (48 sells / 71 buys), 39.5356 uPEG gross sell volume, 30.2685 gross buy volume, and 9.2671 net signed Swap flow into the pool. Target-token Transfer logs reconcile the 10.106754360913178103 uPEG historical balance increase exactly and expose a 0.83964 uPEG Transfer-minus-Swap residual. Evidence: `research-notes/upeg-directional-flow-audit.md`; local outputs: `output-upeg-v3-7d/research-directional-flow/2026-05-07T12/`.
+- **Local analysis studio homepage** (2026-08-19) — `python3 -m src.cli studio` serves a form: token address/name, optional from-block, 7 or 30 days; queues one `analyze` job and links the generated dashboard. GitHub Pages stays static.
 
 ---
 
 ## 🎯 Current
 
+- **Crash pre-30d queue** — after the live FLOKI/TURBO/… 30d job: OM (2025-04-13), FTT (2022-11-08), CEL (2022-06-13), CREDI (2025-08-08 ATH). Cases in `research-notes/crash-pre30d-cases.md`. APRZ skipped (listed and dumped within ~1 day).
 - **Directional flow full-window expansion** — add persistent block/transaction metadata caching, then extend signed Swap, actual target-token Transfer, residual, sender-concentration, and price-impact features across all 169 matched V3 hourly buckets. Keep LP identity and V4 liquidity amount metrics excluded until coverage is recovered.
+- **TURBO month run** — first pass failed mid-index (Dune/RPC 429); resume then failed at start with **RPC ConnectionError** (Alchemy unreachable). Partial data kept in `output-turbo-month` (older window). Not mixing into today's 30-day panel.
 
 ---
 

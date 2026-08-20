@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyze a token</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--text-muted:#94a3b8;--text-dim:#64748b;--accent:#3b82f6;--accent-light:#60a5fa;--green:#4ade80;--yellow:#facc15;--red:#f87171;--radius:10px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);padding:20px;min-height:100vh}
+.container{max-width:1100px;margin:0 auto}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:28px}
+.brand{font-size:18px;font-weight:700}
+.brand-accent{color:var(--accent)}
+.nav-links{display:flex;align-items:center}
+.hero h1{font-size:32px;font-weight:700;letter-spacing:-0.4px}
+.hero p{color:var(--text-muted);margin-top:8px;max-width:640px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin:24px 0}
+label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px}
+input[type=text],input[type=number]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:#0b1224;color:var(--text);font-size:14px}
+.row{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px}
+.dur{display:flex;gap:10px}
+.dur label{display:flex;align-items:center;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;flex:1}
+.dur input{accent-color:var(--accent)}
+button{margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 18px;font-weight:600;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:12px;color:var(--text-dim);margin-top:8px}
+.log{white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#0b1224;border:1px solid var(--border);border-radius:8px;padding:12px;max-height:320px;overflow:auto;margin-top:12px;color:#cbd5e1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-decoration:none;color:inherit;display:block}
+.card:hover{border-color:var(--accent)}
+.card .sym{font-size:18px;font-weight:700}
+.card .meta{font-size:12px;color:var(--text-dim);margin-top:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.risk-low{background:rgba(34,197,94,.12);color:var(--green)}
+.risk-medium{background:rgba(250,204,21,.12);color:var(--yellow)}
+.risk-high{background:rgba(239,68,68,.12);color:var(--red)}
+.status{font-size:13px;color:var(--text-muted);margin-top:10px}
+h2{font-size:18px;margin:8px 0 12px}
+@media(max-width:800px){.row{grid-template-columns:1fr}.hero h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="nav-bar">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none"><span class="brand-accent">On-Chain</span> Token Crash</a></div>
+    <div class="nav-links"><a href="/" style="color:var(--accent-light);text-decoration:none;font-size:13px;font-weight:600">Home</a></div>
+  </nav>
+  <div class="hero">
+    <h1>Generate a dashboard</h1>
+    <p>Enter a token address or name, pick a start block and a 7- or 30-day window. The local pipeline discovers pools, indexes events, and writes a dashboard when it finishes.</p>
+  </div>
+  <form class="panel" id="form">
+    <div class="row">
+      <div>
+        <label for="token">Token address or name</label>
+        <input id="token" name="token" type="text" placeholder="0x… / FLOKI / uPEG" required>
+      </div>
+      <div>
+        <label for="from_block">From block (optional)</label>
+        <input id="from_block" name="from_block" type="number" min="1" placeholder="blank = latest minus duration">
+      </div>
+      <div>
+        <label>Duration</label>
+        <div class="dur">
+          <label><input type="radio" name="days" value="7"> 7 days</label>
+          <label><input type="radio" name="days" value="30" checked> 30 days</label>
+        </div>
+      </div>
+    </div>
+    <p class="hint" id="statusLine">Checking RPC…</p>
+    <button type="submit" id="go">Run analysis</button>
+    <div class="status" id="jobStatus"></div>
+    <pre class="log" id="log" hidden></pre>
+  </form>
+  <h2>Existing dashboards</h2>
+  <div class="grid" id="runs"></div>
+</div>
+<script>
+const logEl = document.getElementById('log');
+const jobStatus = document.getElementById('jobStatus');
+const statusLine = document.getElementById('statusLine');
+let pollTimer = null;
+
+async function loadStatus(){
+  try {
+    const r = await fetch('/api/status', {signal: AbortSignal.timeout(6000)});
+    const s = await r.json();
+    if (s.rpc_ok) {
+      statusLine.textContent = 'RPC ok · latest block ' + s.latest_block
+        + (s.running ? ' · a job is already running (new runs queue)' : '');
+      return;
+    }
+    statusLine.textContent = (s.rpc_error || 'RPC not reachable')
+      + ' Leave from-block blank only if RPC can return latest.';
+  } catch (e) {
+    statusLine.textContent = 'Could not check RPC. You can still open existing dashboards, or enter from-block manually.';
+  }
+}
+async function loadRuns(){
+  const r = await fetch('/api/runs');
+  const rows = await r.json();
+  const box = document.getElementById('runs');
+  if (!rows.length){
+    box.innerHTML = '<p class="hint">No completed analyses yet.</p>';
+    return;
+  }
+  box.innerHTML = rows.map(o => {
+    const rl = (o.risk_level || 'N/A').toLowerCase();
+    const href = '/run/' + encodeURIComponent(o.dir) + '/dashboard.html';
+    return '<a class="card" href="'+href+'"><div class="sym">'+esc(o.symbol)+' <span class="badge risk-'+rl+'">'+esc(o.risk_level)+'</span></div><div class="meta">'+esc(o.dir)+' · pools '+o.num_pools+' · score '+(o.risk_score||0).toFixed(4)+'</div></a>';
+  }).join('');
+}
+function esc(s){
+  return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+async function pollJob(id){
+  const r = await fetch('/api/jobs/' + id);
+  if (!r.ok) return;
+  const j = await r.json();
+  jobStatus.textContent = j.status + ' · ' + j.token + ' · blocks ' + j.from_block + '–' + j.to_block;
+  logEl.hidden = false;
+  logEl.textContent = j.log || '';
+  logEl.scrollTop = logEl.scrollHeight;
+  if (j.status === 'done'){
+    jobStatus.innerHTML = 'Done. <a href="'+j.dashboard+'" style="color:var(--accent-light)">Open dashboard</a>';
+    loadRuns();
+    return;
+  }
+  if (j.status === 'error'){
+    jobStatus.textContent = 'Failed: ' + (j.error || 'analyze error');
+    return;
+  }
+  pollTimer = setTimeout(() => pollJob(id), 2000);
+}
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const token = document.getElementById('token').value.trim();
+  const fromRaw = document.getElementById('from_block').value.trim();
+  const days = Number(document.querySelector('input[name=days]:checked').value);
+  const body = {token, days};
+  if (fromRaw) body.from_block = Number(fromRaw);
+  document.getElementById('go').disabled = true;
+  jobStatus.textContent = 'Submitting…';
+  try {
+    const r = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (!r.ok){
+      jobStatus.textContent = j.error || 'Request failed';
+      return;
+    }
+    jobStatus.textContent = 'Queued as ' + j.id;
+    pollJob(j.id);
+  } catch (err) {
+    jobStatus.textContent = 'Could not reach the local studio API.';
+  } finally {
+    document.getElementById('go').disabled = false;
+  }
+});
+loadStatus();
+loadRuns();
+</script>
+</body>
+</html>

@@ -356,13 +356,17 @@ def _execute_remote(
             f"{label}: network/API error: {last}{detail}"
         ) from last
 
-    # Dune's raw-SQL endpoint now expects an explicit current-engine tier.
-    # Omitting it can route requests to the deprecated query engine.
+    # Free-tier keys reject performance=medium|large ("Invalid performance tier").
+    # Paid keys can set DUNE_PERFORMANCE=medium|large|small. Omit otherwise.
+    payload: dict[str, Any] = {"sql": sql}
+    tier = (os.environ.get("DUNE_PERFORMANCE") or "").strip().lower()
+    if tier:
+        payload["performance"] = tier
     start = req(
         "POST",
         f"{_DUNE_API}/sql/execute",
         120,
-        {"sql": sql, "performance": "medium"},
+        payload,
     )
     execution_id = start.json().get("execution_id")
     if not execution_id:

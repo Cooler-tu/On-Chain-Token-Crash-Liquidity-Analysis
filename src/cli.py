@@ -1018,6 +1018,31 @@ def serve_dashboard(
 
 
 @app.command()
+def studio(
+    port: int = typer.Option(8080, help="HTTP port"),
+    host: str = typer.Option("127.0.0.1", help="Bind host"),
+    open_browser: bool = typer.Option(True, "--open/--no-open"),
+):
+    """Local homepage: enter a token, pick from-block + 7/30 days, generate a dashboard.
+
+    GitHub Pages cannot run the pipeline. This server is local-only by default.
+    Analyses queue one at a time so they do not stampede Dune.
+    """
+    import webbrowser
+
+    from .studio.server import serve as serve_studio
+
+    url = "http://{}:{}/".format(host, port)
+    typer.echo("Opening analysis studio at {}".format(url))
+    if open_browser:
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+    serve_studio(host=host, port=port)
+
+
+@app.command()
 def dune(
     action: str = typer.Argument(
         ..., help="Action: pools | swaps | tvl | data-map"

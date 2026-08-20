@@ -83,6 +83,7 @@ open output/dashboard.html
 | Command | Purpose |
 |---------|---------|
 | `analyze` | Full pipeline |
+| `studio` | Local homepage: token + from-block + 7/30 days → queued analysis + dashboard |
 | `discover-only` | Profile + discover + verify pools |
 | `holdings` | Rebuild holdings / pool-ID tables |
 | `dune` | Query Dune directly: `pools` / `swaps` / `tvl` / `data-map` |
@@ -90,6 +91,7 @@ open output/dashboard.html
 | `research-series` | Build typed `analysis_series.parquet`; optionally refresh attributable reserve snapshots with `--refresh-tvl` |
 
 ```bash
+python3 -m src.cli studio                 # local homepage: generate dashboards
 python3 -m src.cli dashboard --output-dir output
 # Recompute adaptive Notable Wallets from local swaps, then rebuild dashboard
 python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity
@@ -292,12 +294,14 @@ export ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR_API_KEY"
 | 命令 | 作用 |
 |------|------|
 | `analyze` | 完整流水线 |
+| `studio` | 本地首页：输入代币 + from block + 7/30 天，排队生成 dashboard |
 | `discover-only` | 只发现/验证池 |
 | `holdings` | 重跑持仓 |
 | `dashboard` | 用已有数据重生成看板；可在本地刷新自适应钱包筛选 |
 | `research-series` | 生成 typed `analysis_series.parquet`；可用 `--refresh-tvl` 刷新可归因的历史储备快照 |
 
 ```bash
+python3 -m src.cli studio                 # 本地首页，从表单生成 dashboard
 python3 -m src.cli dashboard --output-dir output
 # 只读本地 swaps，重算 P99 Notable Wallets，不请求 Dune/RPC
 python3 -m src.cli dashboard --output-dir output --refresh-wallet-activity

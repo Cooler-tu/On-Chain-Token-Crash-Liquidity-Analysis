@@ -164,6 +164,9 @@ If the task genuinely requires a broad scan (e.g. "find all tokens with high ris
 # Full pipeline
 python3 -m src.cli analyze <TOKEN> --from-block <N> --to-block <N> --output-dir output-<name>
 
+# Local homepage: token + from-block + 7/30 days → dashboard
+python3 -m src.cli studio
+
 # Regenerate dashboard only (from existing output)
 python3 -m src.cli dashboard --output-dir output-<name>
 

@@ -379,6 +379,8 @@ h1{font-size:24px;font-weight:700;letter-spacing:-0.3px}
 .subtitle{color:var(--text-muted);font-size:13px;margin-bottom:20px}
 .nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
 .brand{font-size:18px;font-weight:700}
+.brand a{color:inherit;text-decoration:none}
+.brand a:hover{color:var(--accent-light)}
 .brand-accent{color:var(--accent)}
 .nav-links a{color:var(--text-dim);text-decoration:none;font-size:13px;margin-left:20px;transition:color 0.2s}
 .nav-links a:hover,.nav-links a.active{color:var(--accent-light)}
@@ -477,12 +479,23 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 <body>
 <div class="container">
   <nav class="nav-bar">
-    <div class="brand"><span class="brand-accent">On-Chain</span> Token Crash</div>
+    <div class="brand"><a id="nav-home-brand" href="../"><span class="brand-accent">On-Chain</span> Token Crash</a></div>
     <div class="nav-links">
+      <a id="nav-home" href="../">Home</a>
       <a href="#" class="active">Dashboard</a>
       <a href="https://github.com/Cooler-tu/On-Chain-Token-Crash-Liquidity-Analysis" target="_blank">GitHub</a>
     </div>
   </nav>
+  <script>
+  (function(){{
+    var path = location.pathname || "";
+    var home = (path.indexOf("/run/") !== -1 || path === "/" || path === "/index.html") ? "/" : "../";
+    ["nav-home", "nav-home-brand"].forEach(function(id){{
+      var el = document.getElementById(id);
+      if (el) el.href = home;
+    }});
+  }})();
+  </script>
 
   <h1>{symbol} <span class="symbol-muted">Holdings &amp; Liquidity</span></h1>
   <p class="subtitle">Chain ID: {chain_id} &middot; Token: {token_identifier}</p>
