@@ -99,6 +99,36 @@ def _one(rows, *, scope: str, bucket: int, pool: str | None = None):
 
 
 class AnalysisSeriesTest(unittest.TestCase):
+    def test_skipped_position_manager_masks_lp_identity_but_keeps_flow(self):
+        liquidity = [{
+            "event_type": "LIQUIDITY_REMOVE",
+            "block_timestamp": BASE + 50,
+            "block_number": 4,
+            "pool_address": POOL_A,
+            "token0_amount": "10",
+            "token1_amount": "0",
+            "actor": "0x0000000000000000000000000000000000000def",
+        }]
+
+        rows = build_analysis_series(
+            [],
+            liquidity,
+            [],
+            [_pool(POOL_A)],
+            TARGET,
+            0,
+            token_symbol="TEST",
+            bucket_seconds=3_600,
+            tvl_source="snapshot_test",
+            lp_identity_available=False,
+        )
+        row = _one(rows, scope="pool", bucket=BASE, pool=POOL_A)
+
+        self.assertEqual(row["liquidity_removed_token"], 10.0)
+        self.assertEqual(row["net_lp_flow_token"], -10.0)
+        self.assertIsNone(row["active_lp_count"])
+        self.assertIsNone(row["lp_identity_coverage"])
+
     def test_price_ohlc_and_vwap_use_target_token_volume(self):
         swaps = [
             _swap(POOL_A, timestamp=BASE + 10, block=1, target_amount=10, amount_usd=10),

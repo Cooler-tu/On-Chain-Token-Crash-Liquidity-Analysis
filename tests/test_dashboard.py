@@ -12,12 +12,16 @@ from src.analysis.dashboard import (
     _find_volume_bucket,
     _holder_semantics,
     _identifier_html,
+    _build_liquidity_flow_chart_config,
     _pool_liquidity_presentation,
+    _price_chart_presentation,
     _rank_non_pool_holders,
     _table_withdrawals,
     _table_pool_ident,
     _table_large_wallets,
     _token_pair_html,
+    _liquidity_flow_note,
+    _liquidity_flow_timeline,
     _tvl_method_presentation,
     _withdrawal_quantification_note,
 )
@@ -261,6 +265,70 @@ class IdentifierUxTest(unittest.TestCase):
 
 
 class DashboardMetricSemanticsTest(unittest.TestCase):
+    def test_non_usd_price_keeps_quote_unit_and_does_not_claim_usd(self):
+        rows = [
+            {
+                "block_number": 100,
+                "pool_address": "0x" + "22" * 20,
+                "price": 0.0000004,
+                "price_usd": None,
+                "price_unit": "WETH",
+            }
+        ]
+
+        presentation = _price_chart_presentation(rows, "TST")
+
+        self.assertEqual(presentation["unit"], "WETH")
+        self.assertEqual(presentation["rows"][0]["price_value"], 0.0000004)
+        self.assertIn("WETH per TST", presentation["heading"])
+        self.assertIn("not USD", presentation["note"])
+
+    def test_liquidity_flow_separates_gross_add_remove_and_net(self):
+        target = "0x" + "11" * 20
+        pool = "0x" + "22" * 20
+        quote = "0x" + "33" * 20
+        verified = [{
+            "pool_address": pool,
+            "token0": target,
+            "token1": quote,
+            "verified": True,
+        }]
+        events = [
+            {
+                "block_timestamp": 1_700_000_010,
+                "pool_address": pool,
+                "event_type": "LIQUIDITY_ADD",
+                "token0_amount": str(15 * 10**18),
+                "token1_amount": "1",
+                "event_count": 1,
+            },
+            {
+                "block_timestamp": 1_700_000_020,
+                "pool_address": pool,
+                "event_type": "LIQUIDITY_REMOVE",
+                "token0_amount": str(10 * 10**18),
+                "token1_amount": "1",
+                # The amount is already aggregated; event_count is coverage only.
+                "event_count": 3,
+            },
+        ]
+
+        rows = _liquidity_flow_timeline(
+            events, verified, target, token_decimals=18, bucket_seconds=3_600
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["added"], 15.0)
+        self.assertEqual(rows[0]["removed"], 10.0)
+        self.assertEqual(rows[0]["net"], 5.0)
+        self.assertEqual(rows[0]["remove_actions"], 3)
+        config = _build_liquidity_flow_chart_config(rows, symbol="TST")
+        self.assertEqual(config["data"]["datasets"][1]["data"], [-10.0])
+        note = _liquidity_flow_note(rows, "TST")
+        self.assertIn("gross added 15.0000 TST", note)
+        self.assertIn("gross removed 10.0000 TST", note)
+        self.assertIn("net +5.0000 TST", note)
+
     def test_withdrawal_table_distinguishes_unquantified_from_real_zero(self):
         metrics = {
             "withdrawal_severity": {
@@ -443,6 +511,18 @@ class DashboardMetricSemanticsTest(unittest.TestCase):
         self.assertIn("pool token balance snapshots", result["note"])
         self.assertIn("local swap-derived prices", result["note"])
         self.assertIn("Balance snapshot", result["badge_html"])
+
+    def test_rpc_target_balance_is_labeled_as_reserve_not_full_tvl(self):
+        result = _tvl_method_presentation(
+            "rpc_target_balance_local_price",
+            [{"source_event": "rpc_target_balance_x_local_price"}],
+        )
+
+        self.assertEqual(result["kind"], "target_reserve_snapshot")
+        self.assertIn("Target-Token Reserve", result["heading"])
+        self.assertEqual(result["metric_label"], "Total observed reserve")
+        self.assertIn("not full two-sided USD TVL", result["note"])
+        self.assertNotIn("Source unavailable", result["badge_html"])
 
     def test_legacy_rows_can_infer_balance_snapshot_lineage(self):
         result = _tvl_method_presentation(

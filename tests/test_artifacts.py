@@ -31,7 +31,7 @@ from scripts.lp_correlation import _load_analysis_inputs
 from scripts.fund_flow import _read_artifact_rows as _read_fund_flow_rows
 from scripts import publish_site
 from src.indexer.dune_index import index_events_from_dune
-from src.indexer.indexer import _assemble_outputs
+from src.indexer.indexer import _assemble_outputs, index_events
 from src.models import VerifiedPool
 from src.analysis.wallet_clustering import (
     _read_artifact_rows as _read_clustering_rows,
@@ -216,6 +216,44 @@ def _volume_timeline_document():
 
 
 class ArtifactFormatTest(unittest.TestCase):
+    def test_rpc_index_can_skip_global_position_manager(self):
+        pool = VerifiedPool(
+            chain_id=1,
+            protocol="uniswap",
+            version="v3",
+            architecture="concentrated_pool",
+            factory_address="0x0000000000000000000000000000000000000001",
+            pool_address=POOL,
+            custody_address=POOL,
+            position_manager_address="0x0000000000000000000000000000000000000002",
+            token0=TARGET,
+            token1=WETH,
+            verified=True,
+        )
+        with tempfile.TemporaryDirectory() as tmp, patch(
+            "src.indexer.indexer.index_v3_pool_events", return_value=[]
+        ), patch(
+            "src.indexer.indexer.index_v3_position_events"
+        ) as position_index:
+            result = index_events(
+                object(),
+                [pool],
+                TARGET,
+                100,
+                200,
+                output_dir=tmp,
+                index_token_transfer=False,
+                index_position_manager=False,
+                source="rpc",
+            )
+
+            position_index.assert_not_called()
+            self.assertEqual(result["position_events"], [])
+            source = json.loads((Path(tmp) / "index_source.json").read_text())
+            self.assertEqual(source["position_manager_indexing"], "skipped")
+            self.assertEqual(source["position_identity_coverage"], "unavailable")
+            self.assertTrue(source["notes"])
+
     def test_format_validation(self):
         self.assertEqual(normalize_artifact_format(" BOTH "), "both")
         with self.assertRaisesRegex(ValueError, "json, parquet, both"):

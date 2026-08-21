@@ -25,10 +25,26 @@ End-to-end **Ethereum mainnet** tool for token liquidity / crash analysis: disco
 
 | Token | Window | Pools | Holders | Risk | Date | Dir |
 |-------|--------|-------|---------|------|------|-----|
+| TURBO | 25580851–25796850 | 5 (V2/V3) | 45 positive in 3% balance coverage | 0.2593 LOW (provisional) | 2026-08-21 | `output-turbo-30d-25580851/` |
 | uPEG directional audit | 25043020–25043311 | 1 V3 | 99 tx senders | Research | 2026-08-18 | `output-upeg-v3-7d/research-directional-flow/2026-05-07T12/` |
 | uPEG | 25003546–25004000 | 10 (V2/V3/V4) | ~231 EOA | 0.4364 MEDIUM | 2026-07-28 | `output/` |
 | SPX | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 LOW | 2026-07-18 | `output/` (superseded) / `output-spx-demo/` |
 | USDC | 19000000–19000050 | — | — | 0.0000 LOW | — | `output-test/` |
+
+### Recent Findings (TURBO)
+
+- The 30-day pool-level run covers blocks `25580851–25796850`, 5 verified pools, 1,040 swaps, 640 pool liquidity events, and 10,395 transfers. Position Manager history was intentionally skipped, so LP NFT identity and LP concentration remain unavailable rather than zero.
+- The main TURBO/WETH V3 pool holds 98.28% of measured target-token reserves and contributes 98.71% of measured TURBO volume. These are measured target-reserve/volume shares, not full USD-liquidity market shares.
+- Across measured LP events, 212 additions supplied 1,864.46M TURBO and 214 removals withdrew 1,865.73M TURBO, for a net LP flow of only `-1.2675M TURBO`. Gross removals therefore overstate permanent exit because capital can be removed and re-added.
+- Dashboard presentation now labels the price series as WETH per TURBO, identifies historical RPC `balanceOf` rows as target-token reserve snapshots rather than full USD TVL, and charts gross added, gross removed, and net LP flow separately. The `0.2593 LOW` risk score remains provisional because LP identity was skipped and same-pool position recreation can be misclassified as risk-reducing migration.
+- The matched main-pool 31-day correlation pilot treats reserve-change versus net LP flow (~0.965) as a mechanical consistency check. The exploratory candidates are volume turnover leading price return by 2 days (Pearson 0.4157 / Spearman 0.4702) and leading gross-withdrawal activity by 3 days (0.4094 / 0.3471). These are not causal findings; limitations and the next transaction-evidence window are documented in `research-notes/turbo-correlation-pilot.md`.
+
+```bash
+python3 -m src.cli analyze 0xA35923162C49cF95e6BF26623385eb431ad920D3 \
+  --from-block 25580851 --to-block 25796850 \
+  --skip-position-manager --output-dir output-turbo-30d-25580851
+python3 -m src.cli dashboard --output-dir output-turbo-30d-25580851
+```
 
 ### Recent Findings (uPEG)
 
@@ -111,11 +127,18 @@ python3 scripts/publish_site.py --serve  # preview
 | `--from-block` / `--to-block` | Analysis window | `19000000` / `19100000` |
 | `--incident-block` | Crash block for temporal / impact scoring | `0` |
 | `--fast-mode` | Skip heavy exhaustive indexing | `false` |
+| `--skip-position-manager` | Keep pool Swap/Mint/Burn/Collect data but skip global V3/V4 LP-NFT event scans; LP identity is marked unavailable | `false` |
 | `--output-dir` | Artifacts directory | `output` |
 | `--pools-file` | Load pool candidates from a saved Dune pools JSON (skip live discovery) | (none) |
 | `--artifact-format` | `json` or `both` (JSON + Parquet event/holdings/positions/timeline tables) | `json` |
 
 > Indexing is **resumable** via `event_indexer_checkpoint.json`. Change token/window or delete checkpoint to start clean.
+
+For price/volume/TVL correlation research over wide RPC windows, use
+`--skip-position-manager` to avoid scanning every Uniswap position NFT on the
+network. This does not remove pool-level liquidity events. It only defers LP NFT
+identity and position-event history, which can be reconstructed later from the
+target pool transactions.
 
 The artifact-storage migration keeps JSON as the compatibility default. Use
 `--artifact-format both` to additionally write typed Parquet tables for swaps, transfers,
@@ -255,10 +278,26 @@ See `SUPPORTED_PROTOCOLS.md` for contract addresses and notes.
 
 | Token | 窗口 | 池子 | 持有者 | 风险 | 日期 | 目录 |
 |-------|------|------|--------|------|------|------|
+| TURBO | 25580851–25796850 | 5 (V2/V3) | 余额覆盖 3% 中 45 个正余额地址 | 0.2593 低（暂定） | 2026-08-21 | `output-turbo-30d-25580851/` |
 | uPEG 方向审计 | 25043020–25043311 | 1 V3 | 99 个交易发起地址 | 研究 | 2026-08-18 | `output-upeg-v3-7d/research-directional-flow/2026-05-07T12/` |
 | uPEG | 25003546–25004000 | 10 (V2/V3/V4) | ~231 EOA | 0.4364 中 | 2026-07-28 | `output/` |
 | SPX | 19000022–19000022 | 8 (V2+V3) | 3 | 0.1944 低 | 2026-07-18 | `output-spx-demo/` 等 |
 | USDC | 19000000–19000050 | — | — | 0.0000 低 | — | `output-test/` |
+
+### 近期发现（TURBO）
+
+- 30 天池级扫描覆盖区块 `25580851–25796850`，包含 5 个已验证池、1,040 笔 Swap、640 条池级流动性事件和 10,395 条 Transfer。此次主动跳过 Position Manager，因此 LP NFT 身份和 LP 集中度应视为未采集，而不是零。
+- TURBO/WETH V3 主池占已测目标代币储备的 98.28%，贡献已测 TURBO 成交量的 98.71%。这些是目标代币储备和成交量占比，不是完整 USD 流动性市场份额。
+- 已量化 LP 事件中，212 次添加共加入 1,864.46M TURBO，214 次移除共撤出 1,865.73M TURBO，但净 LP 流量只有 `-1.2675M TURBO`。资金可以撤出后重新加入，因此累计移除明显高估永久退出规模。
+- 看板现在将价格明确标为 WETH/TURBO，将历史 RPC `balanceOf` 数据标为目标代币储备快照而非完整 USD TVL，并分别画出累计添加、累计移除和净 LP 流量。`0.2593 LOW` 风险分数仍是暂定值，因为缺少 LP 身份，且同池重新建仓可能被误识别成降低风险的“迁移”。
+- 主池 31 日桶相关性试验将“储备变化 vs 净 LP 流量”（约 0.965）视为机械性的自洽检查。探索性候选为：成交量周转率领先 2 天的价格收益（Pearson 0.4157 / Spearman 0.4702），以及领先 3 天的累计撤资活动（0.4094 / 0.3471）。这些不是因果结论；限制和下一步交易证据窗口记录在 `research-notes/turbo-correlation-pilot.md`。
+
+```bash
+python3 -m src.cli analyze 0xA35923162C49cF95e6BF26623385eb431ad920D3 \
+  --from-block 25580851 --to-block 25796850 \
+  --skip-position-manager --output-dir output-turbo-30d-25580851
+python3 -m src.cli dashboard --output-dir output-turbo-30d-25580851
+```
 
 ### 近期发现（uPEG）
 
@@ -311,6 +350,11 @@ python3 -m src.cli research-series --output-dir output
 python3 -m src.cli research-series --output-dir output --refresh-tvl
 python3 scripts/publish_site.py
 ```
+
+通过 RPC 分析较长窗口、且当前目标是价格/成交量/TVL 相关性时，可以给
+`analyze` 增加 `--skip-position-manager`。它会保留池级 Swap/Mint/Burn/Collect，
+只跳过全市场 V3/V4 LP NFT 事件；LP 身份会明确标记为未采集，之后仍可按目标池
+交易哈希精确回溯。
 
 大型事件、持仓、LP positions 和图表时间序列表正在迁移到 Parquet。默认仍生成兼容 JSON；
 运行 `analyze` 时增加 `--artifact-format both`，会额外生成：

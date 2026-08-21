@@ -51,6 +51,7 @@ const portfolioData = {portfolio_json};
 const tokenSymbol = "{symbol}";
 const chainId = {chain_id};
 const tvlPointDetails = {tvl_detail_json};
+const tvlMetricLabel = "{tvl_metric_label_js}";
 const chartSeriesColors = {chart_colors_json};
 const topChartHolders = topH.slice(0, 10);
 
@@ -169,7 +170,7 @@ function renderTvlDetails(index){
     : escTxt(detail.block);
   document.getElementById('tvl-detail-title').innerHTML =
     blockLabel + (detail.time_label ? (' &middot; ' + escTxt(detail.time_label)) : '');
-  var meta = '<div class="detail-summary">Total TVL <strong>' + fmtNum(detail.total_tvl, 4) + ' ' + escTxt(tokenSymbol) + '</strong></div>';
+  var meta = '<div class="detail-summary">' + escTxt(tvlMetricLabel) + ' <strong>' + fmtNum(detail.total_tvl, 4) + ' ' + escTxt(tokenSymbol) + '</strong></div>';
   if (detail.volume_bucket_label) {
     meta += '<span style="opacity:.85">Volume bucket: ' + escTxt(detail.volume_bucket_label) + '</span>';
   }
@@ -312,6 +313,7 @@ function closeTvlDetails(){
   {price_chart}
   {volume_chart}
   {tvl_chart}
+  {liquidity_flow_chart}
 })();
 
 function togglePortfolio(addr) {
@@ -508,8 +510,9 @@ tr:hover td{background:rgba(59,130,246,0.04)}
     <div class="info-item">Balance source &middot; <span>{balance_source_label}</span></div>
     <div class="info-item">Token &middot; <span>{token_name}</span></div>
     <div class="info-item">Decimals &middot; <span>{decimals}</span> <span style="opacity:.6">({decimals_source})</span></div>
-    {supply_info}
+{supply_info}
   </div>
+{position_coverage_note}
 
   <div class="grid">
     <div class="card glow">
@@ -552,8 +555,8 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card">
-      <h2>Price Timeline (USD)</h2>
-      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Swap-derived USD price per pool. Bucket from analysis window: ~month→daily 00:00 UTC; ~week/day→hourly.</p>
+      <h2>{price_heading}</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">{price_note}</p>
       <div class="chart-box"><canvas id="c5"></canvas></div>
     </div>
     <div class="card">
@@ -576,7 +579,7 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 
   <div class="grid">
     <div class="card fw">
-      <h2>Pool TVL Timeline (Total + Per Pool) {tvl_method_badge}</h2>
+      <h2>{tvl_heading} {tvl_method_badge}</h2>
       <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">{tvl_method_note} Bucket configuration: {chart_bucket_label}.</p>
       <div class="chart-box"><canvas id="c4"></canvas></div>
       <div id="tvl-details" class="point-details" style="display:none">
@@ -587,11 +590,20 @@ tr:hover td{background:rgba(59,130,246,0.04)}
         <div id="tvl-detail-meta" class="point-details-meta"></div>
         <div class="scroll">
           <table>
-            <thead><tr><th>Pool</th><th>Protocol / Version</th><th>TVL ({symbol})</th><th>TVL Share</th><th>Price (USD)</th><th>Volume ({symbol})</th><th>Volume (USD)</th></tr></thead>
+            <thead><tr><th>Pool</th><th>Protocol / Version</th><th>{tvl_value_header}</th><th>{tvl_share_header}</th><th>Price (USD)</th><th>Volume ({symbol})</th><th>Volume (USD)</th></tr></thead>
             <tbody id="tvl-detail-body"></tbody>
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fw">
+      <h2>Liquidity Flow by Bucket (Gross Added, Gross Removed &amp; Net)</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 10px">Green bars are measured target-token additions; red bars are measured removals plotted below zero; the blue line is net LP flow = added − removed. This is LP-event flow, not the same as pool reserve change: swaps and direct token transfers can also change pool balances.</p>
+      {liquidity_flow_note}
+      <div class="chart-box"><canvas id="c8"></canvas></div>
     </div>
   </div>
 
@@ -632,10 +644,20 @@ def generate_dashboard(
     metrics = inputs["metrics"]
     risk = inputs["risk"]
     positions_data = inputs["positions"]
+    index_source = inputs["index_source"]
     swaps_data = inputs["swaps"]
     liq_data = inputs["liquidity_events"]
     transfers_data = inputs["transfers"]
     events_all = inputs["events_all"]
+
+    position_coverage_note = ""
+    if index_source.get("position_manager_indexing") == "skipped":
+        position_coverage_note = (
+            '<div class="coverage-note"><strong>LP NFT identity not collected</strong>'
+            "V3/V4 Position Manager event history was intentionally skipped for "
+            "this run. Pool-level Swap/Mint/Burn/Collect data remains available; "
+            "missing LP identities do not mean zero LP activity.</div>"
+        )
 
     holdings_data = holdings.get("holdings", [])
     pool_ident = holdings.get("pool_identification", [])
@@ -992,7 +1014,7 @@ def generate_dashboard(
       <div class="coverage-note"><strong>{pool_liquidity['coverage_title']}</strong>{pool_liquidity['comparison_note']}<br>{pool_liquidity['method_note']}</div>
       <div class="pools-layout">
         <div class="scroll"><table><thead><tr><th>Pool Address</th><th>Protocol / Version</th><th>Token Pair</th><th>Observed Token Reserve</th><th>Estimated Pool Liquidity (in {html.escape(str(symbol))})</th><th>Volume ({symbol})</th><th>{pool_liquidity['share_header']}</th><th>Vol Share</th><th>In Holders</th></tr></thead><tbody>{table_ident}</tbody></table></div>
-        {reserve_pie_block}
+{reserve_pie_block}
       </div>
     </div>
   </div>""")
@@ -1031,6 +1053,13 @@ def generate_dashboard(
     tvl_method = _tvl_method_presentation(
         metrics.get("tvl_timeline_source"), tvl_data
     )
+    liquidity_flow_rows = _liquidity_flow_timeline(
+        liq_data,
+        verified_pools,
+        token_addr,
+        token_decimals=decimals,
+        bucket_seconds=bucket_seconds,
+    )
 
     tvl_chart = _build_tvl_chart_js(
         tvl_data,
@@ -1053,14 +1082,23 @@ def generate_dashboard(
         token_decimals=decimals,
         bucket_seconds=bucket_seconds,
     )
+    price_presentation = _price_chart_presentation(price_rows, symbol)
     price_chart = _build_price_chart_js(
-        price_rows,
+        price_presentation["rows"],
         symbol=symbol,
         address_labels=address_labels,
         bucket_seconds=bucket_seconds,
     )
     volume_chart = _build_volume_chart_js(
         volume_metrics, symbol=symbol, address_labels=address_labels
+    )
+    liquidity_flow_chart = _config_to_chart_js(
+        "c8",
+        _build_liquidity_flow_chart_config(
+            liquidity_flow_rows,
+            symbol=symbol,
+            bucket_seconds=bucket_seconds,
+        ),
     )
 
     # Build JS
@@ -1073,6 +1111,9 @@ def generate_dashboard(
         "symbol": symbol.replace("\\", "\\\\").replace('"', '\\"'),
         "chain_id": int(chain_id or 0),
         "tvl_detail_json": json.dumps(tvl_details, default=str),
+        "tvl_metric_label_js": str(tvl_method["metric_label"])
+        .replace("\\", "\\\\")
+        .replace('"', '\\"'),
         "chart_colors_json": json.dumps(_CHART_SERIES_COLORS),
         "pool_count": positive_pool_count,
         "holder_count": positive_holder_count,
@@ -1081,8 +1122,9 @@ def generate_dashboard(
         "price_chart": price_chart,
         "volume_chart": volume_chart,
         "tvl_chart": tvl_chart,
+        "liquidity_flow_chart": liquidity_flow_chart,
     }
-    
+
     js_script = _JS_TEMPLATE
     for k, v in js_vars.items():
         js_script = js_script.replace("{" + k + "}", str(v))
@@ -1104,6 +1146,7 @@ def generate_dashboard(
         "decimals_source": decimals_source,
         "supply_info": supply_info,
         "empty_note": empty_note,
+        "position_coverage_note": position_coverage_note,
         "total_addresses": total_addresses,
         "positive_holder_count": positive_holder_count,
         "top_chart_holder_count": min(10, len(top_holders)),
@@ -1118,8 +1161,16 @@ def generate_dashboard(
         "pool_conc_summary": pool_conc_summary,
         "balance_note": balance_note,
         "chart_bucket_label": chart_bucket_label,
+        "price_heading": price_presentation["heading"],
+        "price_note": price_presentation["note"],
         "tvl_method_badge": tvl_method["badge_html"],
         "tvl_method_note": tvl_method["note"],
+        "tvl_heading": tvl_method["heading"],
+        "tvl_value_header": "{} ({})".format(
+            tvl_method["value_header"], symbol
+        ),
+        "tvl_share_header": tvl_method["share_header"],
+        "liquidity_flow_note": _liquidity_flow_note(liquidity_flow_rows, symbol),
         "table_top": table_top,
         "table_movers": table_movers or "",
         "table_withdrawals": table_withdrawals or "",
@@ -1213,6 +1264,205 @@ def _build_volume_chart_js(
         _build_volume_chart_config(
             volume_metrics, symbol=symbol, address_labels=address_labels
         ),
+    )
+
+
+def _liquidity_flow_timeline(
+    liquidity_events: list[dict[str, Any]],
+    verified_pools: list[dict[str, Any]],
+    target_token: str,
+    token_decimals: int = 18,
+    bucket_seconds: int = 3_600,
+) -> list[dict[str, Any]]:
+    """Aggregate measured target-token LP adds/removes without treating gross
+    removals as permanent exits.
+
+    Canonical pool-block rows may carry ``event_count > 1`` while their token
+    amounts are already summed, so event_count affects action coverage only and
+    never multiplies the measured amount.
+    """
+    target = str(target_token or "").lower()
+    seconds = max(1, int(bucket_seconds or 3_600))
+    scale = 10 ** max(0, int(token_decimals or 18))
+    pool_tokens: dict[str, tuple[str, str]] = {}
+    for pool in verified_pools or []:
+        if not isinstance(pool, dict) or not pool.get("verified", True):
+            continue
+        pool_id = str(pool.get("pool_address") or "").lower()
+        if pool_id:
+            pool_tokens[pool_id] = (
+                str(pool.get("token0") or "").lower(),
+                str(pool.get("token1") or "").lower(),
+            )
+
+    buckets: dict[int, dict[str, Any]] = defaultdict(
+        lambda: {
+            "added": 0.0,
+            "removed": 0.0,
+            "add_actions": 0,
+            "remove_actions": 0,
+            "known_actions": 0,
+            "missing_actions": 0,
+        }
+    )
+    for event in liquidity_events or []:
+        event_type = str(event.get("event_type") or "").upper()
+        if event_type not in {"LIQUIDITY_ADD", "LIQUIDITY_REMOVE"}:
+            continue
+        try:
+            ts = int(event.get("block_timestamp") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        if ts <= 0:
+            continue
+        bucket = buckets[(ts // seconds) * seconds]
+        count = max(1, int(event.get("event_count") or 1))
+        action_key = "add_actions" if event_type == "LIQUIDITY_ADD" else "remove_actions"
+        bucket[action_key] += count
+
+        pool_id = str(event.get("pool_address") or "").lower()
+        token0, token1 = pool_tokens.get(pool_id, ("", ""))
+        side = "token0_amount" if target and target == token0 else (
+            "token1_amount" if target and target == token1 else ""
+        )
+        amounts_available = event.get("amounts_available") is not False
+        source_event = str(event.get("source_event") or "").lower()
+        version = str(event.get("version") or "").lower()
+        try:
+            a0 = int(event.get("token0_amount") or 0)
+            a1 = int(event.get("token1_amount") or 0)
+            delta = int(event.get("liquidity_delta") or 0)
+        except (TypeError, ValueError):
+            amounts_available = False
+            a0 = a1 = delta = 0
+        if (
+            version in {"v4", "4"}
+            and source_event == "modifyliquidity"
+            and delta != 0
+            and a0 == 0
+            and a1 == 0
+        ):
+            amounts_available = False
+        if not side or not amounts_available:
+            bucket["missing_actions"] += count
+            continue
+
+        raw = abs(a0 if side == "token0_amount" else a1)
+        value = raw / scale
+        bucket["known_actions"] += count
+        if event_type == "LIQUIDITY_ADD":
+            bucket["added"] += value
+        else:
+            bucket["removed"] += value
+
+    rows = []
+    for bucket_ts, values in sorted(buckets.items()):
+        added = float(values["added"])
+        removed = float(values["removed"])
+        rows.append({
+            "bucket_ts": bucket_ts,
+            "added": added,
+            "removed": removed,
+            "net": added - removed,
+            "add_actions": int(values["add_actions"]),
+            "remove_actions": int(values["remove_actions"]),
+            "known_actions": int(values["known_actions"]),
+            "missing_actions": int(values["missing_actions"]),
+        })
+    return rows
+
+
+def _build_liquidity_flow_chart_config(
+    rows: list[dict[str, Any]],
+    symbol: str = "TOKEN",
+    bucket_seconds: int = 0,
+) -> dict[str, Any]:
+    if not rows:
+        return _empty_line_config("No LP Flow Data")
+    labels = [
+        _chart_axis_label(row.get("bucket_ts"), bucket_seconds) for row in rows
+    ]
+    return {
+        "type": "bar",
+        "data": {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": "Gross added ({})".format(symbol),
+                    "data": [row.get("added", 0) for row in rows],
+                    "backgroundColor": "rgba(34,197,94,0.65)",
+                    "borderColor": "#22c55e",
+                    "borderWidth": 1,
+                },
+                {
+                    "label": "Gross removed ({})".format(symbol),
+                    "data": [-float(row.get("removed", 0) or 0) for row in rows],
+                    "backgroundColor": "rgba(244,63,94,0.65)",
+                    "borderColor": "#f43f5e",
+                    "borderWidth": 1,
+                },
+                {
+                    "type": "line",
+                    "label": "Net LP flow ({})".format(symbol),
+                    "data": [row.get("net", 0) for row in rows],
+                    "borderColor": "#60a5fa",
+                    "backgroundColor": "#60a5fa",
+                    "borderWidth": 2,
+                    "pointRadius": 2,
+                    "tension": 0.2,
+                },
+            ],
+        },
+        "options": {
+            "responsive": True,
+            "maintainAspectRatio": False,
+            "interaction": {"intersect": False, "mode": "index"},
+            "plugins": {
+                "legend": {"labels": {"color": "#94a3b8"}, "position": "top"}
+            },
+            "scales": {
+                "x": {
+                    "ticks": {"color": "#64748b", "maxRotation": 45},
+                    "grid": {"display": False},
+                },
+                "y": {
+                    "ticks": {"color": "#64748b"},
+                    "grid": {"color": "#1e293b"},
+                },
+            },
+        },
+    }
+
+
+def _liquidity_flow_note(rows: list[dict[str, Any]], symbol: str) -> str:
+    if not rows:
+        return (
+            '<div class="coverage-note"><strong>LP flow unavailable</strong>'
+            "No timestamped add/remove events were available for this run.</div>"
+        )
+    added = sum(float(row.get("added") or 0) for row in rows)
+    removed = sum(float(row.get("removed") or 0) for row in rows)
+    net = added - removed
+    add_actions = sum(int(row.get("add_actions") or 0) for row in rows)
+    remove_actions = sum(int(row.get("remove_actions") or 0) for row in rows)
+    known = sum(int(row.get("known_actions") or 0) for row in rows)
+    missing = sum(int(row.get("missing_actions") or 0) for row in rows)
+    sign = "+" if net > 0 else ""
+    return (
+        '<div class="coverage-note"><strong>Measured LP-event flow</strong>'
+        "{:,} adds · {:,} removals · gross added {} · gross removed {} · "
+        "net {}{} {}. Amount coverage: {:,} known actions, {:,} missing. "
+        "Gross totals may count capital that is removed and re-added.</div>"
+    ).format(
+        add_actions,
+        remove_actions,
+        _fmt_bal(added, symbol),
+        _fmt_bal(removed, symbol),
+        sign,
+        _fmt_bal(net, "").strip(),
+        html.escape(symbol),
+        known,
+        missing,
     )
 
 
@@ -1379,7 +1629,12 @@ def _price_series_for_chart(
     token_decimals: int = 18,
     bucket_seconds: int = 0,
 ) -> list[dict]:
-    """Prefer swap-derived USD prices so V2 event-TVL rows without price_usd still chart."""
+    """Prefer swap-derived prices and retain their real quote unit.
+
+    RPC swap rows commonly provide WETH-per-token rather than USD. Dropping
+    those rows produced an empty chart titled USD, which was both unhelpful and
+    semantically wrong.
+    """
     from .metrics import calculate_price_timeline_from_swaps
 
     seconds = int(bucket_seconds or 0) or 3_600
@@ -1413,19 +1668,79 @@ def _price_series_for_chart(
                     "block_number": int(row["bucket_ts"]),
                     "block_timestamp": int(row["bucket_ts"]),
                     "pool_address": row.get("pool_address") or "",
-                    "price_usd": float(row.get("price_usd") or 0),
+                    "price": float(row.get("price") or 0),
+                    "price_usd": (
+                        float(row["price_usd"])
+                        if row.get("price_usd") is not None
+                        else None
+                    ),
+                    "price_unit": row.get("price_unit") or "",
                     "protocol": row.get("protocol") or "",
                     "version": row.get("version") or "",
                 }
                 for row in local
-                if float(row.get("price_usd") or 0) > 0
+                if float(row.get("price") or row.get("price_usd") or 0) > 0
             ]
 
     return [
         row
         for row in (tvl_data or [])
-        if float(row.get("price_usd") or 0) > 0
+        if float(row.get("price_usd") or row.get("price") or 0) > 0
     ]
+
+
+def _price_chart_presentation(
+    rows: list[dict[str, Any]],
+    symbol: str,
+) -> dict[str, Any]:
+    """Select one comparable price unit and disclose any omitted quote units."""
+    usd_rows = [row for row in rows if float(row.get("price_usd") or 0) > 0]
+    if usd_rows:
+        selected = [dict(row, price_value=float(row["price_usd"])) for row in usd_rows]
+        return {
+            "rows": selected,
+            "unit": "USD",
+            "heading": "Price Timeline (USD per {})".format(symbol),
+            "note": (
+                "Swap-derived USD price per pool. Bucket from the analysis "
+                "window; only rows with an explicit USD valuation are plotted."
+            ),
+        }
+
+    by_unit: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows or []:
+        unit = str(row.get("price_unit") or row.get("quote_symbol") or "").upper()
+        value = float(row.get("price") or 0)
+        if unit and value > 0:
+            by_unit[unit].append(row)
+    if not by_unit:
+        return {
+            "rows": [],
+            "unit": "",
+            "heading": "Price Timeline",
+            "note": "No usable swap-derived price observations are available for this run.",
+        }
+
+    unit = max(by_unit, key=lambda key: (len(by_unit[key]), key))
+    selected = [
+        dict(row, price_value=float(row.get("price") or 0))
+        for row in by_unit[unit]
+    ]
+    omitted = sum(len(values) for key, values in by_unit.items() if key != unit)
+    omitted_note = (
+        " {:,} observations in other quote units are omitted to avoid mixing "
+        "incomparable axes.".format(omitted)
+        if omitted else ""
+    )
+    return {
+        "rows": selected,
+        "unit": unit,
+        "heading": "Price Timeline ({} per {})".format(unit, symbol),
+        "note": (
+            "Swap-derived quote-token price per pool; this is not USD unless the "
+            "heading says USD.{}"
+        ).format(omitted_note),
+    }
 
 
 def _chart_axis_label(value: Any, bucket_seconds: int = 0) -> str:
@@ -1684,8 +1999,10 @@ def _build_price_chart_config(
 ) -> dict:
     by_pool: dict[str, list[dict]] = defaultdict(list)
     for t in tvl_data:
-        price_usd = t.get("price_usd") or 0
-        if price_usd > 0:
+        price_value = t.get("price_value")
+        if price_value is None:
+            price_value = t.get("price_usd") or 0
+        if float(price_value or 0) > 0:
             by_pool[t.get("pool_address") or "unknown"].append(t)
 
     if not by_pool:
@@ -1697,7 +2014,14 @@ def _build_price_chart_config(
     ]
     datasets = []
     for i, (pa, entries) in enumerate(sorted(by_pool.items())):
-        vals_by_block = {t["block_number"]: t["price_usd"] for t in entries}
+        vals_by_block = {
+            t["block_number"]: float(
+                t.get("price_value")
+                if t.get("price_value") is not None
+                else t.get("price_usd") or 0
+            )
+            for t in entries
+        }
         color = _CHART_SERIES_COLORS[i % len(_CHART_SERIES_COLORS)]
         datasets.append({
             "label": _address_display_label(pa, address_labels),
@@ -1948,10 +2272,34 @@ def _tvl_method_presentation(
         row_sources = {
             str(row.get("source_event") or "").lower() for row in rows or []
         }
-        if "balance_x_price" in row_sources:
+        if any("rpc_target_balance" in value for value in row_sources):
+            normalized = "rpc_target_balance_local_price"
+        elif "balance_x_price" in row_sources:
             normalized = "dune_snapshot"
         elif rows:
             normalized = "event_accumulate"
+
+    if normalized in {
+        "rpc_target_balance",
+        "rpc_target_balance_local_price",
+        "rpc_target_balance_x_local_price",
+    }:
+        return {
+            "kind": "target_reserve_snapshot",
+            "badge_html": (
+                '<span class="method-badge method-snapshot">Target-token reserve snapshot</span>'
+            ),
+            "heading": "Pool Target-Token Reserve Timeline (Total + Per Pool)",
+            "metric_label": "Total observed reserve",
+            "value_header": "Observed Reserve",
+            "share_header": "Reserve Share",
+            "note": (
+                "Historical RPC balanceOf snapshots show the target-token reserve "
+                "held by each attributable pool. Values are in target-token units, "
+                "not full two-sided USD TVL; local quote-price metadata does not "
+                "supply a USD conversion by itself."
+            ),
+        }
 
     if normalized in {"dune_balance_local_price", "dune_snapshot"}:
         price_note = (
@@ -1964,6 +2312,10 @@ def _tvl_method_presentation(
             "badge_html": (
                 '<span class="method-badge method-snapshot">Balance snapshot</span>'
             ),
+            "heading": "Pool TVL Timeline (Total + Per Pool)",
+            "metric_label": "Total TVL",
+            "value_header": "TVL",
+            "share_header": "TVL Share",
             "note": (
                 "Balance-Snapshot TVL uses pool token balance snapshots × {}. "
                 "Hourly views may carry a daily balance across intraday price buckets."
@@ -1980,6 +2332,10 @@ def _tvl_method_presentation(
             "badge_html": (
                 '<span class="method-badge method-reconstructed">Event reconstructed</span>'
             ),
+            "heading": "Pool TVL Timeline (Total + Per Pool)",
+            "metric_label": "Total reconstructed TVL",
+            "value_header": "Reconstructed TVL",
+            "share_header": "TVL Share",
             "note": (
                 "{}TVL is reconstructed by accumulating indexed liquidity events. "
                 "Treat it as an activity-based proxy, not an on-chain balance snapshot."
@@ -1990,6 +2346,10 @@ def _tvl_method_presentation(
         "badge_html": (
             '<span class="method-badge method-unavailable">Source unavailable</span>'
         ),
+        "heading": "Pool TVL Timeline (Total + Per Pool)",
+        "metric_label": "Total TVL",
+        "value_header": "TVL",
+        "share_header": "TVL Share",
         "note": "No reliable TVL lineage is available for this output.",
     }
 
@@ -3223,6 +3583,7 @@ def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
     verified_pools = _load_json(out / "verified_pools.json", [])
     metrics = _load_json(out / "metrics.json", {})
     risk = _load_json(out / "risk_assessment.json", {})
+    index_source = _load_json(out / "index_source.json", {})
 
     holdings = dict(holdings or {})
     _restore_display_addresses(
@@ -3304,6 +3665,7 @@ def _load_dashboard_inputs(out: Path) -> dict[str, Any]:
         "verified_pools": verified_pools,
         "metrics": metrics,
         "risk": risk,
+        "index_source": index_source,
         "positions": positions,
         "swaps": swaps,
         "liquidity_events": liquidity,

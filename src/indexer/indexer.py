@@ -1506,12 +1506,18 @@ def index_events(
     output_dir: str | Path = "output",
     checkpoint_file: str = "event_indexer_checkpoint.json",
     index_token_transfer: bool = True,
+    index_position_manager: bool = True,
     source: str = "auto",
     force_dune_refresh: bool = False,
     artifact_format: str = "json",
     pool_event_types: Optional[set[str]] = None,
 ) -> dict[str, list]:
     """Index swaps / liquidity / transfers.
+
+    ``index_position_manager=False`` skips the global V3/V4 NFT position-manager
+    streams while retaining pool-level Swap/Mint/Burn/Collect events.  This is
+    appropriate for aggregate market research where LP NFT identity is not
+    required.
 
     ``source``:
       - ``auto`` (default): Dune when ``DUNE_API_KEY`` is set, else RPC
@@ -1648,18 +1654,24 @@ def index_events(
         collected.extend(evts)
         _flush_outputs(out, collected, from_block, to_block)
 
-    pm_addresses = {
-        p.position_manager_address
-        for p in v3_pools
-        if p.position_manager_address
-    }
-    for pm_addr in pm_addresses:
-        pm_evts, _token_map = index_v3_position_events(
-            w3, pm_addr, verified_pools, from_block, to_block,
-            checkpoint, cp_path, cache_dir, ts_cache,
+    if index_position_manager:
+        pm_addresses = {
+            p.position_manager_address
+            for p in v3_pools
+            if p.position_manager_address
+        }
+        for pm_addr in pm_addresses:
+            pm_evts, _token_map = index_v3_position_events(
+                w3, pm_addr, verified_pools, from_block, to_block,
+                checkpoint, cp_path, cache_dir, ts_cache,
+            )
+            collected.extend(pm_evts)
+            _flush_outputs(out, collected, from_block, to_block)
+    elif v3_pools:
+        _progress(
+            "V3 Position Manager indexing skipped; pool-level liquidity "
+            "events remain available."
         )
-        collected.extend(pm_evts)
-        _flush_outputs(out, collected, from_block, to_block)
 
     v4_managers = {p.factory_address for p in v4_pools if p.factory_address}
     for mgr in v4_managers:
@@ -1671,18 +1683,24 @@ def index_events(
         collected.extend(evts)
         _flush_outputs(out, collected, from_block, to_block)
 
-    v4_pm_addresses = {
-        p.position_manager_address
-        for p in v4_pools
-        if p.position_manager_address
-    }
-    for pm_addr in v4_pm_addresses:
-        pm_evts, _token_map = index_v4_position_events(
-            w3, pm_addr, verified_pools, from_block, to_block,
-            checkpoint, cp_path, cache_dir, ts_cache,
+    if index_position_manager:
+        v4_pm_addresses = {
+            p.position_manager_address
+            for p in v4_pools
+            if p.position_manager_address
+        }
+        for pm_addr in v4_pm_addresses:
+            pm_evts, _token_map = index_v4_position_events(
+                w3, pm_addr, verified_pools, from_block, to_block,
+                checkpoint, cp_path, cache_dir, ts_cache,
+            )
+            collected.extend(pm_evts)
+            _flush_outputs(out, collected, from_block, to_block)
+    elif v4_pools:
+        _progress(
+            "V4 Position Manager indexing skipped; Pool Manager liquidity "
+            "events remain available."
         )
-        collected.extend(pm_evts)
-        _flush_outputs(out, collected, from_block, to_block)
 
     if index_token_transfer:
         token_evts = index_token_transfers(
@@ -1722,6 +1740,14 @@ def index_events(
             "to_block": to_block,
             "token": target_token,
             "artifact_format": artifact_mode,
+            "position_manager_indexing": (
+                "included" if index_position_manager else "skipped"
+            ),
+            "position_identity_coverage": (
+                "available_from_indexed_events"
+                if index_position_manager
+                else "unavailable"
+            ),
             "artifacts": table_artifacts,
             "counts": {
                 "swaps": len(result["swaps"]),
@@ -1729,6 +1755,14 @@ def index_events(
                 "transfers": len(result["transfers"]),
                 "position_events": len(result["position_events"]),
             },
+            "notes": (
+                []
+                if index_position_manager
+                else [
+                    "V3/V4 Position Manager event history was intentionally skipped.",
+                    "Pool-level Swap/Mint/Burn/Collect coverage is retained; an empty position-event table does not mean zero LP activity.",
+                ]
+            ),
         },
     )
     _progress(

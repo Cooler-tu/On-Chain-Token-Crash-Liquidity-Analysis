@@ -130,6 +130,14 @@ def analyze(
     rpc_url: str = typer.Option("", envvar="ETH_RPC_URL", help="RPC URL"),
     output_dir: str = typer.Option("output", help="Output directory"),
     fast_mode: bool = typer.Option(False, help="Skip exhaustive event indexing (faster, less data)"),
+    skip_position_manager: bool = typer.Option(
+        False,
+        help=(
+            "Skip global V3/V4 Position Manager event scans. Pool-level "
+            "Swap/Mint/Burn/Collect data remains indexed; LP NFT identity and "
+            "position-event history are marked unavailable."
+        ),
+    ),
     pick: int = typer.Option(0, help="When name matches multiple tokens, pick candidate index"),
     holdings_source: str = typer.Option(
         "auto",
@@ -343,6 +351,7 @@ def analyze(
         to_block,
         output_dir=output_dir,
         index_token_transfer=not fast_mode,
+        index_position_manager=not skip_position_manager,
         source=index_source,
         artifact_format=artifact_mode,
     )
@@ -778,6 +787,16 @@ def research_series(
 
     profile = json.loads(profile_path.read_text())
     metrics = json.loads(metrics_path.read_text())
+    index_source_path = out / "index_source.json"
+    index_source_metadata = (
+        json.loads(index_source_path.read_text())
+        if index_source_path.exists()
+        else {}
+    )
+    lp_identity_available = not (
+        index_source_metadata.get("position_manager_indexing") == "skipped"
+        or index_source_metadata.get("position_identity_coverage") == "unavailable"
+    )
     pools = [
         VerifiedPool(**dict(row))
         for row in json.loads(pools_path.read_text())
@@ -882,6 +901,7 @@ def research_series(
         chain_id=int(profile.get("chain_id") or 1),
         bucket_seconds=seconds,
         tvl_source=str(metrics.get("tvl_timeline_source") or ""),
+        lp_identity_available=lp_identity_available,
     )
     artifact = write_table(
         "analysis_series", rows, out, artifact_format="parquet"

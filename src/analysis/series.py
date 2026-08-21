@@ -398,6 +398,7 @@ def build_analysis_series(
     chain_id: int = 1,
     bucket_seconds: int = 3600,
     tvl_source: str = "",
+    lp_identity_available: bool = True,
 ) -> list[dict[str, Any]]:
     """Return pool-level and token-total rows aligned to fixed time buckets."""
     seconds = int(bucket_seconds or 0)
@@ -490,6 +491,9 @@ def build_analysis_series(
         pool_output: list[dict[str, Any]] = []
         for identifier in sorted(observed_pools):
             flow = _finish_flow(flows.get((bucket, identifier)))
+            if not lp_identity_available:
+                flow["active_lp_count"] = None
+                flow["lp_identity_coverage"] = None
             state = current_tvl.get(identifier)
             has_activity = bool(
                 flow["swap_count"]
@@ -536,6 +540,9 @@ def build_analysis_series(
                 ),
             )
         total_flow = _finish_flow(flows.get((bucket, None)))
+        if not lp_identity_available:
+            total_flow["active_lp_count"] = None
+            total_flow["lp_identity_coverage"] = None
         if pool_output or total_state is not None or total_flow["swap_count"]:
             total = _base_row(
                 chain_id=chain_id,
